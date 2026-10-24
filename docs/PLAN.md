@@ -12,6 +12,33 @@ screen is in [`docs/draft/index.html`](draft/index.html).
 
 ---
 
+## 0. Decisions (owner, 2026-10-24)
+
+| Topic | Decision |
+|---|---|
+| Platform | **Streamlit**, same stack, theme and deploy as the Projection Tool |
+| Google exports | **Shared Drive folder**, written by a service account (Content Manager) |
+| Purchase contract | **In v1**: optional upload per deal, cross-checked against the commitment |
+| Lesson approval | **Admins only**; anyone can submit feedback |
+| Deal types | Wholesale assignment, Double close, Novation / listing, Fix & Flip / Buy & Hold, **Creative Finance** (Subject-to, Seller financing) |
+| Commitment PDFs | Mix of digital and scanned pages (scanned pages go to the model as images) |
+| Volume | 30–100 commitments / month (Deals search and history matter; plan for batch re-runs) |
+| Current checklist | Email / notes per closer, so the Training tab is how the team's knowledge gets captured |
+| States | Nationwide: general checks plus state rules (attorney vs title-company closing states, transfer tax, etc.) added as lessons |
+| AI | Owner has an Anthropic API key; stored as a Streamlit secret, never in chat or git |
+| Retention | Keep uploaded commitments and contracts **forever** (private storage, team-only access) |
+
+Checklist additions from these decisions (**Investor deal structure** group):
+- **Subject-to**: existing loan stays: loan status and reinstatement figure if behind, due-on-sale disclosure signed
+  by seller, seller's authorization to release loan info, insurance changed to name the new owner (and lender as
+  loss payee), servicing / payment plan, no payoff of that mortgage on the settlement statement (title must agree
+  to insure with it as an exception).
+- **Seller financing**: promissory note and mortgage / deed of trust from buyer to seller, recorded at closing;
+  terms match the contract; lender-licensing / Dodd-Frank check when the property is the seller's former home
+  and the buyer will occupy; seller's own existing mortgage paid off or a wrap is disclosed.
+
+---
+
 ## 1. Recommendation: Streamlit (same stack as the Projection Tool)
 
 | | **Streamlit** (recommended) | **Vercel** (Next.js) |
@@ -214,8 +241,8 @@ at the top.
   tests/                    numbering check, coverage math, exports, a set of sample commitments
   ```
 - **Privacy** (same spirit as Projection's non-negotiables): commitments contain names, addresses and loan
-  numbers. Private storage only, team-only app, retention setting (e.g. delete PDFs after 12 months),
-  never in git, logs or test fixtures. Anthropic API traffic is not used for model training.
+  numbers. Private storage only, team-only app, kept indefinitely (owner's choice; a retention setting can
+  shorten it later), never in git, logs or test fixtures. Anthropic API traffic is not used for model training.
 
 ---
 
@@ -228,14 +255,11 @@ at the top.
 | 3 | Exports (CSV, Excel, PDF, Word, Google Sheets, Google Docs); Deals history; Report Missing Item + per-item feedback. |
 | 4 | Training tab, Knowledge tab (lessons approval, worked examples, scorecard); deploy; team trial. |
 
-**What I need from you to start:** 5–10 real (or redacted) commitments with the list your team actually
-worked from for each (those become the first training set and the accuracy test); which states/counties you
-close in most; the title companies you use most (their commitment formats differ); and who approves lessons.
+**What I need from you to start:** 5–10 real (or redacted) commitments, each with the list your team actually
+worked from (pull them from the closers' emails / notes); those become the first training set and the accuracy
+test. Include at least one each of a double close, a subject-to and a seller-finance deal, and a commitment with
+scanned pages.
 
-## 9. Open questions for review
-1. Streamlit (recommended) or Vercel?
-2. Google exports: Shared Drive folder (recommended) or each user signs in with Google?
-3. Should a purchase contract upload be part of v1 (lets the agent check vesting, price and buyer against the
-   commitment), or later?
-4. Who can approve lessons: one admin, or anyone on the team?
-5. How long should uploaded commitments be kept?
+## 9. Still open
+1. Who are the admins that approve lessons?
+2. The title companies you use most (their commitment layouts differ; each gets its own lessons).

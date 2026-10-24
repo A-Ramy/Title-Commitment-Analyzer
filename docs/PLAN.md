@@ -37,7 +37,7 @@ screen is in [`docs/draft/index.html`](draft/index.html).
 | Exports | Google Sheets, Google Docs, Word, PDF, CSV, Excel, all in v1. Sheets is a one-time export (no sync back) |
 | Updated commitments | Uploaded to the same deal; the agent shows what's new and what title removed, and keeps statuses and notes |
 | Deal details | Read from the commitment and contract, **confirmed by the uploader** before the review runs |
-| Email summary | **Daily to all users, covering all open deals**: open blockers and items due soon; sent through an email service (e.g. Resend) from the company domain |
+| Email summary | **Daily to all users, covering all open deals**: open blockers and items due soon; sent through an email service (e.g. Resend) from **@totalchb.com** (proposed sender: `title-agent@totalchb.com`; needs the service's DNS records added to the domain) |
 | AI budget | Accuracy first: most capable model plus the second-opinion pass on every commitment |
 | Training examples | Real, unredacted commitments, purchase contracts, and the closers' lists from email. Never committed to git or used as test fixtures; tests use made-up data |
 

@@ -27,6 +27,19 @@ screen is in [`docs/draft/index.html`](draft/index.html).
 | States | Nationwide: general checks plus state rules (attorney vs title-company closing states, transfer tax, etc.) added as lessons |
 | AI | Owner has an Anthropic API key; stored as a Streamlit secret, never in chat or git |
 | Retention | Keep uploaded commitments and contracts **forever** (private storage, team-only access) |
+| Users & login | 4–10 people; invite-only private Streamlit app, like Projection |
+| Admins (approve lessons) | Owner, CTO, TC, TC Assistant |
+| Title companies | Many, varies by state: lessons are kept per title company and per state |
+| Priorities | Closing Blocker · Before Closing · Review / FYI |
+| Responsibility | **Owner** column is always the TC (they chase it); a **Provided By** column names who actually holds it (seller, buyer, title co. / attorney, lender, HOA, county, contractor, …) |
+| Due dates | Set automatically from the closing date (e.g. payoffs 10 days before, bring-down 5 days before), editable per item |
+| FYI items on exports | Chosen per export (tick box in the export menu) |
+| Exports | Google Sheets, Google Docs, Word, PDF, CSV, Excel, all in v1. Sheets is a one-time export (no sync back) |
+| Updated commitments | Uploaded to the same deal; the agent shows what's new and what title removed, and keeps statuses and notes |
+| Deal details | Read from the commitment and contract, **confirmed by the uploader** before the review runs |
+| Email summary | **Daily to all users, covering all open deals**: open blockers and items due soon; sent through an email service (e.g. Resend) from the company domain |
+| AI budget | Accuracy first: most capable model plus the second-opinion pass on every commitment |
+| Training examples | Real, unredacted commitments, purchase contracts, and the closers' lists from email. Never committed to git or used as test fixtures; tests use made-up data |
 
 Checklist additions from these decisions (**Investor deal structure** group):
 - **Subject-to**: existing loan stays: loan status and reinstatement figure if behind, due-on-sale disclosure signed
@@ -261,5 +274,4 @@ test. Include at least one each of a double close, a subject-to and a seller-fin
 scanned pages.
 
 ## 9. Still open
-1. Who are the admins that approve lessons?
-2. The title companies you use most (their commitment layouts differ; each gets its own lessons).
+Nothing blocking. Building starts when the examples arrive.

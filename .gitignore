@@ -1,0 +1,9 @@
+.env
+.streamlit/secrets.toml
+.data/
+__pycache__/
+*.pyc
+.venv/
+# never commit real commitments or exports
+uploads/
+exports/

@@ -1,0 +1,679 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Title Agent Draft</title>
+<link rel="icon" href="data:image/png;base64,__LOGO_MARK__">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700&display=swap" rel="stylesheet">
+<style>
+/* Total Cash Home Buyers tokens, copied from the Projection Tool (ui/brand.py) */
+:root{
+  --bg:#ffffff;--fg:#211e33;--body:#47445a;--heading:#4d458a;--muted:#767388;--line:#eeedf2;--line-strong:#c9c7d4;
+  --accent:#4d458a;--accent-soft:#eae9f4;--cta:#bd2239;--cta-hover:#992849;--good:#0d7a3b;--good-bg:#eaf7ef;
+  --bad:#bd2239;--bad-bg:#fbf0f2;--warn:#8a5a00;--warn-bg:#fff3d1;--sub:#f5f4fa;--ovr:#b45309;--ovr-bg:#fff1e0;
+  --glass:rgba(255,255,255,.58);--glass-strong:rgba(255,255,255,.82);--glass-soft:rgba(255,255,255,.40);
+  --glass-border:rgba(255,255,255,.78);--glass-line:rgba(77,69,138,.13);
+  --glass-hi:inset 0 1px 0 rgba(255,255,255,.95),inset 0 -1px 0 rgba(77,69,138,.06);
+  --glass-shadow:0 8px 32px rgba(34,29,84,.11),0 1px 3px rgba(34,29,84,.07);
+  --lift:0 10px 26px rgba(34,29,84,.16);--thumb:rgba(255,255,255,.94);
+  --num-grad:linear-gradient(120deg,#4d458a 10%,#7d3468 90%);
+  --bar-grad:linear-gradient(90deg,#4d458a,#7b70d4);
+  --head-grad:linear-gradient(180deg,#5d54a4 0%,#4d458a 60%,#423b78 100%);
+  --bg-glow-1:rgba(98,90,165,.32);--bg-glow-2:rgba(189,34,57,.16);--bg-glow-3:rgba(16,150,72,.12);
+  --bg-base:#f2f1f9;--sheen:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,.12));
+  --blur:blur(22px) saturate(180%);--ease:cubic-bezier(.2,.8,.3,1);
+  --display:"Baloo 2","Nunito Sans",system-ui,sans-serif;--font:"Nunito Sans",system-ui,sans-serif;
+  --cta-glass:linear-gradient(180deg,#e5546a 0%,#bd2239 55%,#a11f3d 100%);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#14122a;--fg:#eceaf5;--body:#d6d3e6;--heading:#c4bff0;--muted:#a19fb5;--line:#2e2a4a;--line-strong:#4a4568;
+  --accent:#a39ce3;--accent-soft:#29254d;--cta:#e0465a;--cta-hover:#bd2239;--good:#5fd38a;--good-bg:#12301f;
+  --bad:#ff7b86;--bad-bg:#3a1620;--warn:#f0c04f;--warn-bg:#3a2f12;--sub:#1b1832;--ovr:#f5a35c;--ovr-bg:#3a2510;
+  --glass:rgba(32,28,66,.52);--glass-strong:rgba(26,23,54,.84);--glass-soft:rgba(255,255,255,.07);
+  --glass-border:rgba(255,255,255,.14);--glass-line:rgba(255,255,255,.08);
+  --glass-hi:inset 0 1px 0 rgba(255,255,255,.16),inset 0 -1px 0 rgba(0,0,0,.25);
+  --glass-shadow:0 10px 36px rgba(0,0,0,.45),0 1px 3px rgba(0,0,0,.3);--lift:0 12px 30px rgba(0,0,0,.5);
+  --thumb:rgba(255,255,255,.17);--num-grad:linear-gradient(120deg,#d9d4ff 10%,#f4a9bb 90%);
+  --bar-grad:linear-gradient(90deg,#625aa5,#9d93f0);--head-grad:linear-gradient(180deg,#4f4790 0%,#3f387a 60%,#352f68 100%);
+  --bg-glow-1:rgba(98,90,165,.40);--bg-glow-2:rgba(189,34,57,.24);--bg-glow-3:rgba(16,150,72,.15);
+  --bg-base:#0d0b1f;--sheen:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.02));color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#14122a;--fg:#eceaf5;--body:#d6d3e6;--heading:#c4bff0;--muted:#a19fb5;--line:#2e2a4a;--line-strong:#4a4568;
+  --accent:#a39ce3;--accent-soft:#29254d;--cta:#e0465a;--cta-hover:#bd2239;--good:#5fd38a;--good-bg:#12301f;
+  --bad:#ff7b86;--bad-bg:#3a1620;--warn:#f0c04f;--warn-bg:#3a2f12;--sub:#1b1832;--ovr:#f5a35c;--ovr-bg:#3a2510;
+  --glass:rgba(32,28,66,.52);--glass-strong:rgba(26,23,54,.84);--glass-soft:rgba(255,255,255,.07);
+  --glass-border:rgba(255,255,255,.14);--glass-line:rgba(255,255,255,.08);
+  --glass-hi:inset 0 1px 0 rgba(255,255,255,.16),inset 0 -1px 0 rgba(0,0,0,.25);
+  --glass-shadow:0 10px 36px rgba(0,0,0,.45),0 1px 3px rgba(0,0,0,.3);--lift:0 12px 30px rgba(0,0,0,.5);
+  --thumb:rgba(255,255,255,.17);--num-grad:linear-gradient(120deg,#d9d4ff 10%,#f4a9bb 90%);
+  --bar-grad:linear-gradient(90deg,#625aa5,#9d93f0);--head-grad:linear-gradient(180deg,#4f4790 0%,#3f387a 60%,#352f68 100%);
+  --bg-glow-1:rgba(98,90,165,.40);--bg-glow-2:rgba(189,34,57,.24);--bg-glow-3:rgba(16,150,72,.15);
+  --bg-base:#0d0b1f;--sheen:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.02));color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:var(--font);color:var(--fg);font-size:15px;line-height:1.45;min-height:100vh;background-color:var(--bg-base);
+  background:radial-gradient(1100px 720px at 6% -12%,var(--bg-glow-1),transparent 62%),
+  radial-gradient(900px 620px at 104% 8%,var(--bg-glow-2),transparent 60%),
+  radial-gradient(900px 760px at 58% 112%,var(--bg-glow-3),transparent 62%),var(--bg-base);background-attachment:fixed}
+h1,h2,h3{font-family:var(--display);color:var(--heading);letter-spacing:.01em;margin:0}
+h1{font-size:2.1rem;font-weight:700;line-height:1.15}
+button{font:inherit;cursor:pointer}
+.glass{background:var(--glass);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border:1px solid var(--glass-border);
+  box-shadow:var(--glass-hi),var(--glass-shadow)}
+.muted{color:var(--muted)}
+
+/* frame */
+.app{display:grid;grid-template-columns:290px minmax(0,1fr);min-height:100vh}
+.side{position:sticky;top:0;height:100vh;padding:12px}
+.side-in{height:100%;border-radius:26px;padding:22px 18px;display:flex;flex-direction:column;gap:4px;overflow:auto;scrollbar-width:none}
+.logo{width:100%;filter:drop-shadow(0 4px 12px rgba(34,29,84,.18))}
+.logo.dk{display:none}
+:root[data-theme="dark"] .logo.lt{display:none}:root[data-theme="dark"] .logo.dk{display:block}
+.brand-sub{font-family:var(--display);font-size:15px;font-weight:600;color:var(--muted);margin:2px 0 10px 2px}
+.side-h{margin:16px 0 4px;font-size:12.5px;font-weight:700;color:var(--muted)}
+.kv{display:grid;gap:2px;color:var(--muted);font-size:13.5px}.kv b{color:var(--fg);font-weight:600}
+.navlink{display:flex;align-items:center;gap:10px;padding:7px 12px;border-radius:999px;color:var(--body);font-weight:600;font-size:14.5px;
+  border:0;background:none;width:100%;text-align:left;transition:background .3s var(--ease)}
+.navlink:hover{background:var(--glass-soft)}
+.navlink.on{background:var(--thumb);box-shadow:var(--glass-hi);color:var(--heading)}
+.navlink .ic{width:18px;text-align:center;opacity:.8}
+.navlink .cnt{margin-left:auto;font-size:11.5px;background:var(--warn-bg);color:var(--warn);border-radius:999px;padding:0 7px;font-weight:700}
+.deal-mini{display:grid;grid-template-columns:1fr auto;gap:2px 8px;padding:7px 12px;border-radius:14px;font-size:13.5px;cursor:pointer}
+.deal-mini:hover{background:var(--glass-soft)}
+.deal-mini b{font-weight:600;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.deal-mini span{color:var(--muted);font-size:12.5px}
+
+.main{padding:26px 34px 120px;max-width:1500px;width:100%}
+.topbar{display:flex;justify-content:center;margin-bottom:18px}
+.tabs{display:inline-flex;gap:4px;padding:5px;border-radius:999px}
+.tab{border:0;background:none;border-radius:999px;padding:6px 22px;font-family:var(--display);font-size:17px;font-weight:600;color:var(--muted);
+  transition:background .3s var(--ease),box-shadow .3s var(--ease),transform .15s var(--ease)}
+.tab:hover{background:var(--glass-soft)}
+.tab.on{background:var(--thumb);color:var(--heading);box-shadow:var(--glass-hi),0 2px 8px rgba(34,29,84,.16)}
+.draftnote{font-size:12.5px;font-weight:700;color:var(--warn);background:var(--warn-bg);border-radius:999px;padding:3px 12px;margin:0 auto 14px;display:table}
+
+/* segmented */
+.seg{display:flex;gap:2px;padding:3px;border-radius:999px;background:var(--glass-soft);border:1px solid var(--glass-border)}
+.seg button{flex:1;border:0;background:none;border-radius:999px;padding:5px 12px;font-weight:600;color:var(--muted);font-size:14px}
+.seg button.on{background:var(--thumb);color:var(--heading);box-shadow:var(--glass-hi),0 3px 10px rgba(34,29,84,.18)}
+
+/* buttons */
+.btn{border-radius:999px;font-weight:700;padding:8px 18px;font-size:14.5px;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;
+  backface-visibility:hidden;transition:transform .2s var(--ease),box-shadow .2s var(--ease),filter .2s}
+.btn:hover{transform:translateY(-1px);filter:brightness(1.05)}.btn:active{transform:scale(.97)}
+.btn.primary{background:var(--cta-glass);border:1px solid rgba(255,255,255,.38);color:#fff;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 -3px 8px rgba(0,0,0,.14),0 6px 18px rgba(189,34,57,.30)}
+.btn.sec{background:var(--sheen),var(--glass);border:1px solid var(--glass-border);color:var(--fg);
+  box-shadow:var(--glass-hi),0 4px 14px rgba(34,29,84,.10);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur)}
+.btn.sm{padding:4px 12px;font-size:13px}
+.btn svg{width:16px;height:16px;flex:none}
+
+/* headings */
+.pagehead{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:6px}
+.status{font-size:13.5px;color:var(--muted);margin:4px 0 10px}
+.sh{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin:24px 0 8px}
+.sh .t1{font-family:var(--display);font-size:22px;font-weight:700;color:var(--heading);line-height:1.2}
+.sh small{color:var(--muted);font-size:13.5px}
+.sec-b{font-size:12.5px;font-weight:700;color:#fff;background:var(--cta);border-radius:6px;padding:1px 8px;align-self:center}
+.sec-b.amber{background:#b7791f}.sec-b.ind{background:var(--accent)}
+:root[data-theme="dark"] .sec-b.ind{color:#14122a}
+
+/* cards */
+.card{border-radius:22px;padding:16px 18px}
+.grid2{display:grid;grid-template-columns:1.25fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.drop{border:2px dashed var(--line-strong);border-radius:18px;padding:18px;display:flex;align-items:center;gap:14px;background:var(--glass-soft)}
+.drop .fic{width:42px;height:52px;border-radius:8px;background:var(--bad-bg);color:var(--bad);display:grid;place-items:center;font-weight:700;font-size:12px;flex:none}
+.drop b{display:block;overflow-wrap:anywhere}
+.field{display:grid;gap:4px;margin-top:12px}
+.field label{font-size:13px;font-weight:700;color:var(--muted)}
+.input{background:var(--glass-strong);border:1px solid var(--line-strong);border-radius:14px;padding:8px 12px;color:var(--fg);font:inherit;width:100%}
+textarea.input{min-height:76px;resize:vertical}
+select.input{border-radius:999px;appearance:none}
+.pills{display:flex;flex-wrap:wrap;gap:4px}
+.pills button{border-radius:999px;background:var(--glass-soft);border:1px solid var(--glass-border);font-weight:600;padding:4px 12px;color:var(--body);font-size:13.5px}
+.pills button.on{background:var(--thumb);color:var(--heading);box-shadow:var(--glass-hi),0 3px 10px rgba(34,29,84,.18)}
+.steps{display:grid;gap:6px;margin-top:4px}
+.step{display:flex;gap:10px;align-items:center;font-size:14px}
+.step i{width:20px;height:20px;border-radius:50%;background:var(--good-bg);color:var(--good);display:grid;place-items:center;font-style:normal;font-size:12px;font-weight:700;flex:none}
+
+/* tiles */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:6px 0 8px}
+.tile{border-radius:22px;padding:12px 16px;display:flex;flex-direction:column;gap:5px;min-width:0;transition:transform .3s var(--ease),box-shadow .3s var(--ease)}
+.tile:hover{transform:translateY(-1px);box-shadow:var(--glass-hi),var(--lift)}
+.tile .l{font-size:13px;color:var(--muted);font-weight:700}
+.tile .v{font-family:var(--display);font-size:30px;line-height:1.1;font-weight:700;font-variant-numeric:tabular-nums;
+  background:var(--num-grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.tile .v.bad{background:none;color:var(--bad)}.tile .v.good{background:none;color:var(--good)}.tile .v.warn{background:none;color:var(--ovr)}
+.tile .s{font-size:13px;color:var(--muted)}
+.meter{height:9px;border-radius:999px;background:var(--glass-soft);position:relative;box-shadow:inset 0 1px 2px rgba(34,29,84,.12);overflow:hidden}
+.meter i{position:absolute;inset:0 auto 0 0;border-radius:999px;background:linear-gradient(90deg,#0d7a3b,#2fc56f)}
+.cov{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.cov .row{display:flex;justify-content:space-between;font-size:13.5px;margin-bottom:5px}
+.cov .row b{color:var(--good);font-variant-numeric:tabular-nums}
+
+/* boxes */
+.box{border-radius:18px;padding:10px 14px;font-size:14px;margin:8px 0;border:1px solid var(--glass-border);background:var(--glass);box-shadow:var(--glass-hi)}
+.box.good{background:linear-gradient(135deg,rgba(16,150,72,.18),rgba(16,150,72,.05)),var(--glass)}
+.box.info{background:linear-gradient(135deg,rgba(98,90,165,.18),rgba(98,90,165,.05)),var(--glass)}
+.box.warn{background:linear-gradient(135deg,rgba(240,180,40,.24),rgba(240,180,40,.07)),var(--glass)}
+
+/* action bar */
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin:14px 0 4px}
+.actions .grp{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.menu{position:relative}
+.menu-pop{position:absolute;top:calc(100% + 6px);left:0;z-index:20;border-radius:18px;padding:6px;min-width:300px;display:none;background:var(--bg)}
+.menu-pop.open{display:block}
+.menu-pop button{display:flex;gap:10px;align-items:center;width:100%;border:0;background:none;padding:8px 10px;border-radius:12px;color:var(--fg);font-weight:600;text-align:left}
+.menu-pop button:hover{background:var(--accent-soft)}
+.menu-pop small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+.fmt{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-size:10.5px;font-weight:800;color:#fff;flex:none}
+
+/* tables */
+.wrap{overflow-x:auto;background:var(--glass-strong);border:1px solid var(--glass-border);border-radius:18px;box-shadow:var(--glass-hi),var(--glass-shadow);margin:4px 0 10px}
+table.t{border-collapse:collapse;width:100%;font-size:13.5px;color:var(--fg)}
+.t th{background:var(--head-grad);color:#fff;font-weight:700;text-align:left;padding:8px 10px;white-space:nowrap;box-shadow:inset 0 1px 0 rgba(255,255,255,.18)}
+.t td{padding:8px 10px;border-bottom:1px solid var(--glass-line);vertical-align:top}
+.t tbody tr:hover td{background:rgba(98,90,165,.07)}
+.t tr.grp td{background:rgba(98,90,165,.10);font-weight:700;color:var(--heading);font-family:var(--display);font-size:15px;padding:6px 10px}
+.t td.n{color:var(--muted);font-variant-numeric:tabular-nums;width:34px}
+.t td.it{min-width:300px}
+.t td.it b{display:block;font-weight:700;color:var(--fg)}
+.t td.it span{color:var(--body)}
+.t .src{font-size:12.5px;color:var(--accent);font-weight:700;white-space:nowrap;cursor:pointer;border-bottom:1px dotted currentColor}
+.t tr.quote td{background:var(--sub);font-size:13px;color:var(--body);padding:8px 14px 10px 46px}
+.t tr.quote q{font-style:italic}
+.t select{background:var(--glass-strong);border:1px solid var(--line-strong);border-radius:999px;padding:2px 8px;color:var(--fg);font:inherit;font-size:12.5px}
+.t td[contenteditable]{outline:none}.t td[contenteditable]:focus{background:var(--accent-soft)}
+.fb{display:flex;gap:4px}
+.fb button{white-space:nowrap;border:1px solid var(--glass-border);background:var(--glass-soft);border-radius:999px;padding:1px 8px;font-size:12px;color:var(--muted);font-weight:700}
+.fb button:hover{color:var(--heading);background:var(--thumb)}
+.fb button.on{background:var(--good-bg);color:var(--good)}
+
+.pill{display:inline-block;font-size:11.5px;font-weight:700;padding:1px 9px;border-radius:999px;white-space:nowrap}
+.p-block{background:var(--bad-bg);color:var(--bad)}.p-before{background:var(--ovr-bg);color:var(--ovr)}
+.p-fyi{background:var(--accent-soft);color:var(--accent)}.p-good{background:var(--good-bg);color:var(--good)}
+.p-warn{background:var(--warn-bg);color:var(--warn)}.p-sub{background:var(--sub);color:var(--muted)}
+.tag{display:inline-block;font-size:11px;font-weight:700;border-radius:6px;padding:0 6px;margin-left:6px;vertical-align:1px}
+.tag.rev{background:var(--warn-bg);color:var(--warn)}.tag.les{background:var(--good-bg);color:var(--good)}
+
+/* compare columns */
+.cmp{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.cmp h3{font-size:17px;display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.cmp ul{margin:0;padding:0;list-style:none;display:grid;gap:8px}
+.cmp li{background:var(--glass-strong);border:1px solid var(--glass-border);border-radius:14px;padding:8px 12px;font-size:13.5px}
+.lesson{margin-top:6px;padding:7px 10px;border-radius:10px;background:var(--good-bg);color:var(--fg);font-size:13px}
+.lesson b{color:var(--good)}
+.row-actions{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+
+/* bars */
+.trend{display:flex;align-items:flex-end;gap:10px;height:120px;padding:6px 4px 0}
+.trend div{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:var(--muted);height:100%;justify-content:flex-end}
+.trend i{display:block;width:100%;max-width:46px;border-radius:8px 8px 3px 3px;background:var(--bar-grad);box-shadow:inset 0 1px 0 rgba(255,255,255,.38)}
+.trend b{color:var(--fg);font-size:12.5px}
+
+/* modal + toast */
+.scrim{position:fixed;inset:0;background:rgba(13,11,31,.45);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+.scrim.open{display:flex}
+.modal{width:min(560px,100%);border-radius:24px;padding:22px 24px;background:var(--glass-strong);max-height:92vh;overflow:auto}
+.modal h2{font-size:1.5rem;margin-bottom:2px}
+.modal .foot{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.toast{position:fixed;bottom:22px;right:26px;z-index:60;border-radius:18px;padding:12px 18px;max-width:min(440px,calc(100vw - 32px));
+  background:var(--glass-strong);transform:translateY(140%);opacity:0;visibility:hidden;transition:transform .35s var(--ease),opacity .35s var(--ease),visibility .35s;font-size:14px}
+.toast.show{transform:none;opacity:1;visibility:visible}
+.toast b{color:var(--heading)}
+
+.view{display:none}.view.on{display:block}
+
+@media (max-width:1100px){.grid2,.cmp,.grid3{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:900px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .actions .grp{width:100%}
+  #filter{min-width:0!important;flex:1}
+  .topbar{justify-content:flex-start}
+  .side{position:static;height:auto;padding:12px 16px 0}
+  .side-in{height:auto}
+  .side .collapsible{display:none}
+  .logo{max-width:220px}
+  .main{padding:16px 16px 100px}
+  .tabs{overflow-x:auto;max-width:100%}
+  .tab{padding:6px 14px;font-size:15px}
+  .cov{grid-template-columns:1fr}
+  h1{font-size:1.7rem}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="side-in glass">
+      <img class="logo lt" alt="Total Cash Home Buyers" src="data:image/png;base64,__LOGO_LIGHT__">
+      <img class="logo dk" alt="Total Cash Home Buyers" src="data:image/png;base64,__LOGO_DARK__">
+      <div class="brand-sub">Title Agent</div>
+      <div class="seg" role="radiogroup" aria-label="Theme">
+        <button data-theme-set="light">Light</button><button data-theme-set="dark">Dark</button>
+      </div>
+      <div class="collapsible">
+        <div class="side-h">Current Deal</div>
+        <div class="kv">
+          <span><b>1427 Maple Ave, Columbus OH</b></span>
+          <span>Commitment # SMP-26-08812</span>
+          <span>Double Close · Wholesale</span>
+          <span>Analyzed Oct 24, 2026 9:42 AM</span>
+        </div>
+        <div class="side-h">Recent Deals</div>
+        <div class="deal-mini" data-go="deals"><b>1427 Maple Ave</b><span class="pill p-block">7 open</span><span>Columbus OH</span></div>
+        <div class="deal-mini" data-go="deals"><b>88 Birchwood Ln</b><span class="pill p-before">3 open</span><span>Dayton OH</span></div>
+        <div class="deal-mini" data-go="deals"><b>310 N 5th St</b><span class="pill p-good">Clear</span><span>Zanesville OH</span></div>
+        <div class="side-h">Tools</div>
+        <button class="navlink" data-go="knowledge"><span class="ic">📚</span>Knowledge<span class="cnt" id="inboxCount">2</span></button>
+        <button class="navlink" data-go="settings"><span class="ic">⚙</span>Settings</button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <nav class="tabs glass" aria-label="Pages">
+        <button class="tab on" data-go="analyze">Analyze</button>
+        <button class="tab" data-go="deals">Deals</button>
+        <button class="tab" data-go="training">Training</button>
+        <button class="tab" data-go="knowledge">Knowledge</button>
+      </nav>
+    </div>
+    <div class="draftnote">Draft · sample data, made-up names and numbers</div>
+
+    <!-- ANALYZE -->
+    <section class="view on" id="v-analyze">
+      <div class="pagehead">
+        <div>
+          <h1>Analyze A Title Commitment</h1>
+          <div class="status">Upload the commitment. The agent lists everything that has to happen before this deal can close.</div>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="card glass">
+          <div class="drop">
+            <div class="fic">PDF</div>
+            <div style="min-width:0"><b>Commitment_1427_Maple_Ave.pdf</b><span class="muted">14 pages · 2.1 MB · uploaded 9:41 AM</span></div>
+            <button class="btn sec sm" style="margin-left:auto">Replace</button>
+          </div>
+          <div class="drop" style="margin-top:10px">
+            <div class="fic" style="background:var(--accent-soft);color:var(--accent)">PDF</div>
+            <div style="min-width:0"><b>Purchase_Agreement_1427_Maple.pdf</b><span class="muted">Optional · lets the agent check vesting, price and buyer</span></div>
+            <button class="btn sec sm" style="margin-left:auto">Replace</button>
+          </div>
+          <div class="field">
+            <label>Deal Type</label>
+            <div class="pills" id="dealType">
+              <button>Wholesale</button><button class="on">Double Close</button><button>Novation</button><button>Fix &amp; Flip</button><button>Buy &amp; Hold</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Closing Date</label>
+            <input class="input" value="Nov 14, 2026" style="max-width:220px">
+          </div>
+          <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn primary" id="reanalyze">▶ Analyze Commitment</button>
+          </div>
+        </div>
+        <div class="card glass">
+          <div style="font-weight:700;color:var(--heading);font-family:var(--display);font-size:18px;margin-bottom:6px">How This Run Went</div>
+          <div class="steps">
+            <div class="step"><i>✓</i>Read 14 pages (2 scanned pages read as images)</div>
+            <div class="step"><i>✓</i>Schedule A: owner, insured, amount, legal description</div>
+            <div class="step"><i>✓</i>Schedule B-I: 9 requirements found, numbering checked 1–9</div>
+            <div class="step"><i>✓</i>Schedule B-II: 12 exceptions found, numbering checked 1–12</div>
+            <div class="step"><i>✓</i>Pro checklist: 32 checks run (Double Close set)</div>
+            <div class="step"><i>✓</i>Second-opinion review: 1 more item found</div>
+            <div class="step"><i>✓</i>Every item traced to its page and quote</div>
+          </div>
+          <div class="box good" style="margin-top:12px">Applied <b>14 lessons</b> your team taught the agent, including 2 for this title company's format.</div>
+        </div>
+      </div>
+
+      <div class="sh"><span class="sec-b">1</span><span class="t1">Summary</span><small>1427 Maple Ave, Columbus OH 43206 · Sample Title Agency · effective Aug 14, 2026</small></div>
+      <div class="tiles" id="tiles"></div>
+      <div class="card glass">
+        <div class="cov">
+          <div><div class="row"><span>B-I Requirements addressed</span><b>9 / 9</b></div><div class="meter"><i style="width:100%"></i></div></div>
+          <div><div class="row"><span>B-II Exceptions classified</span><b>12 / 12</b></div><div class="meter"><i style="width:100%"></i></div></div>
+          <div><div class="row"><span>Pro checklist checks run</span><b>32 / 32</b></div><div class="meter"><i style="width:100%"></i></div></div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <div class="grp">
+          <div class="menu">
+            <button class="btn sec" id="exportBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+              Export List ▾</button>
+            <div class="menu-pop glass" id="exportMenu">
+              <button data-exp="gsheets"><span class="fmt" style="background:#188038">GS</span><span>Google Sheets<small>New sheet in "Title Checklists" folder</small></span></button>
+              <button data-exp="gdocs"><span class="fmt" style="background:#1a73e8">GD</span><span>Google Docs<small>Branded checklist doc, same folder</small></span></button>
+              <button data-exp="csv"><span class="fmt" style="background:#4d458a">CSV</span><span>CSV<small>Downloads now (works in this draft)</small></span></button>
+              <button data-exp="xlsx"><span class="fmt" style="background:#1d6f42">XLS</span><span>Excel<small>.xlsx with priority colors</small></span></button>
+              <button data-exp="pdf"><span class="fmt" style="background:#bd2239">PDF</span><span>PDF<small>Print-ready closing checklist</small></span></button>
+              <button data-exp="docx"><span class="fmt" style="background:#2b579a">DOC</span><span>Word<small>Editable .docx, same layout as PDF</small></span></button>
+            </div>
+          </div>
+          <div class="seg" id="filter" style="min-width:300px">
+            <button class="on" data-f="all">All</button><button data-f="open">Open Only</button><button data-f="block">Blockers</button>
+          </div>
+        </div>
+        <button class="btn primary" id="reportBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          Report Missing Item</button>
+      </div>
+
+      <div class="sh"><span class="sec-b">2</span><span class="t1">Items To Clear Before Closing</span><small>Click a source to see the exact wording from the commitment. Status and notes save as you type.</small></div>
+      <div class="wrap">
+        <table class="t" id="items">
+          <thead><tr><th>#</th><th>Item &amp; Action Needed</th><th>Category</th><th>Responsible</th><th>Source</th><th>Status</th><th>Notes</th><th>Right?</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- DEALS -->
+    <section class="view" id="v-deals">
+      <h1>Deals</h1>
+      <div class="status">Every commitment the agent has reviewed. Re-run any deal with the latest lessons.</div>
+      <div class="wrap"><table class="t">
+        <thead><tr><th>Property</th><th>Deal Type</th><th>Title Company</th><th>Analyzed</th><th>Closing</th><th>Blockers Open</th><th>Total Open</th><th>Coverage</th><th></th></tr></thead>
+        <tbody>
+          <tr><td><b>1427 Maple Ave</b>, Columbus OH</td><td>Double Close</td><td>Sample Title Agency</td><td>Oct 24</td><td>Nov 14</td><td><span class="pill p-block">7</span></td><td>17</td><td><span class="pill p-good">100%</span></td><td><button class="btn sec sm" data-go="analyze">Open</button></td></tr>
+          <tr><td><b>88 Birchwood Ln</b>, Dayton OH</td><td>Wholesale</td><td>Example Land Title</td><td>Oct 21</td><td>Oct 31</td><td><span class="pill p-good">0</span></td><td>3</td><td><span class="pill p-good">100%</span></td><td><button class="btn sec sm">Open</button></td></tr>
+          <tr><td><b>310 N 5th St</b>, Zanesville OH</td><td>Novation</td><td>Sample Title Agency</td><td>Oct 12</td><td>Oct 20</td><td><span class="pill p-good">0</span></td><td>0</td><td><span class="pill p-good">100%</span></td><td><button class="btn sec sm">Open</button></td></tr>
+          <tr><td><b>5 Orchard Ct</b>, Newark OH</td><td>Fix &amp; Flip</td><td>Demo Abstract Co.</td><td>Oct 3</td><td>Oct 17</td><td><span class="pill p-good">0</span></td><td>0</td><td><span class="pill p-good">100%</span></td><td><button class="btn sec sm">Open</button></td></tr>
+        </tbody></table></div>
+    </section>
+
+    <!-- TRAINING -->
+    <section class="view" id="v-training">
+      <h1>Train The Agent</h1>
+      <div class="status">Upload a commitment your team already worked, type the list a pro would make, and compare. Every gap becomes a lesson the agent uses on every future deal.</div>
+
+      <div class="sh"><span class="sec-b">1</span><span class="t1">The Document</span></div>
+      <div class="card glass">
+        <div class="drop">
+          <div class="fic">PDF</div>
+          <div style="min-width:0"><b>Commitment_22_Elm_St_CLOSED.pdf</b><span class="muted">11 pages · closed deal from Sept 2026</span></div>
+          <button class="btn sec sm" style="margin-left:auto">Replace</button>
+        </div>
+      </div>
+
+      <div class="sh"><span class="sec-b">2</span><span class="t1">The Pro's List</span><small>Type it in, or paste / upload from CSV, Excel or Word.</small></div>
+      <div class="wrap"><table class="t" id="expert">
+        <thead><tr><th>#</th><th>Item To Clear</th><th>Priority</th><th>Responsible</th><th>Where In Doc</th></tr></thead>
+        <tbody>
+          <tr><td class="n">1</td><td contenteditable>Payoff + release, mortgage to First Example Bank</td><td>Closing Blocker</td><td contenteditable>Title Co.</td><td contenteditable>B-I #3</td></tr>
+          <tr><td class="n">2</td><td contenteditable>Seller is an LLC: operating agreement + signing resolution</td><td>Closing Blocker</td><td contenteditable>Seller</td><td contenteditable>B-I #5</td></tr>
+          <tr><td class="n">3</td><td contenteditable>Final lien waiver from roofer (Notice of Commencement still open)</td><td>Closing Blocker</td><td contenteditable>Seller</td><td contenteditable>B-II #8</td></tr>
+          <tr><td class="n">4</td><td contenteditable>LLC good standing certificate dated within 30 days</td><td>Before Closing</td><td contenteditable>Seller</td><td contenteditable>Pro knowledge</td></tr>
+          <tr><td class="n">5</td><td contenteditable>Water/sewer final read, city utility lien</td><td>Before Closing</td><td contenteditable>Title Co.</td><td contenteditable>B-II #10</td></tr>
+          <tr><td class="n">6</td><td contenteditable>HOA estoppel</td><td>Before Closing</td><td contenteditable>TC</td><td contenteditable>B-II #6</td></tr>
+          <tr><td class="n muted">+</td><td contenteditable class="muted">Add an item…</td><td></td><td></td><td></td></tr>
+        </tbody></table></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+        <button class="btn primary" id="compareBtn">Compare With Agent</button>
+        <button class="btn sec">Upload List (CSV / Excel / Word)</button>
+      </div>
+
+      <div id="cmpOut" style="display:none">
+        <div class="sh"><span class="sec-b">3</span><span class="t1">How The Agent Did</span><small>Agent found 5 of 6 of your items (83%). One gap becomes a suggested lesson.</small></div>
+        <div class="cmp">
+          <div class="card glass"><h3><span class="pill p-good">5</span>Both Found</h3>
+            <ul><li>Mortgage payoff + release (B-I #3)</li><li>LLC operating agreement + resolution (B-I #5)</li><li>Good standing certificate</li><li>Utility final read / lien (B-II #10)</li><li>HOA estoppel (B-II #6)</li></ul></div>
+          <div class="card glass"><h3><span class="pill p-block">1</span>Agent Missed</h3>
+            <ul id="missedList"><li><b>Final lien waiver from roofer</b> (B-II #8)<br><span class="muted">Agent marked the Notice of Commencement as "standard, acceptable".</span>
+              <div class="lesson"><b>Suggested lesson:</b> When Schedule B-II lists a recorded Notice of Commencement that has not expired, treat it as a Closing Blocker: require the contractor's final affidavit and lien waivers, or a recorded termination.</div>
+              <div class="row-actions"><button class="btn primary sm" data-approve>Approve Lesson</button><button class="btn sec sm">Edit</button><button class="btn sec sm">Reject</button></div></li></ul></div>
+          <div class="card glass"><h3><span class="pill p-fyi">2</span>Agent Extra</h3>
+            <ul><li><b>Effective date is 64 days old</b>, order a bring-down<div class="row-actions"><button class="btn sec sm" data-mark>Good Catch</button><button class="btn sec sm" data-mark>Not Needed</button></div></li>
+              <li><b>FIRPTA non-foreign affidavit</b> for the LLC<div class="row-actions"><button class="btn sec sm" data-mark>Good Catch</button><button class="btn sec sm" data-mark>Not Needed</button></div></li></ul></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- KNOWLEDGE -->
+    <section class="view" id="v-knowledge">
+      <h1>Knowledge</h1>
+      <div class="status">What the agent knows beyond the commitment itself. Every lesson came from your team.</div>
+      <div class="tiles">
+        <div class="tile glass"><span class="l">Finds Expert Items</span><span class="v good">97%</span><span class="s">across 18 worked examples</span></div>
+        <div class="tile glass"><span class="l">Active Lessons</span><span class="v" id="lessonCount">14</span><span class="s">3 added this month</span></div>
+        <div class="tile glass"><span class="l">Worked Examples</span><span class="v">18</span><span class="s">from 6 title companies</span></div>
+        <div class="tile glass"><span class="l">Feedback Waiting</span><span class="v warn" id="inboxTile">2</span><span class="s">needs approval</span></div>
+      </div>
+
+      <div class="grid2" style="margin-top:4px">
+        <div>
+          <div class="sh"><span class="sec-b">1</span><span class="t1">Feedback Inbox</span><small>From Report Missing Item and per-item feedback</small></div>
+          <div id="inbox" style="display:grid;gap:10px"></div>
+        </div>
+        <div>
+          <div class="sh"><span class="sec-b">2</span><span class="t1">Scorecard</span><small>Re-checked on every worked example after each lesson change</small></div>
+          <div class="card glass">
+            <div class="trend">
+              <div><b>84%</b><i style="height:56%"></i>Jul</div>
+              <div><b>89%</b><i style="height:66%"></i>Aug</div>
+              <div><b>91%</b><i style="height:72%"></i>Sep</div>
+              <div><b>97%</b><i style="height:88%"></i>Oct</div>
+            </div>
+            <div class="status" style="margin:8px 0 0">Share of the pros' items the agent also found, by month.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sh"><span class="sec-b">3</span><span class="t1">Lessons</span><small>The agent follows every active lesson on every deal</small></div>
+      <div class="wrap"><table class="t" id="lessons">
+        <thead><tr><th>Lesson</th><th>Came From</th><th>Added</th><th>Used</th><th>Active</th></tr></thead>
+        <tbody>
+          <tr><td>HELOC payoffs need a signed account-closure letter from the borrower, not just a payoff figure.</td><td>Training · 14 Pine Rd</td><td>Sep 30 · A. Ramy</td><td>9 deals</td><td><span class="pill p-good">On</span></td></tr>
+          <tr><td>Double close: confirm the B-C commitment exists and the end buyer's funds are in before the A-B leg records.</td><td>Feedback · 7 Oak Ct</td><td>Sep 18 · TC team</td><td>4 deals</td><td><span class="pill p-good">On</span></td></tr>
+          <tr><td>Sample Title Agency puts tax status in a "Note" after B-II, not in Schedule A: always read it.</td><td>Training · 3 Main St</td><td>Aug 27 · A. Ramy</td><td>11 deals</td><td><span class="pill p-good">On</span></td></tr>
+          <tr><td>Vested owner deceased, spouse surviving: survivorship affidavit + certified death certificate, recorded before the deed.</td><td>Training · 61 Ash Way</td><td>Aug 9 · Closer</td><td>3 deals</td><td><span class="pill p-good">On</span></td></tr>
+        </tbody></table></div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="view" id="v-settings">
+      <h1>Settings</h1>
+      <div class="status">The pro checklist the agent runs on every deal, export destinations and data retention.</div>
+      <div class="grid2">
+        <div class="card glass">
+          <div style="font-weight:700;color:var(--heading);font-family:var(--display);font-size:18px">Pro Checklist <span class="muted" style="font-size:14px;font-family:var(--font)">32 checks</span></div>
+          <div class="wrap" style="margin-top:8px"><table class="t"><thead><tr><th>Group</th><th>Checks</th><th>Runs On</th></tr></thead><tbody>
+            <tr><td>Vesting &amp; Parties</td><td>8</td><td>All deals</td></tr>
+            <tr><td>Money Liens</td><td>9</td><td>All deals</td></tr>
+            <tr><td>Taxes &amp; HOA</td><td>4</td><td>All deals</td></tr>
+            <tr><td>Property &amp; Survey</td><td>4</td><td>All deals</td></tr>
+            <tr><td>Commitment Itself</td><td>4</td><td>All deals</td></tr>
+            <tr><td>Investor Deal Structure</td><td>3</td><td>Wholesale, Double Close, Novation</td></tr>
+          </tbody></table></div>
+        </div>
+        <div class="card glass">
+          <div style="font-weight:700;color:var(--heading);font-family:var(--display);font-size:18px">Exports &amp; Data</div>
+          <div class="field"><label>Google Drive Folder</label><input class="input" value="Shared Drive › Title Checklists"></div>
+          <div class="field"><label>Keep Uploaded Commitments For</label><select class="input" style="max-width:220px"><option>12 months</option><option>24 months</option><option>Forever</option></select></div>
+          <div class="field"><label>Who Can Approve Lessons</label><select class="input" style="max-width:220px"><option>Admins only</option><option>Everyone</option></select></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Report Missing Item -->
+<div class="scrim" id="scrim" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+  <form class="modal glass" id="reportForm">
+    <h2 id="mTitle">Report A Missing Item</h2>
+    <div class="status">Something the agent should have listed for 1427 Maple Ave. It goes to the Feedback Inbox and, once approved, the agent checks for it on every deal.</div>
+    <div class="field"><label>What's Missing</label><input class="input" id="fWhat" required placeholder="e.g. Final water bill / utility lien search"></div>
+    <div class="field"><label>Where In The Document (optional)</label><input class="input" id="fWhere" placeholder="e.g. B-II #10, page 9"></div>
+    <div class="field"><label>Why It Would Stop The Closing</label><textarea class="input" id="fWhy" placeholder="e.g. The city records unpaid water bills as a lien; title won't insure over it."></textarea></div>
+    <div class="field"><label>Priority</label>
+      <div class="pills" id="fPri"><button type="button" class="on">Closing Blocker</button><button type="button">Before Closing</button><button type="button">Review</button></div></div>
+    <div class="field"><label>Category</label>
+      <select class="input" id="fCat" style="max-width:260px"><option>Money Liens</option><option>Vesting &amp; Parties</option><option>Taxes &amp; HOA</option><option>Property &amp; Survey</option><option>Commitment Itself</option><option>Investor Deal Structure</option><option>Closing Docs</option></select></div>
+    <label style="display:flex;gap:8px;align-items:center;margin-top:12px;font-size:14px"><input type="checkbox" checked> Add it to this deal's list now</label>
+    <div class="foot"><button type="button" class="btn sec" id="cancelReport">Cancel</button><button class="btn primary">Send Feedback</button></div>
+  </form>
+</div>
+<div class="toast glass" id="toast"></div>
+
+<script>
+const ITEMS = [
+  {p:"block",cat:"Vesting & Parties",t:"Vested owner is deceased",a:"Record a survivorship affidavit and certified death certificate for Robert A. Sample before the deed. Seller on the contract is Linda M. Sample only.",r:"Seller / Title Co.",src:"B-I #6 · p.4",q:"Furnish a certified copy of the death certificate of Robert A. Sample, together with an Affidavit of Survivorship, to be recorded.",tag:"les"},
+  {p:"block",cat:"Money Liens",t:"Open mortgage, First Example Bank, $142,000 (Inst. 2018-0045512)",a:"Order payoff letter; pay from proceeds; record release.",r:"Title Co.",src:"B-I #4 · B-II #9 · p.3",q:"Payment in full and release of record of Mortgage from Robert A. Sample and Linda M. Sample to First Example Bank, in the original amount of $142,000.00, recorded as Instrument No. 2018-0045512."},
+  {p:"block",cat:"Money Liens",t:"Open HELOC, Second Sample Credit Union (Inst. 2021-0103377)",a:"Payoff letter plus a closure letter signed by the borrower so the line can't be drawn again.",r:"Seller / Title Co.",src:"B-I #5 · p.3",q:"Payment and release of Open-End Mortgage to Second Sample Credit Union, recorded as Instrument No. 2021-0103377. Lender must confirm the line is frozen and closed.",tag:"les"},
+  {p:"block",cat:"Money Liens",t:"Judgment against Robert Sample, Case 21-CV-0331, $8,214",a:"Pay at closing, or get a same-name affidavit if it's a different Robert Sample.",r:"Title Co.",src:"B-I #7 · B-II #10 · p.4",q:"Satisfaction or release of Judgment in favor of Demo Collections LLC against Robert Sample, Case No. 21-CV-0331, in the amount of $8,214.00, or proof that the judgment debtor is not the same party."},
+  {p:"block",cat:"Taxes & HOA",t:"Delinquent property taxes, 2nd half 2025: $1,986.40 + penalty",a:"Get the payoff from the county treasurer; pay from seller proceeds.",r:"Title Co.",src:"B-I #9 · Tax Note · p.9",q:"2025 taxes, 2nd half, DELINQUENT in the amount of $1,986.40 plus penalty and interest."},
+  {p:"block",cat:"Commitment Itself",t:"Proposed insured is \"To Be Determined\"",a:"Give title the end buyer's entity name (B-C leg) and the A-B buyer entity; update the commitment.",r:"TC / Wholesaler",src:"Sch. A #3 · B-I #8 · p.1",q:"Proposed Insured: To Be Determined. (B-I #8: Disclose the name of the proposed insured and furnish evidence of its authority.)"},
+  {p:"block",cat:"Money Liens",t:"Open Notice of Commencement, Demo Roofing Co. (Inst. 2026-0057120)",a:"Get the contractor's final affidavit and lien waivers, or a recorded termination of the notice.",r:"Seller",src:"B-II #8 · p.7",q:"Notice of Commencement recorded June 2, 2026 as Instrument No. 2026-0057120 naming Demo Roofing Co. as contractor.",tag:"rev"},
+  {p:"before",cat:"Commitment Itself",t:"Effective date Aug 14, 2026 is 71 days old",a:"Order a title bring-down (update) within 10 days of closing.",r:"TC",src:"Sch. A #1 · p.1",q:"Effective Date: August 14, 2026 at 8:00 AM."},
+  {p:"before",cat:"Investor Deal Structure",t:"Double close: second commitment for the B-C leg",a:"Order the B-C commitment; confirm transactional funding or end buyer funds are in before the A-B leg records.",r:"TC / Wholesaler",src:"Pro checklist",q:"Not in the commitment. Added by the Double Close checklist and the team lesson \"Double close: confirm the B-C commitment exists\".",tag:"les"},
+  {p:"before",cat:"Taxes & HOA",t:"HOA: Maple Ridge Homeowners Association",a:"Order an estoppel letter; pay dues and transfer fee at closing.",r:"TC",src:"B-II #11 · p.8",q:"Declaration of Covenants for Maple Ridge, recorded as Instrument No. 1999-0012345, including assessments and lien rights of the Association."},
+  {p:"before",cat:"Vesting & Parties",t:"Deed from Linda M. Sample, a widow",a:"Prepare the deed to the proposed insured (A-B buyer entity).",r:"Title Co.",src:"B-I #3 · p.3",q:"Warranty Deed from Linda M. Sample, a widow, to the Proposed Insured."},
+  {p:"before",cat:"Property & Survey",t:"Parties in possession",a:"Confirm the house is vacant or get any lease and a tenant estoppel; seller signs the owner's affidavit.",r:"Seller",src:"B-II #2 · p.6",q:"Rights or claims of parties in possession not shown by the public records."},
+  {p:"before",cat:"Closing Docs",t:"Owner's affidavit and gap indemnity",a:"Seller signs at closing.",r:"Seller",src:"B-I #2 · p.3",q:"Owner's and Seller's Affidavit and Gap Indemnity in a form acceptable to the Company."},
+  {p:"before",cat:"Closing Docs",t:"Non-foreign (FIRPTA) affidavit and 1099-S information",a:"Seller signs at closing.",r:"Seller",src:"Pro checklist",q:"Not in the commitment. Required on every sale by the pro checklist."},
+  {p:"before",cat:"Property & Survey",t:"Survey exception",a:"Order a survey if the buyer or lender wants this exception removed (extended coverage); otherwise accept.",r:"Buyer",src:"B-II #3 · p.6",q:"Encroachments, overlaps, boundary line disputes, and any other matters which would be disclosed by an accurate survey."},
+  {p:"before",cat:"Commitment Itself",t:"Policy amount $95,000 vs contract price $118,000",a:"Ask title to raise the policy amount to the purchase price.",r:"TC",src:"Sch. A #2 · p.1",q:"Owner's Policy Amount: $95,000.00."},
+  {p:"before",cat:"Closing Docs",t:"Title premium, recording fees and transfer tax",a:"Put on the settlement statement; collect at closing.",r:"Title Co.",src:"B-I #1 · p.3",q:"Pay the agreed amount for the estate or interest to be insured, the premiums, fees and charges for the policy, and all taxes and recording fees."},
+  {p:"fyi",cat:"Property & Survey",t:"Utility easement, 10 ft along rear line (Inst. 1988-0004410)",a:"Standard. Acceptable unless the buyer plans to build there.",r:"—",src:"B-II #4 · p.6",q:"Easement to Demo Power Co., recorded as Instrument No. 1988-0004410."},
+  {p:"fyi",cat:"Property & Survey",t:"Covenants and restrictions, Maple Ridge plat",a:"Standard. No forfeiture or reverter clause found.",r:"—",src:"B-II #5 · p.7",q:"Covenants, conditions and restrictions as shown on the recorded plat of Maple Ridge, Plat Book 61, Page 22."},
+  {p:"fyi",cat:"Property & Survey",t:"Oil, gas and mineral rights reserved by a prior owner",a:"FYI for the buyer. Does not stop closing.",r:"—",src:"B-II #6 · p.7",q:"Oil, gas and mineral rights reserved in deed recorded in Volume 211, Page 409."},
+  {p:"fyi",cat:"Commitment Itself",t:"Gap exception (matters recorded after the effective date)",a:"Standard. Removed by the bring-down and the seller's gap indemnity.",r:"—",src:"B-II #7 · p.7",q:"Defects, liens, encumbrances, adverse claims or other matters first appearing in the public records subsequent to the Effective Date."},
+  {p:"fyi",cat:"Property & Survey",t:"Road right of way, Maple Ave, 30 ft",a:"Standard. Acceptable.",r:"—",src:"B-II #12 · p.8",q:"Rights of the public in and to that portion of the premises lying within the bounds of Maple Avenue."},
+  {p:"fyi",cat:"Taxes & HOA",t:"Taxes and assessments not yet due and payable",a:"Standard. Prorate at closing.",r:"—",src:"B-II #1 · p.6",q:"Taxes and assessments for the year 2026 and subsequent years, a lien not yet due and payable."},
+];
+const PRI = {block:["Closing Blocker","p-block","Closing Blockers","sec-b"],before:["Before Closing","p-before","Before Closing","sec-b amber"],fyi:["Review / FYI","p-fyi","Review / FYI · acceptable as is","sec-b ind"]};
+const STATUSES = ["Open","Ordered","Received","Cleared","Waived"];
+ITEMS.forEach((it,i)=>{it.n=i+1;it.status=i===1?"Ordered":(it.p==="fyi"?"Cleared":"Open");it.notes=i===1?"Payoff requested 10/24":"";it.fb=""});
+let filter="all";
+const INBOX=[
+  {what:"Final water bill / city utility lien search",where:"Pro knowledge",who:"TC team · 88 Birchwood Ln",why:"City records unpaid water as a lien; title won't insure over it."},
+  {what:"Spousal consent: seller married at time of purchase",where:"Sch. A vesting",who:"Closer · 310 N 5th St",why:"Agent did not flag missing spouse signature on homestead property."},
+];
+
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function renderTiles(){
+  const open=ITEMS.filter(i=>!["Cleared","Waived"].includes(i.status));
+  const b=ITEMS.filter(i=>i.p==="block"),bo=b.filter(i=>open.includes(i));
+  const f=ITEMS.filter(i=>i.p==="before"),fo=f.filter(i=>open.includes(i));
+  $("#tiles").innerHTML=`
+    <div class="tile glass"><span class="l">Closing Blockers</span><span class="v bad">${bo.length}</span><span class="s">${b.length} found · ${b.length-bo.length} cleared</span></div>
+    <div class="tile glass"><span class="l">Before Closing</span><span class="v warn">${fo.length}</span><span class="s">${f.length} found · ${f.length-fo.length} cleared</span></div>
+    <div class="tile glass"><span class="l">Review / FYI</span><span class="v">${ITEMS.filter(i=>i.p==="fyi").length}</span><span class="s">acceptable as is, listed so nothing is hidden</span></div>
+    <div class="tile glass"><span class="l">Coverage</span><span class="v good">100%</span><span class="s">every numbered item addressed</span></div>
+    <div class="tile glass"><span class="l">Days To Closing</span><span class="v">21</span><span class="s">Nov 14 · bring-down due Nov 4</span></div>`;
+}
+function renderItems(){
+  const tb=$("#items tbody");let h="";
+  for(const k of ["block","before","fyi"]){
+    let rows=ITEMS.filter(i=>i.p===k);
+    if(filter==="open")rows=rows.filter(i=>!["Cleared","Waived"].includes(i.status));
+    if(filter==="block"&&k!=="block")continue;
+    if(!rows.length)continue;
+    h+=`<tr class="grp"><td colspan="8">${PRI[k][2]} (${rows.length})</td></tr>`;
+    for(const it of rows){
+      const tag=it.tag==="rev"?'<span class="tag rev">Found on review</span>':it.tag==="les"?'<span class="tag les">Team lesson</span>':it.tag==="new"?'<span class="tag rev">Added by you</span>':"";
+      h+=`<tr data-n="${it.n}"><td class="n">${it.n}</td>
+        <td class="it"><b>${esc(it.t)}${tag}</b><span>${esc(it.a)}</span></td>
+        <td><span class="pill p-sub">${esc(it.cat)}</span></td>
+        <td style="white-space:nowrap">${esc(it.r)}</td>
+        <td><span class="src" data-q="${it.n}">${esc(it.src)}</span></td>
+        <td><select data-st="${it.n}">${STATUSES.map(s=>`<option${s===it.status?" selected":""}>${s}</option>`).join("")}</select></td>
+        <td contenteditable data-note="${it.n}" style="min-width:130px;color:var(--body)">${esc(it.notes)}</td>
+        <td><div class="fb"><button title="Correct" data-fb="ok" class="${it.fb==="ok"?"on":""}">👍</button><button title="Not needed" data-fb="nn">Not Needed</button></div></td></tr>
+        <tr class="quote" data-qrow="${it.n}" hidden><td colspan="8"><b>${esc(it.src)}:</b> <q>${esc(it.q)}</q></td></tr>`;
+    }
+  }
+  tb.innerHTML=h;
+}
+function renderInbox(){
+  $("#inbox").innerHTML=INBOX.length?INBOX.map((x,i)=>`<div class="card glass" style="padding:12px 16px">
+    <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b>${esc(x.what)}</b><span class="pill p-warn">Missing item</span></div>
+    <div class="muted" style="font-size:13px">${esc(x.who)} · ${esc(x.where||"—")}</div>
+    ${x.why?`<div style="font-size:13.5px;margin-top:4px">${esc(x.why)}</div>`:""}
+    <div class="lesson"><b>Suggested lesson:</b> On every deal, check for "${esc(x.what)}" and list it when it applies.</div>
+    <div class="row-actions"><button class="btn primary sm" data-inbox="${i}">Approve Lesson</button><button class="btn sec sm">Edit</button><button class="btn sec sm" data-reject="${i}">Reject</button></div></div>`).join("")
+    :'<div class="box good">Inbox is empty. Every piece of feedback has been reviewed.</div>';
+  $("#inboxCount").textContent=INBOX.length;$("#inboxCount").style.display=INBOX.length?"":"none";
+  $("#inboxTile").textContent=INBOX.length;
+}
+function toast(html){const t=$("#toast");t.innerHTML=html;t.classList.add("show");clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),3800)}
+function go(v){$$(".view").forEach(e=>e.classList.toggle("on",e.id==="v-"+v));$$(".tab").forEach(e=>e.classList.toggle("on",e.dataset.go===v));
+  $$(".navlink").forEach(e=>e.classList.toggle("on",e.dataset.go===v));window.scrollTo({top:0,behavior:"smooth"})}
+
+/* theme */
+function setTheme(t){document.documentElement.dataset.theme=t;$$("[data-theme-set]").forEach(b=>b.classList.toggle("on",b.dataset.themeSet===t));try{localStorage.setItem("tchb-theme",t)}catch(e){}}
+let saved=null;try{saved=localStorage.getItem("tchb-theme")}catch(e){}
+setTheme(saved||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"));
+$$("[data-theme-set]").forEach(b=>b.onclick=()=>setTheme(b.dataset.themeSet));
+
+document.addEventListener("click",e=>{
+  const g=e.target.closest("[data-go]");if(g){go(g.dataset.go);return}
+  const s=e.target.closest(".src");if(s){const r=$(`[data-qrow="${s.dataset.q}"]`);r.hidden=!r.hidden;return}
+  const fb=e.target.closest("[data-fb]");if(fb){const n=+fb.closest("tr").dataset.n,it=ITEMS[n-1];
+    if(fb.dataset.fb==="ok"){it.fb=it.fb==="ok"?"":"ok";renderItems();toast("Thanks. Marked <b>correct</b>.")}
+    else{INBOX.push({what:"Not needed: "+it.t,where:it.src,who:"You · 1427 Maple Ave",why:""});renderInbox();toast("Sent to the <b>Feedback Inbox</b> as \"not needed\".")}return}
+  const ap=e.target.closest("[data-inbox]");if(ap){INBOX.splice(+ap.dataset.inbox,1);renderInbox();bumpLessons();toast("Lesson <b>approved</b>. The agent uses it from the next run.");return}
+  const rj=e.target.closest("[data-reject]");if(rj){INBOX.splice(+rj.dataset.reject,1);renderInbox();toast("Feedback rejected.");return}
+  if(e.target.closest("[data-approve]")){const li=e.target.closest("li");li.querySelector(".row-actions").innerHTML='<span class="pill p-good">Lesson approved</span>';bumpLessons();toast("Lesson <b>approved</b>. Re-checking the scorecard…");return}
+  const mk=e.target.closest("[data-mark]");if(mk){mk.parentElement.innerHTML=`<span class="pill ${mk.textContent==="Good Catch"?"p-good":"p-sub"}">${mk.textContent}</span>`;return}
+  const pb=e.target.closest(".pills button");if(pb){pb.parentElement.querySelectorAll("button").forEach(b=>b.classList.toggle("on",b===pb));return}
+  if(!e.target.closest(".menu"))$("#exportMenu").classList.remove("open");
+});
+function bumpLessons(){const c=$("#lessonCount");c.textContent=+c.textContent+1}
+document.addEventListener("change",e=>{const s=e.target.closest("[data-st]");if(s){ITEMS[+s.dataset.st-1].status=s.value;renderTiles();if(filter==="open")renderItems()}});
+document.addEventListener("input",e=>{const n=e.target.closest("[data-note]");if(n)ITEMS[+n.dataset.note-1].notes=n.textContent});
+$$("#filter button").forEach(b=>b.onclick=()=>{filter=b.dataset.f;$$("#filter button").forEach(x=>x.classList.toggle("on",x===b));renderItems()});
+
+/* export */
+$("#exportBtn").onclick=()=>$("#exportMenu").classList.toggle("open");
+const EXP={gsheets:"Google Sheet <b>\"1427 Maple Ave · Title Checklist\"</b> would open in a new tab.",gdocs:"Google Doc <b>\"1427 Maple Ave · Title Checklist\"</b> would open in a new tab.",
+  xlsx:"<b>1427_Maple_Ave_Title_Checklist.xlsx</b> would download.",pdf:"<b>1427_Maple_Ave_Title_Checklist.pdf</b> would download (branded, print-ready).",docx:"<b>1427_Maple_Ave_Title_Checklist.docx</b> would download."};
+$$("[data-exp]").forEach(b=>b.onclick=()=>{$("#exportMenu").classList.remove("open");const k=b.dataset.exp;
+  if(k==="csv"){const head=["#","Priority","Category","Item","Action Needed","Responsible","Source","Status","Notes"];
+    const q=v=>`"${String(v).replace(/"/g,'""')}"`;
+    const meta=[["Property","1427 Maple Ave, Columbus OH 43206"],["Commitment #","SMP-26-08812"],["Effective Date","2026-08-14"],["Coverage","B-I 9/9 · B-II 12/12 · Pro checklist 32/32"],[]];
+    const lines=[...meta.map(r=>r.map(q).join(",")),head.map(q).join(","),...ITEMS.map(i=>[i.n,PRI[i.p][0],i.cat,i.t,i.a,i.r,i.src,i.status,i.notes].map(q).join(","))];
+    try{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([lines.join("\r\n")],{type:"text/csv"}));a.download="1427_Maple_Ave_Title_Checklist.csv";document.body.appendChild(a);a.click();a.remove();toast("<b>CSV</b> downloaded.")}
+    catch(err){toast("CSV export is blocked in this preview.")}}
+  else toast("In the app: "+EXP[k])});
+
+/* report missing item */
+const scrim=$("#scrim");
+$("#reportBtn").onclick=()=>{scrim.classList.add("open");setTimeout(()=>$("#fWhat").focus(),50)};
+$("#cancelReport").onclick=()=>scrim.classList.remove("open");
+scrim.addEventListener("click",e=>{if(e.target===scrim)scrim.classList.remove("open")});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")scrim.classList.remove("open")});
+$("#reportForm").onsubmit=e=>{e.preventDefault();
+  const what=$("#fWhat").value.trim(),where=$("#fWhere").value.trim(),why=$("#fWhy").value.trim();
+  const pri=$("#fPri .on").textContent,p=pri==="Closing Blocker"?"block":pri==="Before Closing"?"before":"fyi";
+  ITEMS.push({n:ITEMS.length+1,p,cat:$("#fCat").value,t:what,a:why||"Added from feedback.",r:"—",src:where||"Feedback",q:"Added by you from Report Missing Item.",status:"Open",notes:"",fb:"",tag:"new"});
+  INBOX.unshift({what,where,why,who:"You · 1427 Maple Ave"});
+  renderItems();renderTiles();renderInbox();scrim.classList.remove("open");e.target.reset();
+  $$("#fPri button").forEach((b,i)=>b.classList.toggle("on",i===0));
+  toast("Added to this deal and sent to the <b>Feedback Inbox</b> for approval.")};
+
+/* training compare */
+$("#compareBtn").onclick=()=>{const b=$("#compareBtn");b.textContent="Comparing…";
+  setTimeout(()=>{b.textContent="Compare With Agent";$("#cmpOut").style.display="block";$("#cmpOut").scrollIntoView({behavior:"smooth",block:"start"})},700)};
+$("#reanalyze").onclick=()=>toast("In the app: the agent re-reads the commitment with the latest lessons (about 1–2 minutes).");
+
+renderTiles();renderItems();renderInbox();
+</script>
+</body>
+</html>

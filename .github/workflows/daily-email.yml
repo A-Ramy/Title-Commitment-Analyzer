@@ -1,0 +1,19 @@
+name: Daily title summary
+
+on:
+  schedule:
+    - cron: "41 11 * * 1-5"  # weekdays 7:41 AM Eastern (11:41 UTC during daylight time)
+  workflow_dispatch:
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --no-dev
+      - run: uv run python scripts/daily_email.py
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          APP_URL: ${{ vars.APP_URL }}

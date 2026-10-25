@@ -1,9 +1,25 @@
+# Secrets: never commit
 .env
+.env.*
+!.env.example
 .streamlit/secrets.toml
+*service-account*.json
+*credentials*.json
+
+# Deal data: commitments, contracts and exports hold personal information. Never commit them.
 .data/
+*.pdf
+*.csv
+*.xlsx
+*.xls
+*.docx
+/examples/
+/uploads/
+/exports/
+
+# Python
 __pycache__/
 *.pyc
 .venv/
-# never commit real commitments or exports
-uploads/
-exports/
+.pytest_cache/
+.ruff_cache/

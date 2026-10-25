@@ -273,5 +273,14 @@ worked from (pull them from the closers' emails / notes); those become the first
 test. Include at least one each of a double close, a subject-to and a seller-finance deal, and a commitment with
 scanned pages.
 
-## 9. Still open
-Nothing blocking. Building starts when the examples arrive.
+## 9. Status (2026-10-25)
+- **v1 built** (first update): Analyze → confirm → full review, deal page with coverage panel, exports (CSV, Excel,
+  PDF, Word, Google Sheets, Google Docs), Report Missing Item and per-item feedback, Training (compare with the
+  closer's list), Knowledge (inbox, lessons, scorecard), Settings, daily email script + workflow.
+- **Trained on the 8 worked commitments**: the team's standard is in the system prompt and 10 seed lessons
+  (`titleagent/prompts.py`); the numbering check was verified on all 6 text commitments (2 are scans).
+- **Next (second update, going live)**: deploy, add secrets, import the 8 examples on the Training tab, run
+  `scripts/evaluate.py` on them and tune; Google folder, Resend DNS for @totalchb.com.
+- Open questions for the owner: Title 3 (were B-I #12–15, including the pending foreclosure, on the closer's list?),
+  whether unpaid taxes shown only in B-II are "Before Closing" (current rule), and what the team does for a quiet
+  title judgment entry.

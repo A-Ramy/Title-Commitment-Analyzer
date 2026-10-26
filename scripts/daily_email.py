@@ -28,9 +28,13 @@ def main() -> int:
         print(subject)
         print(html)
         return 0
-    if not secrets.resend_api_key:
-        print("RESEND_API_KEY is not set.", file=sys.stderr)
-        return 1
+    # Not set up yet: skip quietly instead of failing (and emailing a failure notice) every morning
+    if not secrets.resend_api_key or not secrets.database_url:
+        print("Skipped: RESEND_API_KEY and DATABASE_URL must both be set as GitHub Actions secrets.")
+        return 0
+    if not settings["email_recipients"]:
+        print("Skipped: no recipients yet (app → Settings → Daily Email → Send to).")
+        return 0
     send(secrets.resend_api_key, settings["email_from"], settings["email_recipients"], subject, html)
     print(f"Sent to {len(settings['email_recipients'])} recipient(s).")
     return 0

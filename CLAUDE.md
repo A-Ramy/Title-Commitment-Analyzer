@@ -11,6 +11,8 @@ decisions (section 0); keep this file in sync when a rule changes.
   (made-up data). `*.pdf`, `.data/` and exports are gitignored.
 - **Lessons are general rules** (no names, amounts, case numbers) and go live only after an admin approves them.
 - Secrets only from env / Streamlit secrets (`titleagent/config.py`). Never in code or chat.
+- **The app URL is public** (one private app per Streamlit account; Projection has it). `ui/auth.py` gates every
+  page: Google sign-in with the email allow-list, else `APP_PASSWORD`, else locked. Keep it first in `app.py`.
 
 ## The team's standard (from the 8 worked commitments, owner 2026-10-25)
 - **Closing Blocker** = needs money paid to, or a document from, someone outside the closing table, or a court /

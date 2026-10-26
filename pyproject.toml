@@ -5,6 +5,7 @@ description = "Title Commitment Analyzer (Title Agent) for Total Cash Home Buyer
 requires-python = ">=3.11"
 dependencies = [
     "streamlit==1.66.0",  # same version as the Projection Tool, which shares brand.css
+    "Authlib>=1.3.2",  # Google sign-in (st.login)
     "anthropic>=1.0",
     "pypdf>=5.0",
     "pandas>=2.2",

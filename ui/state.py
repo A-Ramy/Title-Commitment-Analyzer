@@ -36,11 +36,10 @@ def ai_ready() -> bool:
 
 
 def user_email() -> str:
-    """The signed-in viewer on Streamlit Community Cloud (private app); empty when running locally."""
-    try:
-        return str(st.user.get("email") or "")
-    except Exception:
-        return ""
+    """The signed-in person (ui/auth.py); empty when running locally without a login."""
+    from ui.auth import signed_in_email
+
+    return signed_in_email()
 
 
 def who() -> str:

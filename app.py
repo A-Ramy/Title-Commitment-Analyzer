@@ -5,12 +5,14 @@
 
 import streamlit as st
 
+from ui.auth import gate
 from ui.brand import LOGO_MARK, inject
 from ui.layout import setup_screen, sidebar, tab_capsule
 from ui.state import ai_ready
 
 st.set_page_config(page_title="Title Agent · Total Cash Home Buyers", page_icon=str(LOGO_MARK), layout="wide")
 inject()
+gate()  # public URL (one private app per Streamlit account): nothing below runs until the person is allowed in
 
 DEAL = st.Page("views/deal.py", title="Deal", icon=":material/fact_check:", url_path="deal")
 MAIN = [

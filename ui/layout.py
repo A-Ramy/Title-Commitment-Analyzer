@@ -7,6 +7,7 @@ import streamlit as st
 from titleagent.config import demo_mode
 from titleagent.models import DONE_STATUSES
 from ui import html as h
+from ui.auth import sign_out_button
 from ui.brand import logo, theme_toggle
 from ui.state import get_store, who
 
@@ -35,6 +36,7 @@ def sidebar(tools: list, deal_page) -> None:
             label = f"{p.title} ({pending})" if p.url_path == "knowledge" and pending else p.title
             st.page_link(p, label=label, width="stretch")
         st.html(f'<div class="kv" style="margin-top:10px"><span>Signed in as <b>{h.esc(who())}</b></span></div>')
+        sign_out_button()
 
 
 def tab_capsule(pages: list) -> None:

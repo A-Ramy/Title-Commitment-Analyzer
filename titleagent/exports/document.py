@@ -31,7 +31,8 @@ def to_pdf(checklist: Checklist, include_fyi: bool = True) -> bytes:
 
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=landscape(letter), leftMargin=0.5 * inch, rightMargin=0.5 * inch,
-                            topMargin=0.45 * inch, bottomMargin=0.45 * inch, title=f"{checklist.title} - Title Checklist")
+                            topMargin=0.45 * inch, bottomMargin=0.45 * inch,
+                            title=f"{checklist.title} - Title Checklist")
     body = ParagraphStyle("b", fontName="Helvetica", fontSize=8.5, leading=10.5)
     small = ParagraphStyle("s", parent=body, fontSize=7.5, leading=9, textColor=colors.HexColor(MUTED))
     bold = ParagraphStyle("bb", parent=body, fontName="Helvetica-Bold")
@@ -43,8 +44,8 @@ def to_pdf(checklist: Checklist, include_fyi: bool = True) -> bytes:
         story.append(Spacer(1, 4))
     story.append(Paragraph(f"Title Checklist: {escape(checklist.title)}", h1))
     story.append(Spacer(1, 6))
-    meta = [*checklist.meta, ("Coverage", checklist.coverage_line), ("Generated",
-                                                                       checklist.generated.strftime("%b %d, %Y %I:%M %p"))]
+    generated = checklist.generated.strftime("%b %d, %Y %I:%M %p")
+    meta = [*checklist.meta, ("Coverage", checklist.coverage_line), ("Generated", generated)]
     meta = [(k, v) for k, v in meta if v]
     half = (len(meta) + 1) // 2
     left, right = meta[:half], meta[half:]

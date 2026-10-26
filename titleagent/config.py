@@ -53,6 +53,12 @@ class Secrets:
     database_url: str | None
     google_service_account: dict | None
     resend_api_key: str | None
+    # Who may open the app (see ui/auth.py). Google sign-in when the [auth] section is set, else the team password.
+    google_login: bool = False
+    app_password: str | None = None
+    allowed_emails: tuple[str, ...] = ()
+    allowed_domains: tuple[str, ...] = ("totalchb.com",)
+    no_login: bool = False  # local development only: TITLE_AGENT_NO_LOGIN=1
 
     @property
     def has_ai(self) -> bool:
@@ -91,7 +97,16 @@ def load_secrets() -> Secrets:
     def get(key: str) -> str | None:
         return os.environ.get(key) or (str(st_secrets[key]) if key in st_secrets else None) or None
 
+    def listed(key: str, default: str = "") -> tuple[str, ...]:
+        return tuple(x.strip().lower() for x in (get(key) or default).replace(";", ",").split(",") if x.strip())
+
+    auth = st_secrets.get("auth") or {}
     return Secrets(
+        google_login=bool(auth.get("client_id") and auth.get("redirect_uri") and auth.get("cookie_secret")),
+        app_password=get("APP_PASSWORD"),
+        allowed_emails=listed("ALLOWED_EMAILS"),
+        allowed_domains=listed("ALLOWED_DOMAINS", "totalchb.com"),
+        no_login=os.environ.get("TITLE_AGENT_NO_LOGIN") == "1",
         anthropic_api_key=get("ANTHROPIC_API_KEY"),
         database_url=get("DATABASE_URL"),
         google_service_account=_decode_service_account(

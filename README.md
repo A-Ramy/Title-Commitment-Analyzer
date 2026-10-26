@@ -34,22 +34,36 @@ uv run streamlit run app.py       # http://localhost:8501
 ```
 
 Without a key, look at the UI with a made-up sample deal: `TITLE_AGENT_DEMO=1 uv run streamlit run app.py`
-(tick "Use the made-up sample commitment" on Analyze).
+(tick "Use the made-up sample commitment" on Analyze). For local work against real data without a sign-in, add
+`TITLE_AGENT_NO_LOGIN=1` to `.env`; never set it in the cloud.
 
 Tests and lint: `uv run pytest` · `uv run ruff check .`
 
 Measure accuracy on real worked commitments (kept **outside** the repo; see the script's docstring for the
 `gold.json` format): `uv run python scripts/evaluate.py /path/to/examples`
 
+## Sign-in (the app is public, so it locks itself)
+
+Streamlit Community Cloud allows one private app per account and the Projection Tool uses it, so this app's URL is
+public. The app is **locked** until one of these is set in its secrets (template: `.streamlit/secrets.toml.example`):
+
+- **Team password (stopgap, 1 minute):** `APP_PASSWORD`. People enter their work email and the password. The email
+  is not verified, so anyone with the password could claim to be an admin.
+- **Google sign-in (recommended, ~15 minutes):** Google Cloud console → APIs & Services → Credentials → Create
+  OAuth client ID (Web application) → authorized redirect URI `https://YOUR-APP.streamlit.app/oauth2callback`.
+  Put the client ID and secret in the `[auth]` section with a random `cookie_secret`. Only verified Google accounts
+  at `ALLOWED_DOMAINS` (default `totalchb.com`) or listed in `ALLOWED_EMAILS` get in.
+
 ## Go live (Streamlit Community Cloud, like the Projection Tool)
 
 1. **Database** – create a Postgres database (Neon or Supabase, free tier to start) and copy its connection string.
-2. **App** – on share.streamlit.io: New app → this repository, branch, `app.py`. Make it **private** and invite the
-   team's emails.
+2. **App** – on share.streamlit.io: New app → this repository, branch, `app.py`. (It can't be private on the free
+   plan while the Projection Tool is; the sign-in protects it.)
 3. **Secrets** (App → Settings → Secrets):
    ```toml
    ANTHROPIC_API_KEY = "sk-ant-..."
    DATABASE_URL = "postgresql://..."
+   APP_PASSWORD = "..."   # or the Google sign-in [auth] section (see Sign-in above)
    ```
 4. **Settings page** – add the admins (Owner, CTO, TC, TC Assistant), the TCs and the email recipients.
 5. **Training set** – on the Training tab, upload each worked commitment with the closer's list. The 10 lessons

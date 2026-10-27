@@ -232,7 +232,7 @@ if shown_items:
         column_config={"#": st.column_config.NumberColumn(width="small"),
                        "Item": st.column_config.TextColumn(width="large"),
                        "Status": st.column_config.SelectboxColumn(options=STATUSES, required=True, width="small"),
-                       "Due": st.column_config.DateColumn(format="MMM D, YYYY", width="small"),
+                       "Due": st.column_config.DateColumn(format="MMM D, YYYY", width="medium"),
                        "Notes": st.column_config.TextColumn(width="large")})
     by_key = {i.key: i for i in shown_items}
     changed = False

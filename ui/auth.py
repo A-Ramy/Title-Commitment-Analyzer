@@ -115,9 +115,10 @@ def _set_cookie(value: str, max_age: int) -> None:
     """Writes (or, with max_age 0, deletes) the remembered sign-in in the browser. Components run in a same-origin
     frame, so the cookie lands on the app's own page and comes back in st.context.cookies on the next visit."""
     components.html(
-        "<script>const d = window.parent.document;"
-        f"d.cookie = {json.dumps(PASS_COOKIE)} + '=' + encodeURIComponent({json.dumps(value)})"
-        f" + '; path=/; max-age={int(max_age)}; SameSite=Lax' + (window.parent.location.protocol === 'https:' ? '; Secure' : '');"
+        "<script>const w = window.parent;"
+        f"w.document.cookie = {json.dumps(PASS_COOKIE)} + '=' + encodeURIComponent({json.dumps(value)})"
+        f" + '; path=/; max-age={int(max_age)}; SameSite=Lax'"
+        " + (w.location.protocol === 'https:' ? '; Secure' : '');"
         "</script>",
         height=0,
     )

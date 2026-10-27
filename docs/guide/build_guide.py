@@ -391,8 +391,8 @@ def story() -> list:
     ], [0.27, 0.73])]
     s += [P("The coverage bar", "h2"),
           P("Three green bars mean the agent accounted for every <b>B-I requirement</b> and every "
-            "<b>B-II exception</b>, and ran the professional checklist (31–34 checks depending on the deal type). If any bar is short or "
-            "there's a red <b>Check by hand</b> box, open the commitment and read those item numbers yourself.")]
+            "<b>B-II exception</b>, and ran the professional checklist (31–34 checks depending on the deal type). "
+            "If any bar is short or there's a red <b>Check by hand</b> box, open the commitment and read those item numbers yourself.")]
     s += [box("If you see <b>The commitment expires before closing</b>, ask the title company for an updated "
               "commitment right away. Some commitments expire 30 days after their date, not 180.", "bad")]
     s += [P("The three priorities", "h2")]

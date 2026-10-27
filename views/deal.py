@@ -192,16 +192,19 @@ def item_table(group: list[ActionItem], start: int) -> str:
                           f'{PROOF[s.verified]}</span>' for s in i.sources)
         cls = "removed" if i.change == "removed" else ("done" if not open_(i) else "")
         rows.append(
-            f'<tr class="{cls}"><td class="nw muted">{n}</td>'
+            # data-label: on a phone each row becomes a card and the cells show their own labels (ui/brand.css)
+            f'<tr class="{cls}"><td class="nw muted num">{n}</td>'
             f'<td class="it">{flag}<b>{h.esc(i.title)}</b><span>{h.esc(i.action)}</span></td>'
-            f'<td>{h.esc(i.provided_by)}<br><small class="muted">Owner: {h.esc(owner(i))}</small></td>'
-            f'<td class="nw">{h.esc(duedates.parse(i.due_date).strftime("%b %d") if i.due_date else "—")}</td>'
-            f'<td class="nw">{h.money(i.amount, 2) if i.amount is not None else "—"}</td>'
-            f'<td>{src}</td>'
-            f'<td><span class="pill {STATUS_PILL.get(i.status, "p-ins")}">{h.esc(i.status)}</span>'
-            f'{f"<br><small>{h.esc(i.notes)}</small>" if i.notes else ""}</td></tr>')
-    head = "".join(f"<th>{c}</th>" for c in ("#", "Item & Action Needed", "Provided By", "Due", "Amount", "Source",
-                                             "Status"))
+            f'<td class="stat" data-label="Status"><span class="pill {STATUS_PILL.get(i.status, "p-ins")}">'
+            f'{h.esc(i.status)}</span>{f"<br><small>{h.esc(i.notes)}</small>" if i.notes else ""}</td>'
+            f'<td data-label="Provided by">{h.esc(i.provided_by)}<br><small class="muted">Owner: {h.esc(owner(i))}'
+            f'</small></td>'
+            f'<td class="nw" data-label="Due">'
+            f'{h.esc(duedates.parse(i.due_date).strftime("%b %d") if i.due_date else "—")}</td>'
+            f'<td class="nw" data-label="Amount">{h.money(i.amount, 2) if i.amount is not None else "—"}</td>'
+            f'<td data-label="Source">{src}</td></tr>')
+    head = "".join(f"<th>{c}</th>" for c in ("#", "Item & Action Needed", "Status", "Provided By", "Due", "Amount",
+                                             "Source"))
     return f'<div class="wrap"><table class="t items"><thead><tr>{head}</tr></thead><tbody>{"".join(rows)}</tbody>' \
            "</table></div>"
 
@@ -230,7 +233,7 @@ if shown_items:
     edited = st.data_editor(
         df, hide_index=True, key=f"ed_{view}", width="stretch", disabled=["#", "Item"],
         column_config={"#": st.column_config.NumberColumn(width="small"),
-                       "Item": st.column_config.TextColumn(width="large"),
+                       "Item": st.column_config.TextColumn(width="medium"),
                        "Status": st.column_config.SelectboxColumn(options=STATUSES, required=True, width="small"),
                        "Due": st.column_config.DateColumn(format="MMM D, YYYY", width="medium"),
                        "Notes": st.column_config.TextColumn(width="large")})

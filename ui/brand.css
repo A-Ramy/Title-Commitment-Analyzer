@@ -199,3 +199,37 @@ button[data-variant="segmented_control"][aria-checked="true"],button[data-varian
 .t.items .src{font-size:12.5px;color:var(--accent);font-weight:700;white-space:nowrap}
 .t.items tr.done td{opacity:.55}
 .t.items tr.removed td{text-decoration:line-through;opacity:.5}
+
+/* ---- phones (Title Agent) ---- */
+@media (max-width:640px){
+  /* the item list: one card per item, each value labelled */
+  .t.items thead{display:none}
+  .t.items,.t.items tbody{display:block;width:100%}
+  .t.items tr{display:flex;flex-wrap:wrap;gap:6px 14px;padding:12px 14px;border-bottom:1px solid var(--glass-line)}
+  .t.items td{display:block;border:0;padding:0;white-space:normal}
+  .t.items td.num{display:none}
+  .t.items td.it{flex:1 1 100%}
+  .t.items td.stat{flex:1 1 100%}
+  .t.items td[data-label]{flex:1 1 calc(50% - 14px);min-width:0}
+  .t.items td.stat[data-label]{flex-basis:100%}
+  .t.items td[data-label]::before{content:attr(data-label);display:block;font-size:11px;font-weight:700;
+    color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:1px}
+  .t.items tbody tr:hover td{background:none}
+  /* summary tiles two across */
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .tile{padding:10px 12px;border-radius:18px}
+  .tile .v{font-size:24px}
+  /* the tab bar stays one row; it scrolls sideways if a screen is very narrow */
+  .st-key-tabs{flex-wrap:nowrap!important;max-width:100%;overflow-x:auto;scrollbar-width:none}
+  .st-key-tabs::-webkit-scrollbar{display:none}
+  .st-key-tabs [data-testid="stPageLink-NavLink"]{padding:6px 11px;font-size:14.5px;white-space:nowrap}
+  .st-key-tabs [data-testid="stPageLink-NavLink"]>span:first-child{display:none}  /* icons: all 4 tabs fit at 360px */
+  /* the sidebar button (Open Deals, Settings, Sign Out) floats top-left: a frosted bar keeps it off the content */
+  [data-testid="stHeader"]{background:var(--glass);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);
+    height:3rem;min-height:3rem;border-bottom:1px solid var(--glass-line)}
+  /* iPhones zoom into any field with text under 16px */
+  input,textarea,[data-baseweb="select"] div{font-size:16px!important}
+  [data-testid="stMainBlockContainer"]{padding-top:3.9rem;padding-left:.9rem;padding-right:.9rem}
+  h1{font-size:1.65rem!important}
+  .sh .t1{font-size:19px}
+}

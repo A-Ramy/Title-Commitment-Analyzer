@@ -22,7 +22,8 @@ from ui.state import get_secrets
 
 
 def _frame(title: str):
-    st.html("<style>[data-testid=stSidebar],[data-testid=stSidebarCollapsedControl]{display:none!important}</style>")
+    st.html("<style>[data-testid=stSidebar],[data-testid=stSidebarCollapsedControl]{display:none!important}"
+            "[data-testid=stHeader]{background:transparent!important;border:0!important}</style>")
     _, mid, _ = st.columns([1, 1.3, 1])
     with mid:
         st.html('<div style="height:10vh"></div>')

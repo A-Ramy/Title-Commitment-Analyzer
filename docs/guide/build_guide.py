@@ -340,6 +340,8 @@ def story() -> list:
         ["Settings", "Team setup: admins, TCs, email recipients, due-date rules (admins only)."],
         ["Light / Dark", "Switches the look. Your choice is remembered."],
         ["Signed in as / Sign Out", "Who you are in the app. Your name is recorded on what you change."],
+        ["On a phone", "Same app, same link. Tap <b>»</b> at the top left for Open Deals, Settings and Sign Out. "
+                       "Each item shows as a card with its Status, Provided By, Due, Amount and Source."],
     ], [0.27, 0.73])]
 
     # ---- 4
@@ -416,6 +418,7 @@ def story() -> list:
           shot("04-blockers", "Closing Blockers on a sample deal.", 1.0)]
     s += [table(["Column", "Meaning"], [
         ["Item &amp; Action Needed", "The headline in bold, then exactly what to order, pay, sign or record."],
+        ["Status", "Open, Ordered, Received, Cleared or Waived, plus your notes."],
         ["Provided By", "Who actually holds or provides it (seller, lender, county, court…). <b>Owner</b> is always "
                         "the deal's TC, who chases it."],
         ["Due", "Counted back from the closing date (see section 6). Weekends move to the Friday before."],
@@ -423,7 +426,6 @@ def story() -> list:
         ["Source", "Where it comes from: <b>B-I 4 · p.2</b> means Schedule B-I item 4 on page 2. "
                    "<b>✓</b> the quoted wording was found on that page. <b>·</b> scanned page or a checklist item, "
                    "not checkable. <b>✗</b> not found word for word: open the source and check."],
-        ["Status", "Open, Ordered, Received, Cleared or Waived, plus your notes."],
     ], [0.24, 0.76])]
 
     # ---- 6
@@ -586,6 +588,8 @@ def story() -> list:
     # ---- 14
     s += section(14, "Quick Answers")
     s += [table(["Question", "Answer"], [
+        ["Does it work on my phone?", "Yes, in the phone's browser with the same link and sign-in. Uploading "
+                                      "and exports work too; a computer is easier for long lists."],
         ["The app is slow to open.", "It sleeps when nobody uses it. The first visit wakes it in about 30 seconds."],
         ["It asks for the password again.", "You signed out, cleared cookies, used a different browser, or the "
                                             "Owner changed the password."],

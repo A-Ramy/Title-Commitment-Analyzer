@@ -47,8 +47,10 @@ Measure accuracy on real worked commitments (kept **outside** the repo; see the 
 Streamlit Community Cloud allows one private app per account and the Projection Tool uses it, so this app's URL is
 public. The app is **locked** until one of these is set in its secrets (template: `.streamlit/secrets.toml.example`):
 
-- **Team password (stopgap, 1 minute):** `APP_PASSWORD`. People enter their work email and the password. The email
-  is not verified, so anyone with the password could claim to be an admin.
+- **Team password (stopgap, 1 minute):** `APP_PASSWORD`. People enter their work email and the password once; the
+  browser stays signed in for 30 days (reloads and links from the daily email open straight in) until they click
+  Sign Out. Changing `APP_PASSWORD` signs everyone out. The email is not verified, so anyone with the password could
+  claim to be an admin.
 - **Google sign-in (recommended, ~15 minutes):** Google Cloud console → APIs & Services → Credentials → Create
   OAuth client ID (Web application) → authorized redirect URI `https://YOUR-APP.streamlit.app/oauth2callback`.
   Put the client ID and secret in the `[auth]` section with a random `cookie_secret`. Only verified Google accounts

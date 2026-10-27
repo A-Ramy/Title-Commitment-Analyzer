@@ -8,9 +8,14 @@ Projection Tool has it), so this app is public on the web and protects itself:
 
 from __future__ import annotations
 
-import streamlit as st
+import json
+import time
+from urllib.parse import unquote
 
-from titleagent.access import email_allowed, password_ok
+import streamlit as st
+import streamlit.components.v1 as components
+
+from titleagent.access import PASS_COOKIE, PASS_DAYS, email_allowed, make_pass, password_ok, read_pass
 from titleagent.config import demo_mode
 from ui.brand import logo
 from ui.state import get_secrets
@@ -60,8 +65,18 @@ def gate() -> None:
         return
 
     if s.app_password:
+        if not st.session_state.get("pw_ok") and not st.session_state.get("signed_out"):
+            cookie = unquote(st.context.cookies.get(PASS_COOKIE) or "")  # stored URL-encoded ("=" -> "%3D")
+            remembered = read_pass(cookie, s.app_password, time.time())
+            if remembered:  # a reload or a link: the browser still holds a valid pass
+                st.session_state["pw_ok"] = True
+                st.session_state["pw_email"] = remembered
         if st.session_state.get("pw_ok"):
+            if token := st.session_state.pop("pass_to_save", None):
+                _set_cookie(token, PASS_DAYS * 86400)
             return
+        if st.session_state.get("signed_out"):
+            _set_cookie("", 0)  # forget this browser
         mid = _frame("Title Agent · team sign-in")
         with mid, st.form("signin"):
             email = st.text_input("Your work email")
@@ -70,6 +85,9 @@ def gate() -> None:
                 if password_ok(pw, s.app_password) and "@" in email:
                     st.session_state["pw_ok"] = True
                     st.session_state["pw_email"] = email.strip().lower()
+                    st.session_state.pop("signed_out", None)
+                    st.session_state["pass_to_save"] = make_pass(st.session_state["pw_email"], s.app_password,
+                                                                 time.time())
                     st.rerun()
                 st.error("Wrong password, or the email is missing.")
         st.stop()
@@ -89,4 +107,17 @@ def sign_out_button() -> None:
         if st.button("Sign Out", icon=":material/logout:", width="stretch"):
             st.session_state.pop("pw_ok", None)
             st.session_state.pop("pw_email", None)
+            st.session_state["signed_out"] = True  # the sign-in screen clears the browser's pass
             st.rerun()
+
+
+def _set_cookie(value: str, max_age: int) -> None:
+    """Writes (or, with max_age 0, deletes) the remembered sign-in in the browser. Components run in a same-origin
+    frame, so the cookie lands on the app's own page and comes back in st.context.cookies on the next visit."""
+    components.html(
+        "<script>const d = window.parent.document;"
+        f"d.cookie = {json.dumps(PASS_COOKIE)} + '=' + encodeURIComponent({json.dumps(value)})"
+        f" + '; path=/; max-age={int(max_age)}; SameSite=Lax' + (window.parent.location.protocol === 'https:' ? '; Secure' : '');"
+        "</script>",
+        height=0,
+    )

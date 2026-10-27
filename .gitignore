@@ -23,3 +23,6 @@ __pycache__/
 .venv/
 .pytest_cache/
 .ruff_cache/
+
+# guide build output
+docs/guide/.crops/

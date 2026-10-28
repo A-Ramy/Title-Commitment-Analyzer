@@ -71,7 +71,14 @@ public. The app is **locked** until one of these is set in its secrets (template
 5. **Training set** – on the Training tab, upload each worked commitment with the closer's list. The 10 lessons
    learned from the first 8 examples are already built in.
 
-### Google Sheets / Docs exports (a Shared Drive on the totalchb.com Google Workspace)
+### Google Sheets / Docs exports
+**Easy way (about 5 minutes):** a small Google Apps Script (`titleagent/exports/google_export.gs`) saves the exports
+into any folder, as the team member who deploys it. No Google Cloud project, no service account. The app walks you
+through it: Settings → Google Exports → **Set up Google exports** (paste the script, add the Drive service, run
+`setup`, deploy as a web app open to Anyone, then add `GOOGLE_EXPORT_URL` and `GOOGLE_EXPORT_KEY` to the secrets).
+The key means only the app can use the script.
+
+**Or a service account on a Shared Drive** (when exports must not belong to a person):
 The app writes as a **service account** (a robot Google user), which has no Drive storage of its own, so exports go
 into a folder in a **Shared Drive**.
 1. **Google Cloud** (console.cloud.google.com, signed in with a totalchb.com account): create a project (e.g.

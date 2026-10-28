@@ -559,8 +559,9 @@ def story() -> list:
         ["Daily Email: Send from", "title-agent@totalchb.com (leave as is)."],
         ["Due Dates", "Days before closing for each kind of item (defaults: payoffs 10, curative 14, documents 5, "
                       "bring-down 5, closing 0)."],
-        ["Shared Drive folder", "Paste the link of the totalchb.com Shared Drive folder for Google Sheets / Docs "
-                                "exports, Save, then click <b>Test Google Folder</b>."],
+        ["Google Drive folder", "Paste the link of the folder for Google Sheets / Docs exports, Save, then click "
+                                "<b>Test Google Folder</b>. First-time setup: follow <b>Set up Google exports</b> "
+                                "just below it (about 5 minutes)."],
     ], [0.27, 0.73])]
     s += [shot("13-settings", "Settings. Click Save Settings when done; the Connections tiles below show what's "
                               "connected and when the daily email last went out.", 1.0,

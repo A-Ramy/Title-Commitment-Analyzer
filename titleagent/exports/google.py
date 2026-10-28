@@ -1,11 +1,20 @@
-"""Google Sheets and Google Docs: the Excel / Word export uploaded into the team's Shared Drive folder and converted
-by Drive, so the Google versions keep the same layout. Written by a service account that is a Content Manager on
-that Shared Drive (service accounts have no Drive storage of their own)."""
+"""Google Sheets and Google Docs: the Excel / Word export uploaded into the team's Drive folder and converted by
+Drive, so the Google versions keep the same layout. Two ways in, the first one set wins:
+
+1. The Apps Script web app (google_export.gs), deployed by a team member: writes as that person. Easy setup: no
+   Google Cloud project, no service account, works with any folder that person can add files to.
+2. A service account that is a Content Manager on a Shared Drive (it has no Drive storage of its own)."""
 
 from __future__ import annotations
 
+import base64
 import io
 import re
+from pathlib import Path
+
+from titleagent.config import Secrets
+
+SCRIPT = (Path(__file__).with_name("google_export.gs")).read_text(encoding="utf-8")
 
 SCOPES = ["https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
 SHEET = "application/vnd.google-apps.spreadsheet"
@@ -92,3 +101,67 @@ def upload(service_account: dict, folder_id: str, name: str, data: bytes, kind: 
         raise GoogleExportError("The app couldn't sign in to Google with the service account key. Check the key "
                                 "in the secrets.") from exc
     return f["webViewLink"]
+
+
+# ---- the Apps Script web app
+def _script_error(error: str) -> str:
+    if error == "wrong key":
+        return "The export key doesn't match. Copy GOOGLE_EXPORT_KEY again from the script's setup log."
+    if error == "not a folder":
+        return "That link is a file, not a folder. Open the folder and copy its link."
+    if error == "read only":
+        return "The script's Google account can only view that folder. Give it edit access, or deploy as an editor."
+    if "Drive is not defined" in error:
+        return ("The script is missing the Drive service: in the script editor click Services (+) → Drive API → Add, "
+                "then Deploy → Manage deployments → edit → New version.")
+    if "is not a function" in error:
+        return ("The script's Drive service is the old version: in the script editor click Drive under Services, "
+                "choose version v3, then Deploy → Manage deployments → edit → New version.")
+    if "not found" in error.lower():
+        return "The script's Google account can't open that folder. Check the link, or share the folder with it."
+    return f"Google Drive said: {error}"
+
+
+def _script(secrets: Secrets, payload: dict) -> dict:
+    import requests
+
+    try:
+        r = requests.post(secrets.google_export_url, json={**payload, "key": secrets.google_export_key}, timeout=90)
+        out = r.json()
+    except requests.RequestException as exc:
+        raise GoogleExportError("Couldn't reach the Google export script. Try again.") from exc
+    except ValueError as exc:  # an HTML sign-in page: the deployment isn't open to "Anyone"
+        raise GoogleExportError("The Google export script didn't answer. Check GOOGLE_EXPORT_URL is the web app URL "
+                                "(ends in /exec) and the deployment's Who has access is Anyone.") from exc
+    if not out.get("ok"):
+        raise GoogleExportError(_script_error(str(out.get("error", ""))))
+    return out
+
+
+def export(secrets: Secrets, folder: str, name: str, data: bytes, kind: str) -> str:
+    """Creates the Google Sheet ('sheet') or Doc ('doc') in the folder and returns its link."""
+    folder_id = folder_id_from(folder)
+    if not folder_id:
+        raise GoogleExportError("Set the Google Drive folder in Settings first.")
+    if secrets.google_export_url and secrets.google_export_key:
+        return _script(secrets, {"action": "create", "folder": folder_id, "name": name, "kind": kind,
+                                 "data": base64.b64encode(data).decode()})["link"]
+    if secrets.google_service_account:
+        return upload(secrets.google_service_account, folder_id, name, data, kind)
+    raise GoogleExportError("Google exports aren't set up yet (Settings → Google Exports).")
+
+
+def check(secrets: Secrets, folder: str) -> tuple[bool, str]:
+    """(ok, message) for Settings → Test Google Folder. Creates nothing."""
+    folder_id = folder_id_from(folder)
+    if not folder_id:
+        return False, "Paste the folder's link in Settings and save first."
+    if secrets.google_export_url and secrets.google_export_key:
+        try:
+            out = _script(secrets, {"action": "ping", "folder": folder_id})
+        except GoogleExportError as exc:
+            return False, str(exc)
+        return True, f"Connected: exports go to “{out.get('folder')}”."
+    if secrets.google_service_account:
+        return check_folder(secrets.google_service_account, folder_id)
+    return False, "Google exports aren't set up yet."

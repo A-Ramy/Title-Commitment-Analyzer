@@ -122,3 +122,49 @@ def test_daily_email_status_for_settings():
     value, sub, cls = run_status(sent)
     assert (value, cls) == ("Sending", "up") and "Oct 27, 12:50 PM ET" in sub and "3 recipients" in sub
     assert run_status(run_record("failed", "Email service returned 403", datetime.now(UTC)))[2] == "down"
+
+
+class FakeResponse:
+    def __init__(self, body):
+        self.body = body
+
+    def json(self):
+        if isinstance(self.body, str):
+            raise ValueError("not JSON")
+        return self.body
+
+
+def test_google_export_through_the_apps_script(monkeypatch):
+    import requests
+
+    from titleagent.config import Secrets
+    from titleagent.exports import google
+
+    secrets = Secrets(None, None, None, None, google_export_url="https://script.google.com/macros/s/x/exec",
+                      google_export_key="k1")
+    assert secrets.has_google
+    sent = []
+
+    def post(url, json, timeout):
+        sent.append(json)
+        if json["key"] != "k1":
+            return FakeResponse({"ok": False, "error": "wrong key"})
+        if json["action"] == "ping":
+            return FakeResponse({"ok": True, "folder": "Title Checklists"})
+        return FakeResponse({"ok": True, "link": "https://docs.google.com/spreadsheets/d/abc"})
+
+    monkeypatch.setattr(requests, "post", post)
+    link = google.export(secrets, "https://drive.google.com/drive/folders/1Fold?usp=sharing", "Deal", b"xlsx", "sheet")
+    assert link.endswith("/abc")
+    assert sent[-1]["folder"] == "1Fold" and sent[-1]["kind"] == "sheet" and sent[-1]["data"] == "eGxzeA=="
+    assert google.check(secrets, "1Fold") == (True, "Connected: exports go to “Title Checklists”.")
+
+    wrong = Secrets(None, None, None, None, google_export_url=secrets.google_export_url, google_export_key="nope")
+    ok, msg = google.check(wrong, "1Fold")
+    assert not ok and "key doesn't match" in msg
+
+    monkeypatch.setattr(requests, "post", lambda *a, **k: FakeResponse("<html>Sign in</html>"))
+    ok, msg = google.check(secrets, "1Fold")
+    assert not ok and "Anyone" in msg
+    assert "Drive service" in google._script_error("ReferenceError: Drive is not defined")
+    assert google.check(Secrets(None, None, None, None), "1Fold")[0] is False

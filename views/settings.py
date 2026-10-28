@@ -46,10 +46,9 @@ with st.form("settings"):
               "bring_down": "Bring-down", "closing": "At closing"}
     for col, k in zip(cols, list(offsets), strict=True):
         offsets[k] = col.number_input(labels.get(k, k), min_value=0, max_value=60, value=int(offsets[k]), step=1)
-    h.heading("Google Exports", "4", "Google Sheets and Docs exports are saved in this Shared Drive folder")
-    folder = st.text_input("Shared Drive folder (paste its link)", settings["google_folder_id"],
-                           help="Open the folder in Google Drive and copy the address bar, or paste just the ID. "
-                                "The service account below must be a Content Manager on that Shared Drive.")
+    h.heading("Google Exports", "4", "Google Sheets and Docs exports are saved in this Google Drive folder")
+    folder = st.text_input("Google Drive folder (paste its link)", settings["google_folder_id"],
+                           help="Open the folder in Google Drive and copy the address bar, or paste just the ID.")
     saved = st.form_submit_button("Save Settings", type="primary", disabled=not admin)
 
 if saved:
@@ -60,14 +59,37 @@ if saved:
     st.success("Saved.")
     st.rerun()
 
+script_mode = bool(secrets.google_export_url and secrets.google_export_key)
 sa_email = (secrets.google_service_account or {}).get("client_email", "")
 if secrets.has_google:
     c1, c2 = st.columns([3, 1], vertical_alignment="bottom")
-    c1.caption(f"Service account to add to the Shared Drive as Content Manager: `{sa_email}`")
+    c1.caption("Exports are saved by the Google export script, as the person who deployed it." if script_mode else
+               f"Service account to add to the Shared Drive as Content Manager: `{sa_email}`")
     if c2.button("Test Google Folder", icon=":material/folder_shared:", width="stretch"):
         with st.spinner("Checking the folder…"):
-            ok, msg = google.check_folder(secrets.google_service_account, settings["google_folder_id"])
+            ok, msg = google.check(secrets, settings["google_folder_id"])
         (st.success if ok else st.error)(msg)
+if not script_mode:
+    with st.expander("Set up Google exports (about 5 minutes, no Google Cloud needed)",
+                     expanded=not secrets.has_google):
+        st.markdown("""
+Do this signed in to Google as someone who can **add files** to the folder (files are saved as that person).
+
+1. Go to **script.google.com** → **New project**. Delete what's in the editor, paste the script below (copy button
+   at its top right) and click **Save**.
+2. On the left, **Services (+)** → **Drive API** → **Add**.
+3. Pick **setup** in the function menu at the top → **Run** → allow access. The log at the bottom shows
+   `GOOGLE_EXPORT_KEY = "..."`.
+4. **Deploy → New deployment** → type **Web app** → Execute as **Me** → Who has access **Anyone** → **Deploy** →
+   copy the **Web app URL**.
+5. In Streamlit: App → **Settings → Secrets**, add the two lines and save:
+   `GOOGLE_EXPORT_URL = "the web app URL"` and the `GOOGLE_EXPORT_KEY` line from step 3.
+6. Back here: paste the folder's link above, **Save Settings**, then **Test Google Folder**.
+
+Only the app can use the script: every request must carry the key. If step 4 has no **Anyone** option, a Google
+Workspace admin has turned it off; ask them to allow it.
+""")
+        st.code(google.SCRIPT, language="javascript")
 
 h.heading("Connections", "5", "Set in the app's secrets, never here")
 email_value, email_sub, email_cls = run_status(settings.get(LAST_RUN))
@@ -76,8 +98,8 @@ h.tiles([
      "up" if secrets.has_ai else "down"),
     ("Database", "Postgres" if secrets.database_url else "Local file", "DATABASE_URL",
      "up" if secrets.database_url else "muted"),
-    ("Google", "Key Added" if secrets.has_google else "Not set",
-     h.esc(sa_email) if secrets.has_google else "service account for Sheets / Docs",
+    ("Google", "Set Up" if secrets.has_google else "Not set",
+     "export script" if script_mode else h.esc(sa_email) if secrets.has_google else "for Sheets / Docs exports",
      "up" if secrets.has_google else "muted"),
     ("Daily Email", email_value, email_sub, email_cls),
 ])

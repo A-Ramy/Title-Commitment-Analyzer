@@ -53,6 +53,9 @@ class Secrets:
     database_url: str | None
     google_service_account: dict | None
     resend_api_key: str | None
+    # Google exports through the Apps Script web app (titleagent/exports/google_export.gs): the easy setup
+    google_export_url: str | None = None
+    google_export_key: str | None = None
     # Who may open the app (see ui/auth.py). Google sign-in when the [auth] section is set, else the team password.
     google_login: bool = False
     app_password: str | None = None
@@ -66,7 +69,7 @@ class Secrets:
 
     @property
     def has_google(self) -> bool:
-        return self.google_service_account is not None
+        return bool(self.google_export_url and self.google_export_key) or self.google_service_account is not None
 
 
 def _streamlit_secrets() -> dict:
@@ -119,6 +122,8 @@ def load_secrets() -> Secrets:
             get("GOOGLE_SERVICE_ACCOUNT_JSON"),
         ),
         resend_api_key=get("RESEND_API_KEY"),
+        google_export_url=get("GOOGLE_EXPORT_URL"),
+        google_export_key=get("GOOGLE_EXPORT_KEY"),
     )
 
 

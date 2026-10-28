@@ -116,13 +116,13 @@ with c1.popover("Export List", icon=":material/download:", width="stretch"):
                        google.DOCX, width="stretch")
     st.divider()
     if not secrets.has_google:
-        st.caption("Google Sheets / Docs: add the service account in the app's secrets (see README).")
+        st.caption("Google Sheets / Docs: an admin sets this up in Settings → Google Exports.")
     for kind, label in (("sheet", "Google Sheets"), ("doc", "Google Docs")):
         if st.button(label, width="stretch", disabled=not secrets.has_google, key=f"g_{kind}"):
             try:
                 data = (tabular.to_xlsx(checklist, include_fyi) if kind == "sheet"
                         else document.to_docx(checklist, include_fyi))
-                link = google.upload(secrets.google_service_account, settings.get("google_folder_id", ""),
+                link = google.export(secrets, settings.get("google_folder_id", ""),
                                      f"{checklist.title} · Title Checklist", data, kind)
                 st.success(f"Created. [Open it]({link})")
             except google.GoogleExportError as exc:

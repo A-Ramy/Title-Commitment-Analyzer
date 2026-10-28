@@ -37,7 +37,7 @@ screen is in [`docs/draft/index.html`](draft/index.html).
 | Exports | Google Sheets, Google Docs, Word, PDF, CSV, Excel, all in v1. Sheets is a one-time export (no sync back) |
 | Updated commitments | Uploaded to the same deal; the agent shows what's new and what title removed, and keeps statuses and notes |
 | Deal details | Read from the commitment and contract, **confirmed by the uploader** before the review runs |
-| Email summary | **Daily to all users, covering all open deals**: open blockers and items due soon; sent through an email service (e.g. Resend) from **@totalchb.com** from `title-agent@totalchb.com` (needs the service's DNS records added to the domain), **weekdays ~8:00 AM Eastern** |
+| Email summary | **Daily to all users, covering all open deals**: open blockers and items due soon; sent through an email service (e.g. Resend) from **@totalchb.com** from `title-agent@totalchb.com` (needs the service's DNS records added to the domain), **weekdays at 8:00 AM Eastern** (queued early with Resend so GitHub delays can't make it late) |
 | AI budget | Accuracy first: most capable model plus the second-opinion pass on every commitment |
 | Training examples | Real, unredacted commitments, purchase contracts, and the closers' lists from email. Never committed to git or used as test fixtures; tests use made-up data |
 
@@ -284,4 +284,4 @@ scanned pages.
 - Owner answers (2026-10-28): Title 3's B-I #12–15 (judgment, state tax liens, pending foreclosure) are Closing
   Blockers, as the agent already flags them; unpaid or past-due taxes shown only in B-II stay Before Closing; a
   quiet title judgment entry is Before Closing (certified copy to the title company), a blocker only while the
-  case is pending; the daily email goes out weekdays at about 8:00 AM Eastern all year.
+  case is pending; the daily email goes out weekdays at 8:00 AM Eastern all year, without fail.

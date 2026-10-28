@@ -3,7 +3,7 @@ from datetime import UTC, date, datetime
 from titleagent.compare import carry_over
 from titleagent.config import _decode_service_account
 from titleagent.duedates import due_date
-from titleagent.emailer import run_record, run_status, summary_html
+from titleagent.emailer import EASTERN, already_done, plan, run_record, run_status, send, summary_html
 from titleagent.exports.google import check_folder, folder_id_from
 from titleagent.grounding import found_on, verify
 from titleagent.models import ActionItem, Source
@@ -168,3 +168,43 @@ def test_google_export_through_the_apps_script(monkeypatch):
     assert not ok and "Anyone" in msg
     assert "Drive service" in google._script_error("ReferenceError: Drive is not defined")
     assert google.check(Secrets(None, None, None, None), "1Fold")[0] is False
+
+
+def test_daily_email_goes_out_at_8_eastern():
+    utc = lambda *a: datetime(*a, tzinfo=UTC)  # noqa: E731
+    action, at = plan(utc(2026, 10, 28, 6, 17))  # Wed 2:17 AM EDT
+    assert action == "schedule" and at.astimezone(EASTERN).strftime("%Y-%m-%d %H:%M %Z") == "2026-10-28 08:00 EDT"
+    action, at = plan(utc(2026, 11, 4, 12, 17))  # Wed 7:17 AM EST (after the clock change)
+    assert action == "schedule" and at.astimezone(UTC).hour == 13
+    assert plan(utc(2026, 10, 28, 16, 50)) == ("now", None)  # a run hours late sends right away
+    assert plan(utc(2026, 10, 31, 10, 47)) == ("skip", None)  # Saturday
+
+
+def test_only_one_email_a_day():
+    day = date(2026, 10, 28)
+    at = datetime(2026, 10, 28, 12, 0, tzinfo=UTC)
+    scheduled = run_record("scheduled", "3 recipients", at, day, datetime(2026, 10, 28, 12, 0, tzinfo=UTC))
+    assert already_done(scheduled, day) and not already_done(scheduled, date(2026, 10, 29))
+    assert not already_done(run_record("failed", "503", at, day), day)  # a failed try is tried again
+    assert not already_done(run_record("test", "3 recipients", at, day), day)  # a manual test isn't the 8:00 email
+    assert not already_done(None, day)
+    value, sub, _ = run_status(scheduled, now=datetime(2026, 10, 28, 7, 0, tzinfo=EASTERN))
+    assert value == "Scheduled" and "goes out Oct 28, 8:00 AM ET" in sub
+    value, sub, _ = run_status(scheduled, now=datetime(2026, 10, 28, 9, 0, tzinfo=EASTERN))
+    assert value == "Sending" and "last sent Oct 28, 8:00 AM ET" in sub
+
+
+def test_send_hands_resend_the_delivery_time(monkeypatch):
+    import requests
+
+    bodies = []
+
+    class Ok:
+        status_code = 200
+        text = ""
+
+    monkeypatch.setattr(requests, "post", lambda url, headers, timeout, json: bodies.append(json) or Ok())
+    at = datetime(2026, 10, 29, 8, 0, tzinfo=EASTERN)
+    send("re_x", "title-agent@totalchb.com", ["a@totalchb.com"], "s", "<p>h</p>", at)
+    send("re_x", "title-agent@totalchb.com", ["a@totalchb.com"], "s", "<p>h</p>")
+    assert bodies[0]["scheduled_at"] == "2026-10-29T08:00:00-04:00" and "scheduled_at" not in bodies[1]

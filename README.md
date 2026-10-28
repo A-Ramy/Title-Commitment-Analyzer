@@ -102,8 +102,9 @@ into a folder in a **Shared Drive**.
 2. Create an API key. In this GitHub repository: Settings → Secrets → Actions: `DATABASE_URL`, `RESEND_API_KEY`;
    Variables: `APP_URL` (the app's link). The key stays in GitHub; Settings → Connections shows when the
    email last went out.
-3. `.github/workflows/daily-email.yml` sends it every weekday at about 8:00 AM Eastern, all year (Run workflow to
-   test it).
+3. `.github/workflows/daily-email.yml` delivers it at 8:00 AM Eastern every weekday, all year. GitHub's scheduler
+   runs late or skips runs, so it tries five times before 8:00 and the first try that gets through hands the email
+   to Resend to deliver at 8:00 sharp. **Run workflow** sends a test right away (it doesn't replace the 8:00 email).
 
 ## Privacy
 

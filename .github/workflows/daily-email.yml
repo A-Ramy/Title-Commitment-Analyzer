@@ -1,39 +1,29 @@
 name: Daily title summary
 
-# Weekdays at 7:52 AM Eastern all year, so it lands around 8:00 (GitHub starts scheduled runs a few minutes late).
-# Cron is UTC only: one schedule for daylight time (11:52 UTC) and one for standard time (12:52 UTC); each run
-# checks which one New York is on and skips if it's the other.
+# The email arrives at 8:00 AM Eastern every weekday (scripts/daily_email.py). GitHub starts scheduled runs late,
+# sometimes by hours, and can skip them, so there are five tries before 8:00. The first that gets through hands the
+# email to Resend to deliver at 8:00 sharp; the rest see it's done. Times are UTC (EDT / EST):
 on:
   schedule:
-    - cron: "52 11 * * 1-5"  # 7:52 AM EDT
-    - cron: "52 12 * * 1-5"  # 7:52 AM EST
-  workflow_dispatch:
+    - cron: "17 6 * * 1-5"   # 2:17 / 1:17 AM
+    - cron: "17 8 * * 1-5"   # 4:17 / 3:17 AM
+    - cron: "47 9 * * 1-5"   # 5:47 / 4:47 AM
+    - cron: "47 10 * * 1-5"  # 6:47 / 5:47 AM
+    - cron: "17 12 * * 1-5"  # 8:17 / 7:17 AM: last try; sends right away if nothing went out yet
+  workflow_dispatch:  # Run workflow: sends a test email right away
+
+concurrency:
+  group: daily-email  # tries that start together run one after the other, so only one sends
+  cancel-in-progress: false
 
 jobs:
   send:
     runs-on: ubuntu-latest
     steps:
-      - name: Eastern-time check
-        id: when
-        env:
-          SCHEDULE: ${{ github.event.schedule }}
-        run: |
-          offset=$(TZ=America/New_York date +%z)
-          if { [ "$SCHEDULE" = "52 11 * * 1-5" ] && [ "$offset" != "-0400" ]; } ||
-             { [ "$SCHEDULE" = "52 12 * * 1-5" ] && [ "$offset" != "-0500" ]; }; then
-            echo "Not 7:52 AM in New York on this schedule (offset $offset); the other one sends today."
-            echo "send=no" >> "$GITHUB_OUTPUT"
-          else
-            echo "send=yes" >> "$GITHUB_OUTPUT"
-          fi
-      - if: steps.when.outputs.send == 'yes'
-        uses: actions/checkout@v4
-      - if: steps.when.outputs.send == 'yes'
-        uses: astral-sh/setup-uv@v6
-      - if: steps.when.outputs.send == 'yes'
-        run: uv sync --no-dev
-      - if: steps.when.outputs.send == 'yes'
-        run: uv run python scripts/daily_email.py
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --no-dev
+      - run: uv run python scripts/daily_email.py ${{ github.event_name == 'workflow_dispatch' && '--now' || '' }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}

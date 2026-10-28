@@ -529,9 +529,9 @@ def story() -> list:
             "<b>Mark Deal Closed</b>. It leaves the open list and the daily email. <b>Reopen Deal</b> brings it "
             "back.")]
     s += [P("The daily email", "h2"),
-          P("Every weekday morning, everyone on the list gets one email from <b>title-agent@totalchb.com</b>, covering "
-            "every open deal: its open Closing Blockers and anything due in the next 3 days, with overdue items "
-            "flagged and an <b>Open</b> link straight to the deal.")]
+          P("Every weekday at about 8:00 AM Eastern, everyone on the list gets one email from "
+            "<b>title-agent@totalchb.com</b>, covering every open deal: its open Closing Blockers and anything due "
+            "in the next 3 days, with overdue items flagged and an <b>Open</b> link straight to the deal.")]
 
     # ---- 12
     s += section(12, "For The Owner And Admins",

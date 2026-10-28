@@ -7,8 +7,8 @@ from openpyxl import load_workbook
 from titleagent import demo, pipeline
 from titleagent.exports import Checklist, document, tabular
 from titleagent.llm import Usage
-from titleagent.prompts import SEED_LESSONS
-from titleagent.storage import Store
+from titleagent.prompts import REVISED_SEED_LESSONS, SEED_LESSONS
+from titleagent.storage import Store, lessons_t
 
 
 def analysis():
@@ -16,6 +16,16 @@ def analysis():
     docs = pipeline.Documents(demo.sample_commitment_pdf())
     structure, gaps = pipeline.read_documents(llm, docs, [], usage)
     return pipeline.review(llm, docs, structure, pipeline.DealInfo(closing_date=date(2026, 11, 13)), [], usage, gaps)
+
+
+def test_revised_seed_lesson_rewritten_in_old_database(tmp_path):
+    url = f"sqlite:///{tmp_path / 't.db'}"
+    store = Store(url)
+    old, new = next(iter(REVISED_SEED_LESSONS.items()))
+    with store.engine.begin() as c:  # a database seeded before the owner changed the rule
+        c.execute(lessons_t.update().where(lessons_t.c.text == new).values(text=old))
+    assert old in store.active_lessons()
+    assert Store(url).active_lessons() == SEED_LESSONS
 
 
 def test_store_round_trip(tmp_path):

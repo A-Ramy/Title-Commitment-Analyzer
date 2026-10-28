@@ -37,7 +37,7 @@ screen is in [`docs/draft/index.html`](draft/index.html).
 | Exports | Google Sheets, Google Docs, Word, PDF, CSV, Excel, all in v1. Sheets is a one-time export (no sync back) |
 | Updated commitments | Uploaded to the same deal; the agent shows what's new and what title removed, and keeps statuses and notes |
 | Deal details | Read from the commitment and contract, **confirmed by the uploader** before the review runs |
-| Email summary | **Daily to all users, covering all open deals**: open blockers and items due soon; sent through an email service (e.g. Resend) from **@totalchb.com** (proposed sender: `title-agent@totalchb.com`; needs the service's DNS records added to the domain) |
+| Email summary | **Daily to all users, covering all open deals**: open blockers and items due soon; sent through an email service (e.g. Resend) from **@totalchb.com** from `title-agent@totalchb.com` (needs the service's DNS records added to the domain), **weekdays ~8:00 AM Eastern** |
 | AI budget | Accuracy first: most capable model plus the second-opinion pass on every commitment |
 | Training examples | Real, unredacted commitments, purchase contracts, and the closers' lists from email. Never committed to git or used as test fixtures; tests use made-up data |
 
@@ -281,6 +281,7 @@ scanned pages.
   (`titleagent/prompts.py`); the numbering check was verified on all 6 text commitments (2 are scans).
 - **Next (second update, going live)**: deploy, add secrets, import the 8 examples on the Training tab, run
   `scripts/evaluate.py` on them and tune; Google folder, Resend DNS for @totalchb.com.
-- Open questions for the owner: Title 3 (were B-I #12–15, including the pending foreclosure, on the closer's list?),
-  whether unpaid taxes shown only in B-II are "Before Closing" (current rule), and what the team does for a quiet
-  title judgment entry.
+- Owner answers (2026-10-28): Title 3's B-I #12–15 (judgment, state tax liens, pending foreclosure) are Closing
+  Blockers, as the agent already flags them; unpaid or past-due taxes shown only in B-II stay Before Closing; a
+  quiet title judgment entry is Before Closing (certified copy to the title company), a blocker only while the
+  case is pending; the daily email goes out weekdays at about 8:00 AM Eastern all year.

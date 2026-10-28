@@ -30,7 +30,6 @@ requirement allows it)
 party, workers' compensation and other government liens
 - municipal maintenance, code, demolition or utility liens; delinquent utilities the commitment requires paid
 - specific taxes the requirements say must be paid (with an amount)
-- quiet title or other court judgment entries the requirements cite
 - recorded memoranda of agreement, lease, option, wind / solar / energy agreements, land contracts that must be \
 terminated or released (unless the buyer accepts them on the policy)
 - estate, probate, death, divorce or authority problems that block a good deed
@@ -40,7 +39,8 @@ Before Closing ("before"): needed by closing day but handled in the normal cours
 fees, entity documents (articles, operating agreement, resolution, good standing), FinCEN reporting details, HOA \
 statement or estoppel when nothing is known to be owed, owner's / vendor's affidavit, FIRPTA, state transfer forms, \
 ID for notarization, bring-down of an aging commitment, survey when coverage needs it, land division approvals, \
-spousal joinder statements, taxes listed only as due or unpaid in Schedule B-II (paid or prorated at closing).
+spousal joinder statements, taxes listed only as due or unpaid in Schedule B-II (paid or prorated at closing), \
+a certified copy of a quiet title judgment entry the requirements cite (the case is already decided).
 
 Review / FYI ("fyi"): standard exceptions that stay on the policy (easements, plat restrictions, mineral rights, \
 rights of way, taxes not yet due, gap and survey boilerplate), informational notes, and anything unusual a person \
@@ -81,6 +81,12 @@ release).
 - Write plainly for a TC. No legal advice disclaimers.
 """
 
+QUIET_TITLE_LESSON = (
+    "A quiet title 'Judgment Entry' cited in Schedule B-I is Before Closing: get a certified copy of the final entry "
+    "from the court or the attorney and send it to the title company (or have it recorded). It is a Closing Blocker "
+    "only when the quiet title case is still pending."
+)
+
 SEED_LESSONS = [
     "Closers list every separate lien, judgment or tax-lien certificate as its own item, even when there are many "
     "small ones against the same person (e.g. five city tax liens = five items).",
@@ -89,8 +95,7 @@ SEED_LESSONS = [
     "A mortgage requirement that mentions a recorded Lis Pendens means a foreclosure is pending: the payoff must "
     "include the foreclosure costs and the case must be dismissed; mark it a Closing Blocker and flag the lis "
     "pendens in the title.",
-    "A 'Judgment Entry' in a quiet title or other civil case cited in Schedule B-I is a Closing Blocker: obtain and "
-    "record (or have title review) the certified entry.",
+    QUIET_TITLE_LESSON,
     "Recorded memoranda of agreement, lease or option (including wind or solar development agreements and their "
     "assignments to utilities) must be terminated of record or accepted on the policy by the buyer: Closing Blocker.",
     "Routine B-I requirements (pay the price, pay premiums, deed to be recorded, buyer / seller LLC documents, "
@@ -105,6 +110,12 @@ SEED_LESSONS = [
     "Taxes sold to a private party (certificate of delinquency) and tax lien certificates need a redemption payoff "
     "from the certificate holder or county: Closing Blocker.",
 ]
+
+# Seed lessons the owner later changed: rewritten in place in databases seeded with the old wording
+REVISED_SEED_LESSONS = {
+    "A 'Judgment Entry' in a quiet title or other civil case cited in Schedule B-I is a Closing Blocker: obtain and "
+    "record (or have title review) the certified entry.": QUIET_TITLE_LESSON,
+}
 
 
 def lessons_block(lessons: list[str]) -> str:

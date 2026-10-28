@@ -81,7 +81,8 @@ public. The app is **locked** until one of these is set in its secrets (template
 1. resend.com → add the domain `totalchb.com` → add the DNS records it shows (2–3 records, one time).
 2. Create an API key. In this GitHub repository: Settings → Secrets → Actions: `DATABASE_URL`, `RESEND_API_KEY`;
    Variables: `APP_URL` (the app's link).
-3. `.github/workflows/daily-email.yml` sends it every weekday morning (Run workflow to test it).
+3. `.github/workflows/daily-email.yml` sends it every weekday at about 8:00 AM Eastern, all year (Run workflow to
+   test it).
 
 ## Privacy
 

@@ -14,14 +14,15 @@ decisions (section 0); keep this file in sync when a rule changes.
 - **The app URL is public** (one private app per Streamlit account; Projection has it). `ui/auth.py` gates every
   page: Google sign-in with the email allow-list, else `APP_PASSWORD`, else locked. Keep it first in `app.py`.
 
-## The team's standard (from the 8 worked commitments, owner 2026-10-25)
+## The team's standard (from the 8 worked commitments, owner 2026-10-25, updated 2026-10-28)
 - **Closing Blocker** = needs money paid to, or a document from, someone outside the closing table, or a court /
   government action: mortgages (incl. lis pendens), judgments (current or prior owner), tax-lien certificates,
   state / city tax liens, workers' comp liens, municipal maintenance liens, delinquent utilities, taxes sold to a
-  third party, quiet title judgment entries, recorded memoranda (agreement / lease / option / wind) to terminate,
+  third party, pending foreclosures, recorded memoranda (agreement / lease / option / wind) to terminate,
   commitment errors.
 - **Before Closing** = routine requirements handled in the normal course (deed, premium, entity docs, FinCEN,
-  HOA statement, affidavits, transfer forms, bring-down, taxes due shown in B-II).
+  HOA statement, affidavits, transfer forms, bring-down, taxes due or past due shown only in B-II, a certified
+  copy of a quiet title judgment entry). Taxes become blockers only when sold or certified as a lien.
 - **Review / FYI** = standard exceptions and notes. A clean title has zero blockers.
 - The TC owns every item; `provided_by` is who actually has it.
 

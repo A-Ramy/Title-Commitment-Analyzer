@@ -34,7 +34,7 @@ from sqlalchemy import (
 
 from titleagent.config import DATA_DIR, DEFAULT_SETTINGS
 from titleagent.models import ActionItem, Analysis
-from titleagent.prompts import SEED_LESSONS
+from titleagent.prompts import REVISED_SEED_LESSONS, SEED_LESSONS
 
 metadata = MetaData()
 
@@ -171,6 +171,9 @@ class Store:
 
     def _seed_lessons(self) -> None:
         with self.engine.begin() as c:
+            for old, new in REVISED_SEED_LESSONS.items():  # owner changed a rule after the database was seeded
+                c.execute(update(lessons_t).where(lessons_t.c.source == "seed", lessons_t.c.text == old)
+                          .values(text=new))
             if c.execute(select(func.count()).select_from(lessons_t)).scalar():
                 return
             now = _now()

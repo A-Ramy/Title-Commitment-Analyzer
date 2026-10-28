@@ -222,7 +222,7 @@ def cover(c, doc) -> None:
     c.drawString(MARGIN, PAGE_H - 6.35 * inch, "For: Transaction Coordinators and the Owner")
     c.setFont("Nunito", 10)
     c.setFillColor(MUTED)
-    c.drawString(MARGIN, PAGE_H - 6.62 * inch, f"Version 1 · {date.today():%B %Y}")
+    c.drawString(MARGIN, PAGE_H - 6.62 * inch, f"Version 1.0 · {date.today():%B %Y}")
     c.setFillColor(colors.white)
     c.setFont("Nunito-Bold", 9.5)
     c.drawString(MARGIN, 0.62 * inch, "Total Cash Home Buyers · Internal use only")
@@ -343,6 +343,8 @@ def story() -> list:
         ["On a phone", "Same app, same link. Tap <b>»</b> at the top left for Open Deals, Settings and Sign Out. "
                        "Each item shows as a card with its Status, Provided By, Due, Amount and Source."],
     ], [0.27, 0.73])]
+    s += [shot("17-phone", "On a phone: each item is a card. Tap » at the top left for the sidebar.", 0.36,
+               max_h=4.4)]
 
     # ---- 4
     s += section(4, "Reviewing A New Commitment",
@@ -403,13 +405,15 @@ def story() -> list:
         ['<font color="#BD2239">Closing Blocker</font>',
          "Needs money paid to, or a document from, someone outside the closing table, or a court / government "
          "action. The deal can't close until it's done.",
-         "Mortgage payoffs and releases, lis pendens / foreclosure, judgments (even a prior owner's), tax lien "
-         "certificates, city and state tax liens, workers' comp liens, code and maintenance liens, delinquent "
-         "utilities, wind/lease/option memoranda to terminate, errors in the commitment."],
+         "Mortgage payoffs and releases, lis pendens and pending foreclosures, judgments (even a prior owner's), "
+         "tax lien certificates, taxes sold or certified as a lien, city and state tax liens, workers' comp liens, "
+         "code and maintenance liens, delinquent utilities, wind/lease/option memoranda to terminate, errors in the "
+         "commitment."],
         ['<font color="#B45309">Before Closing</font>',
          "Needed by closing day, but handled in the normal course.",
          "The deed, LLC documents, FinCEN details, HOA estoppel, affidavits, transfer forms, bring-down of an old "
-         "commitment, taxes due paid at closing."],
+         "commitment, taxes due or past due shown in Schedule B-II (paid at closing), a certified copy of a quiet "
+         "title judgment entry."],
         ['<font color="#4D458A">Review / FYI</font>',
          "Standard exceptions that stay on the policy, and notes. Glance at them.",
          "Utility easements, plat restrictions, mineral rights, road rights of way, taxes not yet due."],
@@ -512,9 +516,9 @@ def story() -> list:
         "need action.",
         "Click the format: <b>CSV</b>, <b>Excel</b>, <b>PDF</b> or <b>Word</b>. The file downloads with the "
         "property address in its name.",
+        "Or click <b>Google Sheets</b> or <b>Google Docs</b>: the file is created in the team's Google Drive "
+        "folder and an <b>Open it</b> link appears. Everyone with access to that folder can see it.",
     ]), shot("09-export", "The export menu.", 0.95, crop=(0.22, 0.0, 0.75, 0.62))]
-    s += [box("<b>Google Sheets</b> and <b>Google Docs</b> appear in the same menu once the Owner connects Google "
-              "Drive. Files are then created in the team's shared folder.", "tip")]
     s += [box("Exports contain names, addresses and loan numbers. Send them only to people on the deal.", "warn")]
 
     # ---- 11
@@ -531,7 +535,9 @@ def story() -> list:
     s += [P("The daily email", "h2"),
           P("Every weekday at 8:00 AM Eastern, everyone on the list gets one email from "
             "<b>title-agent@totalchb.com</b>, covering every open deal: its open Closing Blockers and anything due "
-            "in the next 3 days, with overdue items flagged and an <b>Open</b> link straight to the deal.")]
+            "in the next 3 days, with overdue items flagged and an <b>Open</b> link straight to the deal. It's "
+            "prepared early in the morning, so a status you change before 8:00 shows up the next day. With no open "
+            "deals it still arrives and says so.")]
 
     # ---- 12
     s += section(12, "For The Owner And Admins",
@@ -540,7 +546,8 @@ def story() -> list:
           shot("12-knowledge", "The Feedback Inbox: edit the lesson, then approve or reject.", 1.0,
                crop=(0.22, 0.0, 1.0, 0.86))]
     s += [steps([
-        "Open <b>Knowledge</b>. The sidebar shows how many items are waiting.",
+        "Open the <b>Knowledge</b> tab. The number on the tab, e.g. <b>Knowledge (1)</b>, is how many items "
+        "are waiting.",
         "Read each item in the <b>Feedback Inbox</b>. The suggested lesson is in the text box.",
         "Edit it into a <b>general rule</b> the agent can apply to every commitment. Good: \"When a city lists "
         "unpaid water or sewer charges, order a final read and list the payoff as a Closing Blocker.\" Bad: names, "
@@ -566,6 +573,18 @@ def story() -> list:
     s += [shot("13-settings", "Settings. Click Save Settings when done; the Connections tiles below show what's "
                               "connected and when the daily email last went out.", 1.0,
                crop=(0.22, 0.0, 1.0, 1.0), max_h=4.2)]
+    s += [CondPageBreak(2.4 * inch), P("Connections", "h2"),
+          P("The tiles at the bottom of Settings show whether everything the app depends on is working:"),
+          shot("14-connections", "The Connections tiles.", 1.0)]
+    s += [table(["Tile", "What it tells you"], [
+        ["AI (Anthropic)", "<b>Connected</b>: reviews can run."],
+        ["Database", "<b>Postgres</b>: deals are stored safely in the company database."],
+        ["Google", "<b>Set Up</b>: Google Sheets / Docs exports work. <b>Test Google Folder</b> above it checks the "
+                   "folder. To connect a different account or folder, follow <b>Set up Google exports</b>."],
+        ["Daily Email", "<b>Scheduled</b>: this morning's email is queued for 8:00. <b>Sending</b>: it went out "
+                        "(with the time and how many people). <b>Skipped</b> or <b>Failed</b>: the reason is shown; "
+                        "the next weekday tries again."],
+    ], [0.22, 0.78])]
     s += [box("Admins are recognized by the email typed at sign-in. Keep the team password to the team, and "
               "change it (in Streamlit → Settings → Secrets → APP_PASSWORD) when someone leaves. Changing it signs "
               "everyone out.", "warn")]
@@ -606,6 +625,10 @@ def story() -> list:
         ["Can I upload a scanned PDF?", "Yes. Quotes from scanned pages show · instead of ✓, because there's no text "
                                         "to check them against."],
         ["Where are the original PDFs?", "Deal page → Documents and review history."],
+        ["The daily email didn't arrive.", "Check spam once and mark it Not Spam. Then an admin checks Settings → "
+                                           "Connections → Daily Email, which shows what happened."],
+        ["Google Sheets / Docs shows an error.", "The message says what's wrong. Use Excel or Word for now and send "
+                                                 "the message to an admin (Settings → Test Google Folder)."],
         ["Who sees my changes?", "Everyone on the team, immediately. Your email is recorded on each change."],
     ], [0.34, 0.66])]
 
@@ -619,7 +642,7 @@ def story() -> list:
                           "statuses and notes."),
         ("Something's missing", "Deal → Report Missing Item → fill it in → Send Feedback."),
         ("Something's wrong", "Deal → Feedback on an item → Wrong Info / Not Needed → set status to Waived."),
-        ("Send the list", "Deal → Export List → PDF / Word / Excel / CSV."),
+        ("Send the list", "Deal → Export List → PDF / Word / Excel / CSV, or Google Sheets / Docs."),
         ("Deal closed", "Deal → Documents and review history → Mark Deal Closed."),
     ]
     s.append(table(["I want to…", "Do this"], [[a, b] for a, b in ref], [0.25, 0.75]))

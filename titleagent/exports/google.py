@@ -5,6 +5,7 @@ that Shared Drive (service accounts have no Drive storage of their own)."""
 from __future__ import annotations
 
 import io
+import re
 
 SCOPES = ["https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
 SHEET = "application/vnd.google-apps.spreadsheet"
@@ -15,6 +16,45 @@ DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
 class GoogleExportError(RuntimeError):
     pass
+
+
+def folder_id_from(text: str) -> str:
+    """The folder ID from a pasted Drive link (…/folders/<id>?usp=…, or ?id=<id>) or the bare ID."""
+    text = text.strip()
+    m = re.search(r"/folders/([\w-]+)", text) or re.search(r"[?&]id=([\w-]+)", text)
+    return m.group(1) if m else text
+
+
+def check_folder(service_account: dict, folder_id: str) -> tuple[bool, str]:
+    """(ok, message): can the app create files in this folder? Reads only; creates nothing."""
+    from googleapiclient.errors import HttpError
+
+    email = service_account.get("client_email", "the service account")
+    folder_id = folder_id_from(folder_id)
+    if not folder_id:
+        return False, "Paste the Shared Drive folder's link in Settings first."
+    try:
+        f = _drive(service_account).files().get(
+            fileId=folder_id, fields="name, mimeType, driveId, capabilities(canAddChildren)", supportsAllDrives=True,
+        ).execute()
+    except HttpError as exc:
+        status = getattr(exc, "status_code", None) or getattr(getattr(exc, "resp", None), "status", None)
+        if "has not been used" in str(exc) or "is disabled" in str(exc):
+            return False, "The Google Drive API is off for this service account's project. Enable it, then retry."
+        if str(status) in ("403", "404"):
+            return False, (f"The app can't see that folder. Add {email} to the Shared Drive as Content Manager "
+                           "(Shared Drive → Manage members), then test again.")
+        return False, f"Google Drive returned an error ({status})."
+    except Exception:  # a bad or incomplete key, or no network; never echo the key
+        return False, "The app couldn't sign in to Google with the service account key. Check the key in the secrets."
+    if f.get("mimeType") != "application/vnd.google-apps.folder":
+        return False, "That link is a file, not a folder. Open the folder and copy its link."
+    if not f.get("driveId"):
+        return False, ("That folder is in someone's My Drive. Use a folder inside a Shared Drive: service accounts "
+                       "have no storage of their own.")
+    if not (f.get("capabilities") or {}).get("canAddChildren"):
+        return False, f"{email} can see “{f.get('name')}” but can't add files. Make it a Content Manager."
+    return True, f"Connected: exports go to “{f.get('name')}”."
 
 
 def _drive(service_account: dict):
@@ -30,6 +70,7 @@ def upload(service_account: dict, folder_id: str, name: str, data: bytes, kind: 
     from googleapiclient.errors import HttpError
     from googleapiclient.http import MediaIoBaseUpload
 
+    folder_id = folder_id_from(folder_id)
     if not folder_id:
         raise GoogleExportError("Set the Google Drive folder in Settings first.")
     target, source = (SHEET, XLSX) if kind == "sheet" else (DOC, DOCX)
@@ -47,4 +88,7 @@ def upload(service_account: dict, folder_id: str, name: str, data: bytes, kind: 
             raise GoogleExportError(f"The app can't write to that folder. Add {email} to the Shared Drive as "
                                     "Content Manager, and check the folder ID in Settings.") from exc
         raise GoogleExportError(f"Google Drive returned an error ({status}). Try again.") from exc
+    except Exception as exc:
+        raise GoogleExportError("The app couldn't sign in to Google with the service account key. Check the key "
+                                "in the secrets.") from exc
     return f["webViewLink"]

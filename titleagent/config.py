@@ -79,9 +79,14 @@ def _streamlit_secrets() -> dict:
         return {}
 
 
-def _decode_service_account(raw_b64: str | None, table: dict | None) -> dict | None:
+def _decode_service_account(raw_b64: str | None, table: dict | None, raw_json: str | None = None) -> dict | None:
     if table:
         return dict(table)
+    if raw_json:  # the key file pasted as-is between  in the Streamlit secrets
+        try:
+            return json.loads(raw_json)
+        except Exception as exc:  # never echo the value itself
+            raise ValueError("GOOGLE_SERVICE_ACCOUNT_JSON is set but is not the key file's JSON.") from exc
     if not raw_b64:
         return None
     try:
@@ -110,7 +115,8 @@ def load_secrets() -> Secrets:
         anthropic_api_key=get("ANTHROPIC_API_KEY"),
         database_url=get("DATABASE_URL"),
         google_service_account=_decode_service_account(
-            get("GOOGLE_SERVICE_ACCOUNT_JSON_B64"), st_secrets.get("gcp_service_account")
+            get("GOOGLE_SERVICE_ACCOUNT_JSON_B64"), st_secrets.get("gcp_service_account"),
+            get("GOOGLE_SERVICE_ACCOUNT_JSON"),
         ),
         resend_api_key=get("RESEND_API_KEY"),
     )

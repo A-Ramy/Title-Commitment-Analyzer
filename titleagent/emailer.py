@@ -3,14 +3,17 @@ items due in the next 3 days (owner, 2026-10-25). Sent through Resend from the c
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from html import escape
+from zoneinfo import ZoneInfo
 
 import requests
 
 from titleagent.models import DONE_STATUSES, ActionItem
 
 RESEND_URL = "https://api.resend.com/emails"
+LAST_RUN = "email_last_run"  # settings key the daily script writes, Settings reads
+EASTERN = ZoneInfo("America/New_York")
 SOON_DAYS = 3
 
 
@@ -59,3 +62,22 @@ def send(api_key: str, sender: str, recipients: list[str], subject: str, html: s
                       json={"from": f"Title Agent <{sender}>", "to": recipients, "subject": subject, "html": html})
     if r.status_code >= 300:
         raise RuntimeError(f"Email service returned {r.status_code}: {r.text[:200]}")
+
+
+def run_record(result: str, detail: str, now: datetime) -> dict:
+    """What the daily script stores after each run. result: sent | skipped | failed."""
+    return {"at": now.isoformat(), "result": result, "detail": detail}
+
+
+def run_status(last: dict | None) -> tuple[str, str, str]:
+    """(value, sub, tile class) for the Settings tile. The Resend key lives in GitHub, not in the app, so the last
+    run the script recorded is the only honest status."""
+    if not last:
+        return "No Run Yet", "sent from GitHub each weekday morning", "muted"
+    at = datetime.fromisoformat(last["at"]).astimezone(EASTERN)
+    when = f"{at:%b %d}, {at:%I:%M %p}".replace(", 0", ", ") + " ET"
+    if last["result"] == "sent":
+        return "Sending", f"last sent {when} · {escape(last['detail'])}", "up"
+    if last["result"] == "failed":
+        return "Failed", f"{when} · {escape(last['detail'])}", "down"
+    return "Skipped", f"{when} · {escape(last['detail'])}", "muted"

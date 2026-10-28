@@ -31,18 +31,17 @@ def sidebar(tools: list, deal_page) -> None:
                 st.page_link(deal_page, label=f"{label} · {open_blockers} blocker{'s' if open_blockers != 1 else ''}",
                              query_params={"id": str(d["id"])}, width="stretch")
         st.html('<div class="side-h">Tools</div>')
-        pending = len(store.list_feedback("pending"))
         for p in tools:
-            label = f"{p.title} ({pending})" if p.url_path == "knowledge" and pending else p.title
-            st.page_link(p, label=label, width="stretch")
+            st.page_link(p, width="stretch")
         st.html(f'<div class="kv" style="margin-top:10px"><span>Signed in as <b>{h.esc(who())}</b></span></div>')
         sign_out_button()
 
 
 def tab_capsule(pages: list) -> None:
+    pending = len(get_store().list_feedback("pending"))  # feedback waiting for an admin, shown on Knowledge
     with st.container(key="tabs", horizontal=True, width="content", gap=None):
         for p in pages:
-            st.page_link(p)
+            st.page_link(p, label=f"{p.title} ({pending})" if p.url_path == "knowledge" and pending else p.title)
 
 
 def setup_screen() -> None:

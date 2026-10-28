@@ -1,5 +1,6 @@
 """Send the daily summary. Run on a schedule (.github/workflows/daily-email.yml) with DATABASE_URL and
-RESEND_API_KEY set; APP_URL (optional) adds an "Open" link per deal.
+RESEND_API_KEY set; APP_URL (optional) adds an "Open" link per deal. Each run's outcome is saved in the app database
+so Settings can show it (the app itself never holds the Resend key).
 
     uv run python scripts/daily_email.py [--dry-run]
 """
@@ -8,13 +9,13 @@ from __future__ import annotations
 
 import os
 import sys
-from datetime import date
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from titleagent.config import load_secrets  # noqa: E402
-from titleagent.emailer import send, summary_html  # noqa: E402
+from titleagent.emailer import LAST_RUN, run_record, send, summary_html  # noqa: E402
 from titleagent.storage import Store  # noqa: E402
 
 
@@ -28,15 +29,28 @@ def main() -> int:
         print(subject)
         print(html)
         return 0
+
+    def record(result: str, detail: str) -> None:
+        store.set_setting(LAST_RUN, run_record(result, detail, datetime.now(UTC)), by="daily email")
+
     # Not set up yet: skip quietly instead of failing (and emailing a failure notice) every morning
     if not secrets.resend_api_key or not secrets.database_url:
         print("Skipped: RESEND_API_KEY and DATABASE_URL must both be set as GitHub Actions secrets.")
+        if secrets.database_url:
+            record("skipped", "RESEND_API_KEY is not set in GitHub")
         return 0
-    if not settings["email_recipients"]:
+    recipients = settings["email_recipients"]
+    if not recipients:
         print("Skipped: no recipients yet (app → Settings → Daily Email → Send to).")
+        record("skipped", "no recipients in Settings")
         return 0
-    send(secrets.resend_api_key, settings["email_from"], settings["email_recipients"], subject, html)
-    print(f"Sent to {len(settings['email_recipients'])} recipient(s).")
+    try:
+        send(secrets.resend_api_key, settings["email_from"], recipients, subject, html)
+    except Exception as exc:
+        record("failed", str(exc)[:200])
+        raise
+    record("sent", f"{len(recipients)} recipient{'s' if len(recipients) != 1 else ''}")
+    print(f"Sent to {len(recipients)} recipient(s).")
     return 0
 
 

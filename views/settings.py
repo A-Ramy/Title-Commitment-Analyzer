@@ -5,6 +5,8 @@ from __future__ import annotations
 import streamlit as st
 
 from titleagent.config import DEFAULT_SETTINGS
+from titleagent.emailer import LAST_RUN, run_status
+from titleagent.exports import google
 from ui import html as h
 from ui.state import get_secrets, get_settings, get_store, is_admin, who
 
@@ -44,28 +46,38 @@ with st.form("settings"):
               "bring_down": "Bring-down", "closing": "At closing"}
     for col, k in zip(cols, list(offsets), strict=True):
         offsets[k] = col.number_input(labels.get(k, k), min_value=0, max_value=60, value=int(offsets[k]), step=1)
-    h.heading("Google Exports", "4")
-    folder = st.text_input("Shared Drive folder ID", settings["google_folder_id"],
-                           help="The part of the folder's link after /folders/. The service account must be a "
-                                "Content Manager on that Shared Drive.")
+    h.heading("Google Exports", "4", "Google Sheets and Docs exports are saved in this Shared Drive folder")
+    folder = st.text_input("Shared Drive folder (paste its link)", settings["google_folder_id"],
+                           help="Open the folder in Google Drive and copy the address bar, or paste just the ID. "
+                                "The service account below must be a Content Manager on that Shared Drive.")
     saved = st.form_submit_button("Save Settings", type="primary", disabled=not admin)
 
 if saved:
     for key, value in (("admins", parse(admins)), ("tcs", parse(tcs)), ("email_recipients", parse(recipients)),
                        ("email_from", sender.strip() or DEFAULT_SETTINGS["email_from"]), ("due_offsets", offsets),
-                       ("google_folder_id", folder.strip())):
+                       ("google_folder_id", google.folder_id_from(folder))):
         store.set_setting(key, value, by=who())
     st.success("Saved.")
     st.rerun()
 
+sa_email = (secrets.google_service_account or {}).get("client_email", "")
+if secrets.has_google:
+    c1, c2 = st.columns([3, 1], vertical_alignment="bottom")
+    c1.caption(f"Service account to add to the Shared Drive as Content Manager: `{sa_email}`")
+    if c2.button("Test Google Folder", icon=":material/folder_shared:", width="stretch"):
+        with st.spinner("Checking the folder…"):
+            ok, msg = google.check_folder(secrets.google_service_account, settings["google_folder_id"])
+        (st.success if ok else st.error)(msg)
+
 h.heading("Connections", "5", "Set in the app's secrets, never here")
+email_value, email_sub, email_cls = run_status(settings.get(LAST_RUN))
 h.tiles([
     ("AI (Anthropic)", "Connected" if secrets.has_ai else "Not set", "ANTHROPIC_API_KEY",
      "up" if secrets.has_ai else "down"),
     ("Database", "Postgres" if secrets.database_url else "Local file", "DATABASE_URL",
      "up" if secrets.database_url else "muted"),
-    ("Google", "Connected" if secrets.has_google else "Not set", "service account for Sheets / Docs",
+    ("Google", "Key Added" if secrets.has_google else "Not set",
+     h.esc(sa_email) if secrets.has_google else "service account for Sheets / Docs",
      "up" if secrets.has_google else "muted"),
-    ("Email", "Connected" if secrets.resend_api_key else "Not set", "RESEND_API_KEY",
-     "up" if secrets.resend_api_key else "muted"),
+    ("Daily Email", email_value, email_sub, email_cls),
 ])

@@ -28,6 +28,6 @@ if not ai_ready():
     setup_screen()
     st.stop()
 
-sidebar([MAIN[3], SETTINGS], DEAL)
+sidebar([SETTINGS], DEAL)
 tab_capsule(MAIN)
 page.run()

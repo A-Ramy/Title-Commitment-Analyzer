@@ -1,8 +1,10 @@
-from datetime import date
+from datetime import UTC, date, datetime
 
 from titleagent.compare import carry_over
+from titleagent.config import _decode_service_account
 from titleagent.duedates import due_date
-from titleagent.emailer import summary_html
+from titleagent.emailer import run_record, run_status, summary_html
+from titleagent.exports.google import check_folder, folder_id_from
 from titleagent.grounding import found_on, verify
 from titleagent.models import ActionItem, Source
 from titleagent.pdf import PdfText
@@ -68,3 +70,55 @@ def test_daily_email_lists_blockers_and_due_items():
     assert "1 open blocker," in subject and "1 due soon" in subject
     assert "Mortgage payoff" in html and "Deed" in html
     assert "Cleared lien" not in html and "Later doc" not in html
+
+
+def test_folder_id_from_links_and_bare_ids():
+    assert folder_id_from("https://drive.google.com/drive/folders/0AbC-d_12?usp=sharing") == "0AbC-d_12"
+    assert folder_id_from("https://drive.google.com/drive/u/1/folders/1xYz") == "1xYz"
+    assert folder_id_from("https://drive.google.com/open?id=1xYz&authuser=0") == "1xYz"
+    assert folder_id_from("  1xYz ") == "1xYz"
+    assert folder_id_from("") == ""
+
+
+class FakeDrive:
+    def __init__(self, meta):
+        self.meta = meta
+
+    def files(self):
+        return self
+
+    def get(self, **_):
+        return self
+
+    def execute(self):
+        return self.meta
+
+
+def test_check_folder_needs_a_shared_drive_folder_it_can_write(monkeypatch):
+    from titleagent.exports import google
+
+    sa = {"client_email": "agent@proj.iam.gserviceaccount.com"}
+    folder = {"name": "Title Checklists", "mimeType": "application/vnd.google-apps.folder"}
+    cases = [({**folder, "driveId": "0A", "capabilities": {"canAddChildren": True}}, True, "Title Checklists"),
+             ({**folder, "capabilities": {"canAddChildren": True}}, False, "My Drive"),
+             ({**folder, "driveId": "0A", "capabilities": {"canAddChildren": False}}, False, "Content Manager"),
+             ({"name": "x.pdf", "mimeType": "application/pdf", "driveId": "0A"}, False, "not a folder")]
+    for meta, ok, words in cases:
+        monkeypatch.setattr(google, "_drive", lambda _sa, m=meta: FakeDrive(m))
+        got_ok, msg = check_folder(sa, "https://drive.google.com/drive/folders/0AbC")
+        assert got_ok is ok and words in msg
+    assert check_folder(sa, "")[0] is False
+
+
+def test_service_account_pasted_as_json():
+    assert _decode_service_account(None, None, '{"client_email": "a@b.iam.gserviceaccount.com"}') == {
+        "client_email": "a@b.iam.gserviceaccount.com"}
+    assert _decode_service_account(None, None, None) is None
+
+
+def test_daily_email_status_for_settings():
+    assert run_status(None)[0] == "No Run Yet"
+    sent = run_record("sent", "3 recipients", datetime(2026, 10, 27, 16, 50, tzinfo=UTC))
+    value, sub, cls = run_status(sent)
+    assert (value, cls) == ("Sending", "up") and "Oct 27, 12:50 PM ET" in sub and "3 recipients" in sub
+    assert run_status(run_record("failed", "Email service returned 403", datetime.now(UTC)))[2] == "down"

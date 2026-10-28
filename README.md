@@ -71,16 +71,30 @@ public. The app is **locked** until one of these is set in its secrets (template
 5. **Training set** – on the Training tab, upload each worked commitment with the closer's list. The 10 lessons
    learned from the first 8 examples are already built in.
 
-### Google Sheets / Docs exports
-1. Google Cloud console → enable the **Google Drive API** → create a service account → Keys → JSON.
-2. In Google Drive, create a **Shared Drive** (e.g. "Title Checklists") and add the service account's email as
-   **Content Manager**.
-3. Secrets: `GOOGLE_SERVICE_ACCOUNT_JSON_B64 = "<base64 -w0 key.json>"`; Settings → paste the folder ID.
+### Google Sheets / Docs exports (a Shared Drive on the totalchb.com Google Workspace)
+The app writes as a **service account** (a robot Google user), which has no Drive storage of its own, so exports go
+into a folder in a **Shared Drive**.
+1. **Google Cloud** (console.cloud.google.com, signed in with a totalchb.com account): create a project (e.g.
+   "Title Agent") → APIs & Services → Library → enable **Google Drive API** → IAM & Admin → Service Accounts → Create
+   (name `title-agent`, no roles) → open it → Keys → Add key → JSON. If key creation is blocked, a Workspace admin
+   turns off the organization policy *Disable service account key creation* for this project.
+2. **Shared Drive**: open the drive → Manage members → add the service account's email
+   (`title-agent@<project>.iam.gserviceaccount.com`) as **Content Manager**. If Drive refuses because it's outside
+   totalchb.com, a Workspace admin allows it (Admin console → Apps → Google Workspace → Drive and Docs → Sharing
+   settings, and the Shared Drive's own setting for people outside the organization).
+3. **Secrets** (Streamlit → App → Settings → Secrets): paste the key file between triple quotes:
+   ```toml
+   GOOGLE_SERVICE_ACCOUNT_JSON = '''
+   { ...the whole key file... }
+   '''
+   ```
+4. **App → Settings → Google Exports**: paste the folder's link, Save, click **Test Google Folder**.
 
 ### Daily email (from @totalchb.com)
 1. resend.com → add the domain `totalchb.com` → add the DNS records it shows (2–3 records, one time).
 2. Create an API key. In this GitHub repository: Settings → Secrets → Actions: `DATABASE_URL`, `RESEND_API_KEY`;
-   Variables: `APP_URL` (the app's link).
+   Variables: `APP_URL` (the app's link). The key stays in GitHub; Settings → Connections shows when the
+   email last went out.
 3. `.github/workflows/daily-email.yml` sends it every weekday at about 8:00 AM Eastern, all year (Run workflow to
    test it).
 

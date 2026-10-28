@@ -336,8 +336,8 @@ def story() -> list:
         ["Tabs at the top", "<b>Analyze</b>: upload a commitment. <b>Deals</b>: every deal reviewed. "
                             "<b>Training</b>: teach the agent (optional). <b>Knowledge</b>: what the agent knows."],
         ["Open Deals (sidebar)", "Your open deals with their open Closing Blockers count. Click one to jump to it."],
-        ["Knowledge (n)", "The number shows feedback waiting for an admin."],
-        ["Settings", "Team setup: admins, TCs, email recipients, due-date rules (admins only)."],
+        ["Knowledge (n)", "The number on the Knowledge tab shows feedback waiting for an admin."],
+        ["Settings (sidebar)", "Team setup: admins, TCs, email recipients, due-date rules (admins only)."],
         ["Light / Dark", "Switches the look. Your choice is remembered."],
         ["Signed in as / Sign Out", "Who you are in the app. Your name is recorded on what you change."],
         ["On a phone", "Same app, same link. Tap <b>»</b> at the top left for Open Deals, Settings and Sign Out. "
@@ -559,10 +559,12 @@ def story() -> list:
         ["Daily Email: Send from", "title-agent@totalchb.com (leave as is)."],
         ["Due Dates", "Days before closing for each kind of item (defaults: payoffs 10, curative 14, documents 5, "
                       "bring-down 5, closing 0)."],
-        ["Shared Drive folder ID", "For Google Sheets / Docs exports, once Google is connected."],
+        ["Shared Drive folder", "Paste the link of the totalchb.com Shared Drive folder for Google Sheets / Docs "
+                                "exports, Save, then click <b>Test Google Folder</b>."],
     ], [0.27, 0.73])]
     s += [shot("13-settings", "Settings. Click Save Settings when done; the Connections tiles below show what's "
-                              "connected.", 1.0, crop=(0.22, 0.0, 1.0, 1.0), max_h=4.2)]
+                              "connected and when the daily email last went out.", 1.0,
+               crop=(0.22, 0.0, 1.0, 1.0), max_h=4.2)]
     s += [box("Admins are recognized by the email typed at sign-in. Keep the team password to the team, and "
               "change it (in Streamlit → Settings → Secrets → APP_PASSWORD) when someone leaves. Changing it signs "
               "everyone out.", "warn")]

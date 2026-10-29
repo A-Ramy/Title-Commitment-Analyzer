@@ -4,13 +4,15 @@ Copies settings, lessons, documents (the PDFs go to Storage), deals, every revie
 feedback, training examples and scores, keeping every id, so links and history stay the same. Safe to run again:
 records are overwritten by id, nothing is deleted. Ends by comparing the counts on both sides.
 
-    DATABASE_URL=postgresql://...  FIREBASE_PROJECT_ID=...  [FIREBASE_STORAGE_BUCKET=...]
-    GOOGLE_APPLICATION_CREDENTIALS=key.json  uv run python scripts/copy_to_firestore.py [--dry-run]
+Runs from GitHub (Actions → Copy to Firestore → Run workflow) with the repository's secrets: DATABASE_URL,
+FIREBASE_PROJECT_ID, FIREBASE_SERVICE_ACCOUNT_JSON (and FIREBASE_STORAGE_BUCKET if not the default). The log shows
+counts only, never deal details.
+
+    uv run python scripts/copy_to_firestore.py [--dry-run]
 """
 
 from __future__ import annotations
 
-import os
 import sys
 from pathlib import Path
 
@@ -112,15 +114,18 @@ def _item_id(key: str) -> str:
 
 
 def main() -> int:
-    from titleagent.firestore_store import FirestoreStore
+    from titleagent.config import load_secrets
 
-    src = sql.Store(os.environ["DATABASE_URL"])
+    secrets = load_secrets()
+    if not secrets.database_url or not secrets.firebase_project:
+        print("Set DATABASE_URL and FIREBASE_PROJECT_ID (and FIREBASE_SERVICE_ACCOUNT_JSON) first.")
+        return 1
+    src = sql.Store(secrets.database_url)
     before = sql_counts(src)
     print("SQL database:", before)
     if "--dry-run" in sys.argv:
         return 0
-    project = os.environ["FIREBASE_PROJECT_ID"]
-    dst = FirestoreStore(project=project, bucket=os.environ.get("FIREBASE_STORAGE_BUCKET"))
+    dst = sql.open_store(secrets)  # Firestore, because FIREBASE_PROJECT_ID is set
     copy(src, dst)
     after = firestore_counts(dst)
     print("Firestore:   ", after)

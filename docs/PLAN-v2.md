@@ -10,6 +10,7 @@ Owner's goals (2026-10-29): **privacy, speed, our own domain.** Built the way th
 | Data | **Move to Firestore** (records) + Firebase Storage (PDFs, each review's full analysis); one-time copy, nothing lost |
 | Who can sign in | **@totalchb.com only** (Google accounts, verified) |
 | Address | **title.totalchb.com** |
+| Design | **The Universal Team Hub's design**, not the Streamlit app's (owner, 2026-10-30): same views and formats across the team's apps. The new page reuses the hub's stylesheet (TCHB tokens, Baloo 2 / Nunito Sans) and its components: header, cards, pills, buttons, menus, light / dark |
 
 ## Architecture
 ```
@@ -27,12 +28,14 @@ GitHub: code; pushes deploy the page (Vercel) and the engine (Cloud Run); Action
 1. **Firestore data layer + copy** *(built 2026-10-29)*: `titleagent/firestore_store.py` has the same methods as
    `storage.Store`; the same tests run on both (Firestore through the local emulator,
    `scripts/firestore_emulator.sh`). `scripts/copy_to_firestore.py` copies everything with the same ids and checks
-   the counts. Setting `FIREBASE_PROJECT_ID` switches today's app and the daily email to Firestore, so the data can
+   the counts; it runs from GitHub (Actions → **Copy to Firestore**) with the repository's secrets, and is re-run on
+   switch-over day so anything added meanwhile comes over. Until then the Streamlit app stays on Postgres. Setting `FIREBASE_PROJECT_ID` switches today's app and the daily email to Firestore, so the data can
    move before the new page is ready.
 2. **Engine service** on Cloud Run: sign-in check, read documents, run review (progress in Firestore), exports,
    feedback and lessons. Dockerfile; deploy from GitHub.
-3. **New page** on Vercel in the hub's style and the TCHB brand: Analyze, Deal, Deals, Training, Knowledge,
-   Settings; Firebase Google sign-in; Firestore and Storage security rules.
+3. **New page** on Vercel built from the Universal Team Hub's design (its stylesheet and components, so the
+   apps look and work alike): Analyze, Deal, Deals, Training, Knowledge, Settings; Firebase Google sign-in;
+   Firestore and Storage security rules.
 4. **Connections**: daily email from Firestore (done in phase 1), Google export script (unchanged), optional
    "Send blockers to the Team Hub" (separate projects: the engine writes with the hub's own service account).
 5. **Switch-over**: a week side by side, `APP_URL` → https://title.totalchb.com, guide refresh, then retire the
@@ -46,9 +49,10 @@ GitHub: code; pushes deploy the page (Vercel) and the engine (Cloud Run); Action
 3. **Firestore Database → Create** (production mode, location `nam5` or `us-east1`); **Storage → Get started**
    (same location).
 4. **Authentication → Sign-in method → Google** (for phase 3).
-5. **Project settings → Service accounts → Generate new private key** (for the copy, GitHub Actions and the
-   interim Streamlit app). If Google blocks key creation, a Workspace admin turns off the organization policy
-   *Disable service account key creation* for this project.
+5. **Project settings → Service accounts → Generate new private key**, pasted into GitHub (Settings → Secrets →
+   Actions) as `FIREBASE_SERVICE_ACCOUNT_JSON`, with `FIREBASE_PROJECT_ID`. Used by the copy and the daily email.
+   If Google blocks key creation, a Workspace admin turns off the organization policy *Disable service account key
+   creation* for this project.
 6. Domain: add `title.totalchb.com` in Vercel (phase 3) and one DNS record where totalchb.com's DNS is managed.
 
 ## Costs

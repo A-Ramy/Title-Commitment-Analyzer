@@ -2,7 +2,8 @@
 
 Streamlit app that reviews title commitments and lists everything needed to close. `docs/PLAN.md` holds the owner's
 decisions (section 0); keep this file in sync when a rule changes. **v2 is in progress** (`docs/PLAN-v2.md`): the
-same engine on Cloud Run, Firestore data, a new page on Vercel at title.totalchb.com.
+same engine on Cloud Run, Firestore data, a new page on Vercel at title.totalchb.com **in the Universal Team Hub's
+design** (RemyTCHB/Universal-Task-Tracker: its stylesheet and components), not this Streamlit app's.
 
 ## Non-negotiables
 - **Never leave a numbered item behind.** Every Schedule B-I and B-II number must get a disposition; the numbering

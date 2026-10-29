@@ -1,7 +1,7 @@
 # CLAUDE.md — Title Agent (Total Cash Home Buyers)
 
 Reviews title commitments and lists everything needed to close. Live at **title.totalchb.com** (since 2026-10-29):
-the page in `web/` (Vercel, **the Universal Team Hub's design**: RemyTCHB/Universal-Task-Tracker's stylesheet and
+the page in `web/` (Vercel, **the Universal Team Hub's design**: RemyTCHB/HUB's stylesheet and
 components), the engine in `engine/` + `titleagent/` (Cloud Run), data in Firebase (project `title-commitment-agent`).
 `docs/PLAN.md` holds the owner's decisions on the rules (section 0); `docs/PLAN-v2.md` how it runs. Keep this file in
 sync when a rule changes. (The first Streamlit version and its Neon database were retired on 2026-10-30.)

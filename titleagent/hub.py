@@ -1,4 +1,4 @@
-"""The Universal Team Hub connection (tasks.totalchb.com, RemyTCHB/Universal-Task-Tracker → api/title-agent).
+"""The Universal Team Hub connection (tasks.totalchb.com, RemyTCHB/HUB → api/title-agent).
 
 Only Closing Blockers go to the hub: one task per deal, "Title - <address>", in Monz's list, marked as added by
 "Title Commitment Agent". Each blocker is a subtask (title = the item, a note with the action and the source, the

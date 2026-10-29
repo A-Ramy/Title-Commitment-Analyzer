@@ -71,3 +71,18 @@ jobs:
             --min-instances 0 --max-instances 3 \
             --set-env-vars "^@^FIREBASE_PROJECT_ID=$PROJECT@ALLOWED_DOMAINS=totalchb.com@ALLOWED_ORIGINS=https://title.totalchb.com,http://localhost:5173@ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY@GOOGLE_EXPORT_URL=$GOOGLE_EXPORT_URL@GOOGLE_EXPORT_KEY=$GOOGLE_EXPORT_KEY"
           echo "Engine URL: $(gcloud run services describe "$SERVICE" --region "$REGION" --format='value(status.url)')"
+
+      - name: Smoke check (up, refuses anyone not signed in, browser rules)
+        if: steps.ready.outputs.go == 'yes'
+        run: |
+          URL=$(gcloud run services describe "$SERVICE" --region "$REGION" --format='value(status.url)')
+          check() { [ "$2" = "$3" ] && echo "ok   $1 ($2)" || { echo "FAIL $1: got $2, expected $3"; exit 1; }; }
+          check "health"            "$(curl -s -o /dev/null -w '%{http_code}' "$URL/healthz")" 200
+          check "no sign-in"        "$(curl -s -o /dev/null -w '%{http_code}' "$URL/v1/me")" 401
+          check "forged sign-in"    "$(curl -s -o /dev/null -w '%{http_code}' -H 'Authorization: Bearer forged' "$URL/v1/me")" 401
+          check "no API docs"       "$(curl -s -o /dev/null -w '%{http_code}' "$URL/docs")" 404
+          allow() { curl -s -D - -o /dev/null -X OPTIONS -H "Origin: $1" -H 'Access-Control-Request-Method: POST' \
+                      -H 'Access-Control-Request-Headers: authorization' "$URL/v1/read" \
+                    | grep -ci '^access-control-allow-origin' || true; }
+          check "title.totalchb.com may call it" "$(allow https://title.totalchb.com)" 1
+          check "other sites may not"            "$(allow https://example.com)" 0

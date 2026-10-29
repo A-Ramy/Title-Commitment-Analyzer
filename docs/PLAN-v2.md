@@ -48,7 +48,8 @@ GitHub: code; pushes deploy the page (Vercel) and the engine (Cloud Run); Action
    "Send blockers to the Team Hub" (separate projects: the engine writes with the hub's own service account).
 5. **Switch-over** *(done 2026-10-29: the team works in the new app; the 8 AM email reads Firestore and links to
    https://title.totalchb.com; the Streamlit app shows the "moved" banner. The final copy was skipped: the Streamlit
-   database had no new records since the first copy)*. The steps, for reference:
+   database had no new records since the first copy; the Streamlit app was deleted 2026-10-30 and the Neon
+   database is kept as a backup)*. The steps, for reference:
    1. Actions → **Copy to Firestore** → Run workflow (brings over everything added in the Streamlit app since).
    2. GitHub → Settings → Secrets and variables → Actions → Variables: `USE_FIRESTORE` = `true`, and
       `APP_URL` = `https://title.totalchb.com` (the 8 AM email then reads Firestore and links to the new page).

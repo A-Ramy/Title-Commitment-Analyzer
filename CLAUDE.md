@@ -4,7 +4,8 @@ Streamlit app that reviews title commitments and lists everything needed to clos
 decisions (section 0); keep this file in sync when a rule changes. **v2 is live** (`docs/PLAN-v2.md`, switched
 2026-10-29): the same engine on Cloud Run (`engine/`), Firestore data, the page in `web/` on Vercel at
 title.totalchb.com **in the Universal Team Hub's design** (RemyTCHB/Universal-Task-Tracker: its stylesheet and
-components). The Streamlit app is read-only history with a "moved" banner; new work goes into `web/` and `engine/`.
+components). The Streamlit app was deleted (2026-10-30); its code (`app.py`, `ui/`, `views/`) is unused, and the old Neon
+Postgres database is kept as a backup only. New work goes into `web/` and `engine/`.
 
 ## Non-negotiables
 - **Never leave a numbered item behind.** Every Schedule B-I and B-II number must get a disposition; the numbering

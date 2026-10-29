@@ -15,39 +15,41 @@ FILLS = {"Closing Blocker": "FBE3E7", "Before Closing": "FFF1E0", "Review / FYI"
 WIDTHS = [5, 16, 22, 44, 60, 8, 22, 12, 12, 11, 22, 30]
 
 
-def to_csv(checklist: Checklist, include_fyi: bool = True) -> bytes:
+def to_csv(checklist: Checklist, include: str = "all") -> bytes:
     buf = io.StringIO()
     w = csv.writer(buf)
     w.writerow([checklist.title])
-    for k, v in checklist.meta:
+    for k, v in checklist.meta_for(include):
         w.writerow([k, v])
     if checklist.coverage_line:
         w.writerow(["Coverage", checklist.coverage_line])
-    w.writerow(["Generated", checklist.generated.strftime("%Y-%m-%d %H:%M")])
+    w.writerow(["Generated", checklist.generated_text])
     w.writerow([])
     w.writerow(COLUMNS)
-    w.writerows(rows(checklist, include_fyi))
+    w.writerows(rows(checklist, include) or [["", checklist.empty_note(include)]])
     return buf.getvalue().encode("utf-8-sig")  # BOM so Excel opens it as UTF-8
 
 
-def to_xlsx(checklist: Checklist, include_fyi: bool = True) -> bytes:
+def to_xlsx(checklist: Checklist, include: str = "all") -> bytes:
     wb = Workbook()
     ws = wb.active
-    ws.title = "Title Checklist"
+    ws.title = checklist.heading(include)
     ws.append([checklist.title])
     ws["A1"].font = Font(bold=True, size=14, color="4D458A")
-    for k, v in checklist.meta:
+    for k, v in checklist.meta_for(include):
         ws.append([k, v])
     if checklist.coverage_line:
         ws.append(["Coverage", checklist.coverage_line])
-    ws.append(["Generated", checklist.generated.strftime("%Y-%m-%d %H:%M")])
+    ws.append(["Generated", checklist.generated_text])
     ws.append([])
     header_row = ws.max_row + 1
     ws.append(COLUMNS)
     for cell in ws[header_row]:
         cell.font = Font(bold=True, color="FFFFFF")
         cell.fill = PatternFill("solid", fgColor="4D458A")
-    for r in rows(checklist, include_fyi):
+    if not rows(checklist, include):
+        ws.append(["", checklist.empty_note(include)])
+    for r in rows(checklist, include):
         ws.append(r)
         fill = FILLS.get(r[1])
         if fill:

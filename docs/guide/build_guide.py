@@ -512,13 +512,14 @@ def story() -> list:
                  "Send the checklist to the title company, the seller or the buyer, or keep a copy with the file.")
     s += [steps([
         "On the deal page, click <b>Export List</b>.",
-        "Leave <b>Include Review / FYI items</b> on to send everything, or turn it off to send only items that "
-        "need action.",
+        "Under <b>Include</b>, pick <b>Everything</b>, <b>Action items only</b> (leaves out Review / FYI) or "
+        "<b>Closing Blockers only</b>. The number shows how many items each one has. A partial export says what "
+        "was left out, and a blockers-only file is titled <b>Closing Blockers</b>.",
         "Click the format: <b>CSV</b>, <b>Excel</b>, <b>PDF</b> or <b>Word</b>. The file downloads with the "
         "property address in its name.",
         "Or click <b>Google Sheets</b> or <b>Google Docs</b>: the file is created in the team's Google Drive "
         "folder and an <b>Open it</b> link appears. Everyone with access to that folder can see it.",
-    ]), shot("09-export", "The export menu.", 0.95, crop=(0.22, 0.0, 0.75, 0.62))]
+    ]), shot("09-export", "The export menu, set to Closing Blockers only.", 0.95, crop=(0.22, 0.0, 0.75, 0.66))]
     s += [box("Exports contain names, addresses and loan numbers. Send them only to people on the deal.", "warn")]
 
     # ---- 11
@@ -642,7 +643,8 @@ def story() -> list:
                           "statuses and notes."),
         ("Something's missing", "Deal → Report Missing Item → fill it in → Send Feedback."),
         ("Something's wrong", "Deal → Feedback on an item → Wrong Info / Not Needed → set status to Waived."),
-        ("Send the list", "Deal → Export List → PDF / Word / Excel / CSV, or Google Sheets / Docs."),
+        ("Send the list", "Deal → Export List → Include: Everything / Action items / Closing Blockers only → "
+                          "PDF / Word / Excel / CSV, or Google Sheets / Docs."),
         ("Deal closed", "Deal → Documents and review history → Mark Deal Closed."),
     ]
     s.append(table(["I want to…", "Do this"], [[a, b] for a, b in ref], [0.25, 0.75]))

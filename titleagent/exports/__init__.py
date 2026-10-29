@@ -4,8 +4,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from titleagent.models import PRIORITY_LABEL, ActionItem
+
+# What an export includes (Export List → Include). Every format takes the same choice.
+INCLUDE = {"all": "Everything", "action": "Action items only (no Review / FYI)", "blockers": "Closing Blockers only"}
+_PRIORITIES = {"all": ("blocker", "before", "fyi"), "action": ("blocker", "before"), "blockers": ("blocker",)}
 
 COLUMNS = ["#", "Priority", "Category", "Item", "Action Needed", "Owner", "Provided By", "Amount", "Due", "Status",
            "Source", "Notes"]
@@ -17,16 +22,37 @@ class Checklist:
     meta: list[tuple[str, str]]  # header block, in order
     items: list[ActionItem]
     coverage_line: str = ""
-    generated: datetime = field(default_factory=datetime.now)
+    generated: datetime = field(default_factory=lambda: datetime.now(ZoneInfo("America/New_York")))  # the team's time
 
-    def visible(self, include_fyi: bool) -> list[ActionItem]:
-        return [i for i in self.items if i.change != "removed" and (include_fyi or i.priority != "fyi")]
+    @property
+    def generated_text(self) -> str:
+        return self.generated.strftime("%b %d, %Y %I:%M %p") + (" ET" if self.generated.tzinfo else "")
 
-    def filename(self, ext: str) -> str:
+    def visible(self, include: str = "all") -> list[ActionItem]:
+        keep = _PRIORITIES[include]
+        return [i for i in self.items if i.change != "removed" and i.priority in keep]
+
+    def heading(self, include: str = "all") -> str:
+        """The document's name: a blockers-only export must not pass for the full list."""
+        return "Closing Blockers" if include == "blockers" else "Title Checklist"
+
+    def empty_note(self, include: str = "all") -> str:
+        """Shown instead of a table when the export has no items (e.g. blockers only on a clean title)."""
+        return "No Closing Blockers on this deal." if include == "blockers" else "No items on this list."
+
+    def meta_for(self, include: str = "all") -> list[tuple[str, str]]:
+        """The header block, plus a line saying what was left out when the export isn't the whole list."""
+        left_out = {"action": "Review / FYI items left out",
+                    "blockers": "Before Closing and Review / FYI items left out"}
+        if include not in left_out:
+            return list(self.meta)
+        return [*self.meta, ("Includes", f"{INCLUDE[include]}: {left_out[include]}")]
+
+    def filename(self, ext: str, include: str = "all") -> str:
         import re
 
         base = re.sub(r"[^A-Za-z0-9]+", "_", self.title).strip("_")[:60] or "Title"
-        return f"{base}_Title_Checklist.{ext}"
+        return f"{base}_{self.heading(include).replace(' ', '_')}.{ext}"
 
 
 def money(v: float | None) -> str:
@@ -37,9 +63,9 @@ def source_text(item: ActionItem) -> str:
     return "; ".join(f"{s.ref}{f' p.{s.page}' if s.page else ''}" for s in item.sources)
 
 
-def rows(checklist: Checklist, include_fyi: bool) -> list[list[str]]:
+def rows(checklist: Checklist, include: str = "all") -> list[list[str]]:
     out = []
-    for n, i in enumerate(checklist.visible(include_fyi), 1):
+    for n, i in enumerate(checklist.visible(include), 1):
         out.append([str(n), PRIORITY_LABEL.get(i.priority, i.priority), i.category, i.title, i.action, i.owner,
                     i.provided_by, money(i.amount), i.due_date or "", i.status, source_text(i), i.notes])
     return out

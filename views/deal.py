@@ -10,7 +10,7 @@ import pandas as pd
 import streamlit as st
 
 from titleagent import duedates, pipeline
-from titleagent.exports import document, google, tabular
+from titleagent.exports import INCLUDE, document, google, tabular
 from titleagent.models import DONE_STATUSES, PRIORITY_LABEL, STATUSES, ActionItem, Coverage, StructureOut
 from ui import html as h
 from ui.runs import checklist_for, review_step
@@ -105,14 +105,16 @@ secrets = get_secrets()
 settings = get_settings()
 c1, c2, c3, c4 = st.columns([1.2, 1.2, 1, 1])
 with c1.popover("Export List", icon=":material/download:", width="stretch"):
-    include_fyi = st.toggle("Include Review / FYI items", value=True)
-    st.download_button("CSV", tabular.to_csv(checklist, include_fyi), checklist.filename("csv"), "text/csv",
+    counts = {k: len(checklist.visible(k)) for k in INCLUDE}
+    include = st.radio("Include", list(INCLUDE), format_func=lambda k: f"{INCLUDE[k]} ({counts[k]})",
+                       key=f"export_include_{deal_id}")
+    st.download_button("CSV", tabular.to_csv(checklist, include), checklist.filename("csv", include), "text/csv",
                        width="stretch")
-    st.download_button("Excel", tabular.to_xlsx(checklist, include_fyi), checklist.filename("xlsx"),
+    st.download_button("Excel", tabular.to_xlsx(checklist, include), checklist.filename("xlsx", include),
                        google.XLSX, width="stretch")
-    st.download_button("PDF", document.to_pdf(checklist, include_fyi), checklist.filename("pdf"),
+    st.download_button("PDF", document.to_pdf(checklist, include), checklist.filename("pdf", include),
                        "application/pdf", width="stretch")
-    st.download_button("Word", document.to_docx(checklist, include_fyi), checklist.filename("docx"),
+    st.download_button("Word", document.to_docx(checklist, include), checklist.filename("docx", include),
                        google.DOCX, width="stretch")
     st.divider()
     if not secrets.has_google:
@@ -120,10 +122,10 @@ with c1.popover("Export List", icon=":material/download:", width="stretch"):
     for kind, label in (("sheet", "Google Sheets"), ("doc", "Google Docs")):
         if st.button(label, width="stretch", disabled=not secrets.has_google, key=f"g_{kind}"):
             try:
-                data = (tabular.to_xlsx(checklist, include_fyi) if kind == "sheet"
-                        else document.to_docx(checklist, include_fyi))
+                data = (tabular.to_xlsx(checklist, include) if kind == "sheet"
+                        else document.to_docx(checklist, include))
                 link = google.export(secrets, settings.get("google_folder_id", ""),
-                                     f"{checklist.title} · Title Checklist", data, kind)
+                                     f"{checklist.title} · {checklist.heading(include)}", data, kind)
                 st.success(f"Created. [Open it]({link})")
             except google.GoogleExportError as exc:
                 st.error(str(exc))

@@ -14,15 +14,15 @@ INDIGO, RED, MUTED = "#4D458A", "#BD2239", "#767388"
 GROUP_COLOR = {"blocker": RED, "before": "#B45309", "fyi": INDIGO}
 
 
-def _groups(checklist: Checklist, include_fyi: bool):
-    items = checklist.visible(include_fyi)
+def _groups(checklist: Checklist, include: str):
+    items = checklist.visible(include)
     for p in ("blocker", "before", "fyi"):
         group = [i for i in items if i.priority == p]
         if group:
             yield p, group
 
 
-def to_pdf(checklist: Checklist, include_fyi: bool = True) -> bytes:
+def to_pdf(checklist: Checklist, include: str = "all") -> bytes:
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import landscape, letter
     from reportlab.lib.styles import ParagraphStyle
@@ -32,7 +32,7 @@ def to_pdf(checklist: Checklist, include_fyi: bool = True) -> bytes:
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=landscape(letter), leftMargin=0.5 * inch, rightMargin=0.5 * inch,
                             topMargin=0.45 * inch, bottomMargin=0.45 * inch,
-                            title=f"{checklist.title} - Title Checklist")
+                            title=f"{checklist.title} - {checklist.heading(include)}")
     body = ParagraphStyle("b", fontName="Helvetica", fontSize=8.5, leading=10.5)
     small = ParagraphStyle("s", parent=body, fontSize=7.5, leading=9, textColor=colors.HexColor(MUTED))
     bold = ParagraphStyle("bb", parent=body, fontName="Helvetica-Bold")
@@ -42,10 +42,10 @@ def to_pdf(checklist: Checklist, include_fyi: bool = True) -> bytes:
     if LOGO.exists():
         story.append(Image(str(LOGO), width=1.9 * inch, height=1.9 * inch * 274 / 900, hAlign="LEFT"))
         story.append(Spacer(1, 4))
-    story.append(Paragraph(f"Title Checklist: {escape(checklist.title)}", h1))
+    story.append(Paragraph(f"{checklist.heading(include)}: {escape(checklist.title)}", h1))
     story.append(Spacer(1, 6))
-    generated = checklist.generated.strftime("%b %d, %Y %I:%M %p")
-    meta = [*checklist.meta, ("Coverage", checklist.coverage_line), ("Generated", generated)]
+    meta = [*checklist.meta_for(include), ("Coverage", checklist.coverage_line),
+            ("Generated", checklist.generated_text)]
     meta = [(k, v) for k, v in meta if v]
     half = (len(meta) + 1) // 2
     left, right = meta[:half], meta[half:]
@@ -59,8 +59,10 @@ def to_pdf(checklist: Checklist, include_fyi: bool = True) -> bytes:
     t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("BOTTOMPADDING", (0, 0), (-1, -1), 2)]))
     story += [t, Spacer(1, 10)]
 
-    widths = [0.3, 2.6, 3.4, 1.35, 0.8, 0.8, 0.75]
-    for p, group in _groups(checklist, include_fyi):
+    widths = [0.3, 2.6, 3.25, 1.35, 0.8, 0.95, 0.75]
+    if not checklist.visible(include):
+        story.append(Paragraph(escape(checklist.empty_note(include)), bold))
+    for p, group in _groups(checklist, include):
         color = colors.HexColor(GROUP_COLOR[p])
         story.append(Paragraph(f"{PRIORITY_LABEL[p]} ({len(group)})",
                                ParagraphStyle("g", parent=bold, fontSize=11, leading=14, textColor=color)))
@@ -109,7 +111,7 @@ def _dejavu() -> bool:
     return False
 
 
-def to_docx(checklist: Checklist, include_fyi: bool = True) -> bytes:
+def to_docx(checklist: Checklist, include: str = "all") -> bytes:
     from docx import Document
     from docx.enum.section import WD_ORIENT
     from docx.shared import Inches, Pt, RGBColor
@@ -126,18 +128,20 @@ def to_docx(checklist: Checklist, include_fyi: bool = True) -> bytes:
 
     if LOGO.exists():
         d.add_picture(str(LOGO), width=Inches(2.0))
-    h = d.add_heading(f"Title Checklist: {checklist.title}", level=1)
+    h = d.add_heading(f"{checklist.heading(include)}: {checklist.title}", level=1)
     for r in h.runs:
         r.font.color.rgb = RGBColor(0x4D, 0x45, 0x8A)
-    meta = [*checklist.meta, ("Coverage", checklist.coverage_line),
-            ("Generated", checklist.generated.strftime("%b %d, %Y %I:%M %p"))]
+    meta = [*checklist.meta_for(include), ("Coverage", checklist.coverage_line),
+            ("Generated", checklist.generated_text)]
     t = d.add_table(rows=0, cols=2)
     for k, v in meta:
         if v:
             cells = t.add_row().cells
             cells[0].text, cells[1].text = k, v
             cells[0].paragraphs[0].runs[0].bold = True
-    for p, group in _groups(checklist, include_fyi):
+    if not checklist.visible(include):
+        d.add_paragraph().add_run(checklist.empty_note(include)).bold = True
+    for p, group in _groups(checklist, include):
         hh = d.add_heading(f"{PRIORITY_LABEL[p]} ({len(group)})", level=2)
         color = GROUP_COLOR[p].lstrip("#")
         for r in hh.runs:

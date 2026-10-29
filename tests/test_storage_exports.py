@@ -54,7 +54,7 @@ def test_every_export_format():
     a = analysis()
     cl = Checklist(title="1427 Maple Ave, Columbus, OH", meta=[("Deal type", "Double Close")], items=a.items,
                    coverage_line="B-I 9/9")
-    rows = list(csv.reader(io.StringIO(tabular.to_csv(cl, include_fyi=False).decode("utf-8-sig"))))
+    rows = list(csv.reader(io.StringIO(tabular.to_csv(cl, "action").decode("utf-8-sig"))))
     header = rows.index(next(r for r in rows if r and r[0] == "#"))
     body = rows[header + 1:]
     assert len(body) == len([i for i in a.items if i.priority != "fyi"])
@@ -64,3 +64,27 @@ def test_every_export_format():
     assert document.to_pdf(cl).startswith(b"%PDF")
     assert document.to_docx(cl)[:2] == b"PK"
     assert cl.filename("pdf") == "1427_Maple_Ave_Columbus_OH_Title_Checklist.pdf"
+
+
+def test_closing_blockers_only_export():
+    a = analysis()
+    cl = Checklist(title="1427 Maple Ave, Columbus, OH", meta=[("Deal type", "Double Close")], items=a.items)
+    blockers = [i for i in a.items if i.priority == "blocker"]
+    assert blockers and len(cl.visible("blockers")) == len(blockers) < len(cl.visible("all"))
+    rows = list(csv.reader(io.StringIO(tabular.to_csv(cl, "blockers").decode("utf-8-sig"))))
+    assert ["Includes", "Closing Blockers only: Before Closing and Review / FYI items left out"] in rows
+    body = rows[rows.index(next(r for r in rows if r and r[0] == "#")) + 1:]
+    assert {r[1] for r in body} == {"Closing Blocker"}
+    assert cl.filename("pdf", "blockers") == "1427_Maple_Ave_Columbus_OH_Closing_Blockers.pdf"
+    assert load_workbook(io.BytesIO(tabular.to_xlsx(cl, "blockers"))).active.title == "Closing Blockers"
+    from pypdf import PdfReader
+
+    text = PdfReader(io.BytesIO(document.to_pdf(cl, "blockers"))).pages[0].extract_text()
+    assert "Closing Blockers: 1427 Maple Ave" in text and "Before Closing (" not in text
+    assert document.to_docx(cl, "blockers")[:2] == b"PK"
+    # a clean title: the export says so instead of an empty table
+    clean = Checklist(title="Clean St", meta=[], items=[i for i in a.items if i.priority != "blocker"])
+    assert "No Closing Blockers on this deal." in PdfReader(io.BytesIO(document.to_pdf(clean, "blockers"))).pages[0] \
+        .extract_text()
+    assert ["", "No Closing Blockers on this deal."] in list(csv.reader(io.StringIO(
+        tabular.to_csv(clean, "blockers").decode("utf-8-sig"))))

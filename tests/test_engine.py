@@ -48,6 +48,11 @@ def test_only_verified_company_accounts_get_in(setup):
     assert client.get("/v1/me", headers=h("outsider")).status_code == 403
     assert client.get("/v1/me", headers=h("unverified")).status_code == 403
     assert client.get("/v1/me", headers=h("tc")).json() == {"email": "pat.tc@totalchb.com", "admin": True}
+    ref = client.get("/v1/reference", headers=h("tc")).json()
+    assert "Double Close" in ref["deal_types"] and sum(len(g["checks"]) for g in ref["checklist"]) == 34
+    assert ref["connections"]["google"] is None and "function doPost" in ref["google_script"]
+    assert ref["settings_defaults"]["due_offsets"]["payoff"] == 10
+    assert client.get("/v1/reference").status_code == 401
 
 
 def test_a_full_deal_through_the_engine(setup):
@@ -125,7 +130,8 @@ def test_admin_actions(setup):
                       json={"google_folder_id": "https://drive.google.com/drive/folders/1AbC?usp=sharing",
                             "due_offsets": {"payoff": "12", "junk": 3}}).status_code == 200
     s = store.get_settings()
-    assert s["google_folder_id"] == "1AbC" and s["due_offsets"] == {"payoff": 12}
+    assert s["google_folder_id"] == "1AbC"
+    assert s["due_offsets"] == {"payoff": 12, "curative": 14, "documents": 5, "bring_down": 5, "closing": 0}
 
     fid = store.add_feedback("missing", "Water bill", by="pat.tc@totalchb.com")
     assert client.post(f"/v1/feedback/{fid}/resolve", headers=h("owner"),

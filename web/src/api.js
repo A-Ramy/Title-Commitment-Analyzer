@@ -30,6 +30,7 @@ async function call(method, path, body, { raw = false } = {}) {
 export const jobId = () => 'job-' + crypto.randomUUID().replace(/-/g, '').slice(0, 24);
 
 export const api = {
+  call,
   me: () => call('GET', '/v1/me'),
   read: body => call('POST', '/v1/read', body),
   review: body => call('POST', '/v1/review', body),

@@ -10,7 +10,10 @@ import { useTheme } from './theme.js';
 import { Icon, Menu, Seg, Spinner, ToastHost, initials, useMenu } from './ui.jsx';
 import { Deal } from './pages/Deal.jsx';
 import { Deals } from './pages/Deals.jsx';
-import { Soon } from './pages/Soon.jsx';
+import { Analyze } from './pages/Analyze.jsx';
+import { Knowledge } from './pages/Knowledge.jsx';
+import { Settings } from './pages/Settings.jsx';
+import { Training } from './pages/Training.jsx';
 
 const TABS = [
   { value: 'deals', label: 'Deals' }, { value: 'analyze', label: 'Analyze' },
@@ -83,7 +86,7 @@ function App() {
       if (e?.code !== 'auth/popup-closed-by-user' && e?.code !== 'auth/cancelled-popup-request') setError(e.message);
     } finally { setBusy(false); }
   };
-  const [page, arg] = route;
+  const [page, arg, sub] = route;
   return (
     <ToastHost>
       <canvas ref={bg} class="aurora" aria-hidden="true" />
@@ -92,8 +95,11 @@ function App() {
         {user === undefined ? <p class="lede" style="text-align:center"><Spinner /></p>
           : !user ? <Gate error={error} busy={busy} onSignIn={doSignIn} />
             : page === 'deal' ? <Deal id={arg} me={me} />
-              : page === 'deals' ? <Deals />
-                : <Soon page={page} />}
+              : page === 'analyze' ? <Analyze arg={arg} sub={sub} />
+                : page === 'training' ? <Training />
+                  : page === 'knowledge' ? <Knowledge me={me} />
+                    : page === 'settings' ? <Settings me={me} />
+                      : <Deals />}
       </main>
     </ToastHost>
   );

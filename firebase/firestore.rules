@@ -22,9 +22,10 @@ service cloud.firestore {
     match /examples/{id} { allow read: if team(); }
     match /scores/{id} { allow read: if team(); }
     match /settings/{key} { allow read: if team(); }
-    // A review's progress: the person who started it watches it.
-    match /jobs/{jobId} { allow read: if team() && resource.data.by == request.auth.token.email.lower(); }
-    match /drafts/{draftId} { allow read: if team() && resource.data.by == request.auth.token.email.lower(); }
+    // A review's progress: the person who started it watches it (from just before the engine creates it).
+    function own() { return resource == null || resource.data.by == request.auth.token.email.lower(); }
+    match /jobs/{jobId} { allow read: if team() && own(); }
+    match /drafts/{draftId} { allow read: if team() && own(); }
     // Everything else (meta/counters, …) is the engine's alone.
   }
 }

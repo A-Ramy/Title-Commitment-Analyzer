@@ -28,7 +28,7 @@ from pydantic import BaseModel, Field
 
 from titleagent import flows
 from titleagent.access import email_allowed
-from titleagent.config import DEFAULT_SETTINGS, Secrets, demo_mode, load_secrets
+from titleagent.config import DEAL_TYPES, DEFAULT_SETTINGS, Secrets, demo_mode, load_secrets
 from titleagent.exports import INCLUDE, checklist_for, google
 from titleagent.llm import LLM, AgentError, ClaudeLLM
 from titleagent.models import STATUSES
@@ -243,6 +243,26 @@ def create_app(engine: Engine | None = None) -> FastAPI:
     def me(u: User = Depends(user)):
         return {"email": u.email, "admin": u.admin}
 
+    @app.get("/v1/reference")
+    def reference(u: User = Depends(user), e: Engine = Depends(eng)):
+        """What the page needs from the Python side: deal types, the professional checklist, connections."""
+        from titleagent import checklist
+
+        s = e.secrets
+        return {
+            "deal_types": DEAL_TYPES,
+            "checklist": [{"group": g, "checks": [{"id": c.id, "name": c.name, "look_for": c.look_for,
+                                                    "deal_types": [] if c.deal_types == checklist.ALL
+                                                    else list(c.deal_types)}
+                                                   for c in checklist.CHECKS if c.group == g]}
+                          for g in checklist.GROUPS],
+            "connections": {"ai": s.has_ai or demo_mode(),
+                            "google": "script" if s.google_export_url and s.google_export_key
+                            else "service_account" if s.google_service_account else None},
+            "google_script": google.SCRIPT,
+            "settings_defaults": {k: v for k, v in DEFAULT_SETTINGS.items() if k != "our_entities"},
+        }
+
     @app.post("/v1/read")
     def read(body: ReadIn, u: User = Depends(user), e: Engine = Depends(eng)):
         commitment = upload(e, u, body.commitment_path)
@@ -383,8 +403,9 @@ def create_app(engine: Engine | None = None) -> FastAPI:
         for key, value in body.items():
             if key == "google_folder_id":
                 value = google.folder_id_from(str(value or ""))
-            if key == "due_offsets":
-                value = {k: int(v) for k, v in dict(value).items() if k in DEFAULT_SETTINGS["due_offsets"]}
+            if key == "due_offsets":  # every kind keeps a value: missing ones fall back to the defaults
+                value = {**DEFAULT_SETTINGS["due_offsets"],
+                         **{k: int(v) for k, v in dict(value).items() if k in DEFAULT_SETTINGS["due_offsets"]}}
             e.store.set_setting(key, value, by=u.email)
         return {"ok": True}
 

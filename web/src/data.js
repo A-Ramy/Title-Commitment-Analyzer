@@ -3,6 +3,7 @@
 import { collection, doc, limit, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { getBytes, ref } from 'firebase/storage';
 import { useEffect, useState } from 'preact/hooks';
+import { api } from './api.js';
 import { db, storage } from './firebase.js';
 
 export const PRIORITY = { blocker: 'Closing Blocker', before: 'Before Closing', fyi: 'Review / FYI' };
@@ -67,9 +68,26 @@ export function useLatestRun(dealId) {
   return { run, analysis, loading: runs === undefined };
 }
 
+// Saved settings over the engine's defaults (Python DEFAULT_SETTINGS), exactly as the engine sees them.
 export function useSettings() {
   const { data } = useLive(() => collection(db, 'settings'), []);
-  return data ? Object.fromEntries(data.map(d => [d._id, d.value])) : null;
+  const ref = useReference();
+  if (!data || !ref) return null;
+  const saved = Object.fromEntries(data.map(d => [d._id, d.value]));
+  return { ...ref.settings_defaults, ...saved,
+    due_offsets: { ...ref.settings_defaults.due_offsets, ...(saved.due_offsets || {}) } };
 }
 
 export const useJob = id => useLive(() => (id ? doc(db, 'jobs', id) : null), [id]).data;
+
+// Deal types, the professional checklist and connections, from the engine (once per page load).
+let referenceCache = null;
+export function useReference() {
+  const [ref, setRef] = useState(referenceCache);
+  useEffect(() => {
+    if (referenceCache) return;
+    api.call('GET', '/v1/reference')
+      .then(r => { referenceCache = r; setRef(r); }).catch(() => {});
+  }, []);
+  return ref;
+}

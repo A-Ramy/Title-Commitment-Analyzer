@@ -105,4 +105,10 @@ function App() {
   );
 }
 
+// Old-style links (the Streamlit app's /deal?id=3, e.g. from an earlier daily email) open the same deal here.
+const legacy = new URLSearchParams(location.search).get('id');
+if (location.pathname.replace(/\/$/, '') === '/deal' && /^\d+$/.test(legacy || '')) {
+  history.replaceState(null, '', `/#/deal/${legacy}`);
+}
+
 render(<App />, document.getElementById('app'));

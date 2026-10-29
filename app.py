@@ -8,11 +8,15 @@ import streamlit as st
 from ui.auth import gate
 from ui.brand import LOGO_MARK, inject
 from ui.layout import setup_screen, sidebar, tab_capsule
-from ui.state import ai_ready
+from ui.state import ai_ready, get_secrets
 
 st.set_page_config(page_title="Title Agent · Total Cash Home Buyers", page_icon=str(LOGO_MARK), layout="wide")
 inject()
 gate()  # public URL (one private app per Streamlit account): nothing below runs until the person is allowed in
+
+if moved_to := get_secrets().moved_to_url:  # switch-over to v2: everyone works in the new app from now on
+    st.warning(f"The Title Agent has moved to **[{moved_to.removeprefix('https://')}]({moved_to})**. This app is "
+               "read-only history now: make changes in the new one.", icon=":material/open_in_new:")
 
 DEAL = st.Page("views/deal.py", title="Deal", icon=":material/fact_check:", url_path="deal")
 MAIN = [

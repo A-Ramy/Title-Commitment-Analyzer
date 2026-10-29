@@ -208,3 +208,12 @@ def test_send_hands_resend_the_delivery_time(monkeypatch):
     send("re_x", "title-agent@totalchb.com", ["a@totalchb.com"], "s", "<p>h</p>", at)
     send("re_x", "title-agent@totalchb.com", ["a@totalchb.com"], "s", "<p>h</p>")
     assert bodies[0]["scheduled_at"] == "2026-10-29T08:00:00-04:00" and "scheduled_at" not in bodies[1]
+
+
+def test_email_links_follow_the_app():
+    deals = [{"id": 7, "address": "1 Sample St", "deal_type": "Double Close", "closing_date": None, "tc": "Pat"}]
+    items = {7: [item("Payoff", key="a")]}
+    _, old = summary_html(deals, items, date(2026, 10, 25), "https://old.streamlit.app")
+    _, new = summary_html(deals, items, date(2026, 10, 25), "https://title.totalchb.com/", hash_links=True)
+    assert 'href="https://old.streamlit.app/deal?id=7"' in old
+    assert 'href="https://title.totalchb.com/#/deal/7"' in new

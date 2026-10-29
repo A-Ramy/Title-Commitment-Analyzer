@@ -46,8 +46,12 @@ GitHub: code; pushes deploy the page (Vercel) and the engine (Cloud Run); Action
    Firestore and Storage security rules.
 4. **Connections**: daily email from Firestore (done in phase 1), Google export script (unchanged), optional
    "Send blockers to the Team Hub" (separate projects: the engine writes with the hub's own service account).
-5. **Switch-over**: a week side by side, `APP_URL` → https://title.totalchb.com, guide refresh, then retire the
-   Streamlit app and the Postgres database (after a backup).
+5. **Switch-over** (one day, not side by side: the two apps keep separate data until then):
+   1. Actions → **Copy to Firestore** → Run workflow (brings over everything added in the Streamlit app since).
+   2. GitHub → Settings → Secrets and variables → Actions → Variables: `USE_FIRESTORE` = `true`, and
+      `APP_URL` = `https://title.totalchb.com` (the 8 AM email then reads Firestore and links to the new page).
+   3. Streamlit secrets: `MOVED_TO_URL = "https://title.totalchb.com"` (a banner sends everyone to the new app).
+   4. Tell the team. Later: guide refresh, then retire the Streamlit app and the Postgres database after a backup.
 
 ## Owner setup (one time, walked through step by step)
 1. console.firebase.google.com, signed in as the owner's @totalchb.com account → **Add project** "TCHB Title Agent"

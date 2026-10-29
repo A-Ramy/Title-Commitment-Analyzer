@@ -59,6 +59,7 @@ class Secrets:
     firebase_bucket: str | None = None
     firebase_credentials: dict | None = None
     # Google exports through the Apps Script web app (titleagent/exports/google_export.gs): the easy setup
+    moved_to_url: str | None = None  # v2 switch-over: today's app shows a banner pointing here
     google_export_url: str | None = None
     google_export_key: str | None = None
     # Who may open the app (see ui/auth.py). Google sign-in when the [auth] section is set, else the team password.
@@ -145,6 +146,7 @@ def load_secrets() -> Secrets:
         firebase_bucket=get("FIREBASE_STORAGE_BUCKET"),
         firebase_credentials=_firebase_credentials(get("FIREBASE_SERVICE_ACCOUNT_JSON")),
         google_export_url=get("GOOGLE_EXPORT_URL"),
+        moved_to_url=get("MOVED_TO_URL"),
         google_export_key=get("GOOGLE_EXPORT_KEY"),
     )
 

@@ -32,7 +32,7 @@ def main() -> int:
     now = datetime.now(UTC)
     day = now.astimezone(EASTERN).date()
     subject, html = summary_html(store.list_deals(status="open"), store.open_items_by_deal(), day,
-                                 os.environ.get("APP_URL", ""))
+                                 os.environ.get("APP_URL", ""), hash_links=bool(secrets.firebase_project))
     if "--dry-run" in sys.argv:
         print(subject)
         print(html)

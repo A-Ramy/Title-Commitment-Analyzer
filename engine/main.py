@@ -28,7 +28,7 @@ from pydantic import BaseModel, Field
 
 from titleagent import flows
 from titleagent.access import email_allowed
-from titleagent.config import DEFAULT_SETTINGS, Secrets, load_secrets
+from titleagent.config import DEFAULT_SETTINGS, Secrets, demo_mode, load_secrets
 from titleagent.exports import INCLUDE, checklist_for, google
 from titleagent.llm import LLM, AgentError, ClaudeLLM
 from titleagent.models import STATUSES
@@ -60,8 +60,14 @@ def _firebase_verify(secrets: Secrets) -> Callable[[str], dict]:
 
 def default_engine() -> Engine:
     secrets = load_secrets()
-    return Engine(secrets=secrets, store=open_store(secrets), llm=lambda: ClaudeLLM(secrets.anthropic_api_key or ""),
-                  verify=_firebase_verify(secrets))
+    if demo_mode():  # local development and screen tests only: scripted answers on the made-up sample commitment
+        from titleagent import demo
+
+        llm = demo.scripted_llm
+    else:
+        def llm() -> LLM:
+            return ClaudeLLM(secrets.anthropic_api_key or "")
+    return Engine(secrets=secrets, store=open_store(secrets), llm=llm, verify=_firebase_verify(secrets))
 
 
 @dataclass

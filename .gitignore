@@ -27,3 +27,10 @@ __pycache__/
 # guide build output
 docs/guide/.crops/
 engine/.ca-local.crt
+
+# v2 page (web/)
+web/node_modules/
+web/dist/
+web/.env.local
+# Firebase emulator logs
+*-debug.log

@@ -1,0 +1,23 @@
+rules_version = '2';
+// Title Agent (v2) files. Deployed with `firebase deploy --only storage` (or pasted into Firebase console →
+// Storage → Rules). PDFs and review data are read by the team; uploads go to each person's own folder, where the
+// engine picks them up (and removes them once saved).
+service firebase.storage {
+  match /b/{bucket}/o {
+    function team() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower().matches('.*@totalchb[.]com$');
+    }
+    // Commitments and contracts (documents/<id>/<file>) and each review's full analysis (runs/<id>.json).
+    match /documents/{docId}/{file} { allow read: if team(); }
+    match /runs/{file} { allow read: if team(); }
+    // A PDF the person is about to read with the agent: only into their own folder, up to 50 MB.
+    match /uploads/{uid}/{file} {
+      allow create: if team() && request.auth.uid == uid
+        && request.resource.size < 50 * 1024 * 1024
+        && request.resource.contentType == 'application/pdf';
+      allow read, delete: if team() && request.auth.uid == uid;
+    }
+  }
+}

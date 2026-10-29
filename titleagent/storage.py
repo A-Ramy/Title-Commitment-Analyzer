@@ -382,13 +382,19 @@ def open_store(secrets):
         return Store(secrets.database_url)
     import os
 
-    from titleagent.firestore_store import FirestoreStore, LocalBlobs
+    from titleagent.firestore_store import FirestoreStore, GcsBlobs, LocalBlobs
 
     credentials = None
     if secrets.firebase_credentials:
         from google.oauth2 import service_account
 
         credentials = service_account.Credentials.from_service_account_info(secrets.firebase_credentials)
-    blobs = LocalBlobs(DATA_DIR / "blobs") if os.environ.get("FIRESTORE_EMULATOR_HOST") else None  # local dev only
-    return FirestoreStore(project=secrets.firebase_project, bucket=secrets.firebase_bucket, credentials=credentials,
-                          blobs=blobs)
+    bucket = secrets.firebase_bucket or f"{secrets.firebase_project}.firebasestorage.app"
+    blobs = None
+    if os.environ.get("STORAGE_EMULATOR_HOST"):  # local development: the Firebase Storage emulator
+        from google.auth.credentials import AnonymousCredentials
+
+        blobs = GcsBlobs(bucket, AnonymousCredentials(), secrets.firebase_project)
+    elif os.environ.get("FIRESTORE_EMULATOR_HOST"):  # local development without the Storage emulator
+        blobs = LocalBlobs(DATA_DIR / "blobs")
+    return FirestoreStore(project=secrets.firebase_project, bucket=bucket, credentials=credentials, blobs=blobs)

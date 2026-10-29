@@ -1,0 +1,30 @@
+rules_version = '2';
+// Title Agent (v2): who can read what. Deployed with `firebase deploy --only firestore:rules` (or pasted into
+// Firebase console → Firestore → Rules). The page only READS; every change goes through the engine, which uses
+// its own Google identity and is not bound by these rules.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // A verified Google account at totalchb.com (keep in step with ALLOWED_DOMAINS in the engine).
+    function team() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower().matches('.*@totalchb[.]com$');
+    }
+
+    match /deals/{dealId} {
+      allow read: if team();
+      match /items/{itemId} { allow read: if team(); }
+      match /runs/{runId} { allow read: if team(); }
+    }
+    match /documents/{docId} { allow read: if team(); }
+    match /feedback/{id} { allow read: if team(); }
+    match /lessons/{id} { allow read: if team(); }
+    match /examples/{id} { allow read: if team(); }
+    match /scores/{id} { allow read: if team(); }
+    match /settings/{key} { allow read: if team(); }
+    // A review's progress: the person who started it watches it.
+    match /jobs/{jobId} { allow read: if team() && resource.data.by == request.auth.token.email.lower(); }
+    match /drafts/{draftId} { allow read: if team() && resource.data.by == request.auth.token.email.lower(); }
+    // Everything else (meta/counters, …) is the engine's alone.
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "title-agent-web",
+  "private": true,
+  "version": "2.0.0",
+  "description": "Title Agent v2: the page at title.totalchb.com (Universal Team Hub design)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "firebase": "11.10.0",
+    "preact": "10.29.8"
+  },
+  "devDependencies": {
+    "@babel/core": "7.28.5",
+    "@preact/preset-vite": "2.9.4",
+    "vite": "5.4.21"
+  }
+}

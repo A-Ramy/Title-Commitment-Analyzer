@@ -23,6 +23,12 @@ ok() {  # run once; quiet when the thing already exists (running the script agai
   out=$("$@" 2>&1) || { grep -qi "already exists" <<<"$out" || echo "$out"; }
 }
 
+retry() {  # a new identity can take a few seconds before permissions can name it: try up to 6 times
+  local i
+  for i in 1 2 3 4 5 6; do "$@" >/dev/null 2>&1 && return 0; sleep 10; done
+  "$@"  # last try shows Google's error
+}
+
 gcloud config set project "$PROJECT" >/dev/null
 echo "1/6 Turning on Cloud Run, Artifact Registry and keyless sign-in…"
 gcloud services enable run.googleapis.com artifactregistry.googleapis.com iamcredentials.googleapis.com \
@@ -35,19 +41,18 @@ ok gcloud artifacts repositories create title-agent --repository-format=docker -
 echo "3/6 The engine's identity (Firestore + Storage only)…"
 ok gcloud iam service-accounts create title-agent-engine --display-name="Title Agent engine (Cloud Run)"
 for role in roles/datastore.user roles/storage.objectAdmin; do
-  gcloud projects add-iam-policy-binding "$PROJECT" --member="serviceAccount:$RUNTIME" --role="$role" \
-    --condition=None >/dev/null
+  retry gcloud projects add-iam-policy-binding "$PROJECT" --member="serviceAccount:$RUNTIME" --role="$role" \
+    --condition=None
 done
 
 echo "4/6 GitHub's deploy identity (update the engine, push its image)…"
 ok gcloud iam service-accounts create github-deploy --display-name="GitHub deploys the Title Agent engine"
-sleep 15  # new identities take a few seconds to be usable in permissions
-gcloud projects add-iam-policy-binding "$PROJECT" --member="serviceAccount:$DEPLOY" --role=roles/run.admin \
-  --condition=None >/dev/null
-gcloud artifacts repositories add-iam-policy-binding title-agent --location="$REGION" \
-  --member="serviceAccount:$DEPLOY" --role=roles/artifactregistry.writer >/dev/null
-gcloud iam service-accounts add-iam-policy-binding "$RUNTIME" --member="serviceAccount:$DEPLOY" \
-  --role=roles/iam.serviceAccountUser >/dev/null
+retry gcloud projects add-iam-policy-binding "$PROJECT" --member="serviceAccount:$DEPLOY" --role=roles/run.admin \
+  --condition=None
+retry gcloud artifacts repositories add-iam-policy-binding title-agent --location="$REGION" \
+  --member="serviceAccount:$DEPLOY" --role=roles/artifactregistry.writer
+retry gcloud iam service-accounts add-iam-policy-binding "$RUNTIME" --member="serviceAccount:$DEPLOY" \
+  --role=roles/iam.serviceAccountUser
 
 echo "5/6 Keyless link from GitHub ($GITHUB_REPO only, by its id $GITHUB_REPO_ID)…"
 ok gcloud iam workload-identity-pools create github --location=global --display-name="GitHub"
@@ -58,8 +63,8 @@ ok gcloud iam workload-identity-pools providers create-oidc title-agent --locati
   --attribute-condition="assertion.repository_id == '$GITHUB_REPO_ID'"
 NUMBER=$(gcloud projects describe "$PROJECT" --format='value(projectNumber)')
 POOL="projects/$NUMBER/locations/global/workloadIdentityPools/github"
-gcloud iam service-accounts add-iam-policy-binding "$DEPLOY" --role=roles/iam.workloadIdentityUser \
-  --member="principalSet://iam.googleapis.com/$POOL/attribute.repository_id/$GITHUB_REPO_ID" >/dev/null
+retry gcloud iam service-accounts add-iam-policy-binding "$DEPLOY" --role=roles/iam.workloadIdentityUser \
+  --member="principalSet://iam.googleapis.com/$POOL/attribute.repository_id/$GITHUB_REPO_ID"
 
 echo "6/6 Done. Save this in GitHub (Settings → Secrets and variables → Actions → New repository secret):"
 echo

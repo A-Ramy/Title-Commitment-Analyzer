@@ -46,7 +46,9 @@ GitHub: code; pushes deploy the page (Vercel) and the engine (Cloud Run); Action
    Firestore and Storage security rules.
 4. **Connections**: daily email from Firestore (done in phase 1), Google export script (unchanged), optional
    "Send blockers to the Team Hub" (separate projects: the engine writes with the hub's own service account).
-5. **Switch-over** (one day, not side by side: the two apps keep separate data until then):
+5. **Switch-over** *(done 2026-10-29: the team works in the new app; the 8 AM email reads Firestore and links to
+   https://title.totalchb.com; the Streamlit app shows the "moved" banner. The final copy was skipped: the Streamlit
+   database had no new records since the first copy)*. The steps, for reference:
    1. Actions → **Copy to Firestore** → Run workflow (brings over everything added in the Streamlit app since).
    2. GitHub → Settings → Secrets and variables → Actions → Variables: `USE_FIRESTORE` = `true`, and
       `APP_URL` = `https://title.totalchb.com` (the 8 AM email then reads Firestore and links to the new page).

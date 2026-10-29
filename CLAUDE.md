@@ -1,9 +1,10 @@
 # CLAUDE.md — Title Agent (Total Cash Home Buyers)
 
 Streamlit app that reviews title commitments and lists everything needed to close. `docs/PLAN.md` holds the owner's
-decisions (section 0); keep this file in sync when a rule changes. **v2 is in progress** (`docs/PLAN-v2.md`): the
-same engine on Cloud Run, Firestore data, a new page on Vercel at title.totalchb.com **in the Universal Team Hub's
-design** (RemyTCHB/Universal-Task-Tracker: its stylesheet and components), not this Streamlit app's.
+decisions (section 0); keep this file in sync when a rule changes. **v2 is live** (`docs/PLAN-v2.md`, switched
+2026-10-29): the same engine on Cloud Run (`engine/`), Firestore data, the page in `web/` on Vercel at
+title.totalchb.com **in the Universal Team Hub's design** (RemyTCHB/Universal-Task-Tracker: its stylesheet and
+components). The Streamlit app is read-only history with a "moved" banner; new work goes into `web/` and `engine/`.
 
 ## Non-negotiables
 - **Never leave a numbered item behind.** Every Schedule B-I and B-II number must get a disposition; the numbering

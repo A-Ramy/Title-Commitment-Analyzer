@@ -37,7 +37,10 @@ GitHub: code; pushes deploy the page (Vercel) and the engine (Cloud Run); Action
    report missing, item feedback, lessons, settings. Long steps write their current step to `jobs/{id}`; uploads
    come through Storage `uploads/<uid>/`. Tested end to end against the Firestore and Auth emulators, also as the
    built container. `Dockerfile` (engine only, `engine/requirements.txt`); `.github/workflows/deploy-engine.yml`
-   builds and deploys on every engine change, signing in to Google without a key (`scripts/gcp_setup.sh`).
+   builds and deploys on every engine change, signing in to Google without a key (`scripts/gcp_setup.sh`), then
+   smoke-checks it. **Live since 2026-10-29**: https://title-agent-engine-622792668017.us-east1.run.app (Cloud Run,
+   us-east1, project title-commitment-agent; repository RemyTCHB/TITLE-COMMITMENT-AGENT). A signed-in call against
+   the real Firestore is first exercised by the new page (phase 3).
 3. **New page** on Vercel built from the Universal Team Hub's design (its stylesheet and components, so the
    apps look and work alike): Analyze, Deal, Deals, Training, Knowledge, Settings; Firebase Google sign-in;
    Firestore and Storage security rules.

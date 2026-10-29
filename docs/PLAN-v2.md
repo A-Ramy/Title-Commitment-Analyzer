@@ -29,8 +29,8 @@ GitHub: code; pushes deploy the page (Vercel) and the engine (Cloud Run); Action
    `storage.Store`; the same tests run on both (Firestore through the local emulator,
    `scripts/firestore_emulator.sh`). `scripts/copy_to_firestore.py` copies everything with the same ids and checks
    the counts; it runs from GitHub (Actions → **Copy to Firestore**) with the repository's secrets, and is re-run on
-   switch-over day so anything added meanwhile comes over. Until then the Streamlit app stays on Postgres. Setting `FIREBASE_PROJECT_ID` switches today's app and the daily email to Firestore, so the data can
-   move before the new page is ready.
+   switch-over day so anything added meanwhile comes over. Until then the Streamlit app stays on Postgres
+   (setting `FIREBASE_PROJECT_ID` in its secrets would switch it and the daily email to Firestore, if ever needed).
 2. **Engine service** on Cloud Run: sign-in check, read documents, run review (progress in Firestore), exports,
    feedback and lessons. Dockerfile; deploy from GitHub.
 3. **New page** on Vercel built from the Universal Team Hub's design (its stylesheet and components, so the

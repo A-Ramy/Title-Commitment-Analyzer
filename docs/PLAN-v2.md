@@ -64,7 +64,9 @@ GitHub: code; pushes deploy the page (Vercel) and the engine (Cloud Run); Action
 6. **Engine (phase 2)**: in Cloud Shell, run `scripts/gcp_setup.sh` (pasted); save the value it prints in GitHub as
    `GCP_WORKLOAD_IDENTITY_PROVIDER`, and add `ANTHROPIC_API_KEY` (and `GOOGLE_EXPORT_URL` / `GOOGLE_EXPORT_KEY`)
    as GitHub secrets. Then Actions → Deploy engine → Run workflow.
-7. Domain: add `title.totalchb.com` in Vercel (phase 3) and one DNS record where totalchb.com's DNS is managed.
+7. **Page (phase 3)**: Vercel project "title-commitment-agent" (root directory `web`) at
+   https://title-commitment-agent.vercel.app and **https://title.totalchb.com**; Firestore and Storage rules
+   published from `firebase/`; Authentication → Settings → Authorized domains lists both addresses.
 
 ## Costs
 Cloud Run about $0–5/month at 30–100 reviews (it sleeps between them); Firestore and Storage most likely within the

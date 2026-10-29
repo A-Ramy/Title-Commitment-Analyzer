@@ -69,7 +69,7 @@ jobs:
             --service-account "title-agent-engine@$PROJECT.iam.gserviceaccount.com" \
             --no-invoker-iam-check --timeout 900 --cpu 1 --memory 1Gi --concurrency 8 \
             --min-instances 0 --max-instances 3 \
-            --set-env-vars "^@^FIREBASE_PROJECT_ID=$PROJECT@ALLOWED_DOMAINS=totalchb.com@ALLOWED_ORIGINS=https://title.totalchb.com,http://localhost:5173@ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY@GOOGLE_EXPORT_URL=$GOOGLE_EXPORT_URL@GOOGLE_EXPORT_KEY=$GOOGLE_EXPORT_KEY"
+            --set-env-vars "^@^FIREBASE_PROJECT_ID=$PROJECT@ALLOWED_DOMAINS=totalchb.com@ALLOWED_ORIGINS=https://title.totalchb.com,https://title-commitment-agent.vercel.app,http://localhost:5173@ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY@GOOGLE_EXPORT_URL=$GOOGLE_EXPORT_URL@GOOGLE_EXPORT_KEY=$GOOGLE_EXPORT_KEY"
           echo "Engine URL: $(gcloud run services describe "$SERVICE" --region "$REGION" --format='value(status.url)')"
 
       - name: Smoke check (up, refuses anyone not signed in, browser rules)
@@ -85,4 +85,5 @@ jobs:
                       -H 'Access-Control-Request-Headers: authorization' "$URL/v1/read" \
                     | grep -ci '^access-control-allow-origin' || true; }
           check "title.totalchb.com may call it" "$(allow https://title.totalchb.com)" 1
+          check "the Vercel address may call it" "$(allow https://title-commitment-agent.vercel.app)" 1
           check "other sites may not"            "$(allow https://example.com)" 0

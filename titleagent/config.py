@@ -63,10 +63,17 @@ class Secrets:
     # Who may use the app (the engine checks every request's Firebase sign-in against these)
     allowed_emails: tuple[str, ...] = ()
     allowed_domains: tuple[str, ...] = ("totalchb.com",)
+    # The Universal Team Hub (titleagent/hub.py): where Closing Blockers go, and the secret both apps sign with
+    hub_url: str | None = None
+    hub_secret: str | None = None
 
     @property
     def has_ai(self) -> bool:
         return bool(self.anthropic_api_key)
+
+    @property
+    def has_hub(self) -> bool:
+        return bool(self.hub_url and self.hub_secret)
 
     @property
     def has_data_store(self) -> bool:
@@ -121,6 +128,8 @@ def load_secrets() -> Secrets:
         firebase_credentials=_firebase_credentials(get("FIREBASE_SERVICE_ACCOUNT_JSON")),
         google_export_url=get("GOOGLE_EXPORT_URL"),
         google_export_key=get("GOOGLE_EXPORT_KEY"),
+        hub_url=get("HUB_URL") or ("https://tasks.totalchb.com/api/title-agent" if get("HUB_SYNC_SECRET") else None),
+        hub_secret=get("HUB_SYNC_SECRET"),
     )
 
 

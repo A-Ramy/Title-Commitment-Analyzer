@@ -41,6 +41,11 @@ sync when a rule changes. (The first Streamlit version and its Neon database wer
   (`uv export --no-dev --no-hashes --no-emit-project --format requirements-txt -o engine/requirements.txt`).
 - `web/`: Vite + Preact. `src/pages/` one file per screen, `src/data.js` live Firestore reads, `src/api.js` engine
   calls, `src/styles.css` the hub's tokens and components.
+- `titleagent/hub.py`: the Universal Team Hub connection. Only Closing Blockers go (one task per deal, "Title -
+  <address>", in Monz's list, tagged "Title Commitment Agent"); a blocker cleared here is done there and the reverse.
+  Sent after each review / re-run / blocker change (engine, in the background) and every 15 minutes
+  (`scripts/hub_sync.py`, `.github/workflows/hub-sync.yml`); the hub calls `POST /v1/hub/items`. Signed both ways
+  with `HUB_SYNC_SECRET` (GitHub secret; the hub has the same value as `TITLE_AGENT_SYNC_SECRET`).
 - `scripts/daily_email.py` (GitHub Actions, 8:00 AM ET via Resend), `scripts/gcp_setup.sh` (one-time Google Cloud
   setup), `scripts/evaluate.py` (accuracy on worked commitments kept outside the repo).
 - Model: `claude-opus-5-5`, effort `high` (accuracy first). The system prompt must stay identical across a run's

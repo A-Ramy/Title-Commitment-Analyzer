@@ -21,12 +21,12 @@ from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from typing import Literal
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Request
+from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, Field
 
-from titleagent import flows
+from titleagent import flows, hub
 from titleagent.access import email_allowed
 from titleagent.config import DEAL_TYPES, DEFAULT_SETTINGS, Secrets, demo_mode, load_secrets
 from titleagent.exports import INCLUDE, checklist_for, google
@@ -122,6 +122,15 @@ class ItemPatch(BaseModel):
     status: str | None = None
     due_date: str | None = Field(default=None, description="YYYY-MM-DD, or empty to clear")
     notes: str | None = None
+
+class HubUpdate(BaseModel):
+    key: str
+    status: str
+    by: str = ""
+
+class HubItemsIn(BaseModel):
+    deal_id: int
+    updates: list[HubUpdate]
 
 class ItemFeedbackIn(BaseModel):
     item_key: str
@@ -279,8 +288,12 @@ def create_app(engine: Engine | None = None) -> FastAPI:
 
         return run_job(e, body.job_id, "read", u, go)
 
+    def to_hub(bg: BackgroundTasks, e: Engine, deal_id: int) -> None:
+        """The deal's Closing Blockers to the Universal Team Hub, after the response (titleagent/hub.py)."""
+        bg.add_task(hub.safe_sync, e.store, e.secrets, deal_id)
+
     @app.post("/v1/review")
-    def review(body: ReviewIn, u: User = Depends(user), e: Engine = Depends(eng)):
+    def review(body: ReviewIn, bg: BackgroundTasks, u: User = Depends(user), e: Engine = Depends(eng)):
         draft = e.store.get_draft(body.draft_id)
         if not draft:
             raise HTTPException(404, "That upload has expired. Start over from Analyze.")
@@ -290,13 +303,17 @@ def create_app(engine: Engine | None = None) -> FastAPI:
             e.store.delete_draft(body.draft_id)
             return {"deal_id": deal_id}
 
-        return run_job(e, body.job_id, "review", u, go)
+        out = run_job(e, body.job_id, "review", u, go)
+        to_hub(bg, e, out["deal_id"])
+        return out
 
     @app.post("/v1/deals/{deal_id}/rerun")
-    def rerun(deal_id: int, body: JobIn, u: User = Depends(user), e: Engine = Depends(eng)):
+    def rerun(deal_id: int, body: JobIn, bg: BackgroundTasks, u: User = Depends(user), e: Engine = Depends(eng)):
         deal_or_404(e, deal_id)
-        return run_job(e, body.job_id, "rerun", u,
-                       lambda progress: {"deal_id": flows.rerun(e.store, e.llm(), deal_id, u.email, progress)})
+        out = run_job(e, body.job_id, "rerun", u,
+                      lambda progress: {"deal_id": flows.rerun(e.store, e.llm(), deal_id, u.email, progress)})
+        to_hub(bg, e, deal_id)
+        return out
 
     @app.post("/v1/training")
     def train(body: TrainIn, u: User = Depends(user), e: Engine = Depends(eng)):
@@ -332,10 +349,14 @@ def create_app(engine: Engine | None = None) -> FastAPI:
         return {"link": link}
 
     @app.post("/v1/deals/{deal_id}/missing")
-    def missing(deal_id: int, body: MissingIn, u: User = Depends(user), e: Engine = Depends(eng)):
+    def missing(deal_id: int, body: MissingIn, bg: BackgroundTasks, u: User = Depends(user),
+                e: Engine = Depends(eng)):
         deal_or_404(e, deal_id)
-        return {"feedback_id": flows.missing_item(e.store, deal_id, body.what, body.where, body.why, body.priority,
-                                                  body.provided_by, u.email, body.add_to_list)}
+        out = {"feedback_id": flows.missing_item(e.store, deal_id, body.what, body.where, body.why, body.priority,
+                                                 body.provided_by, u.email, body.add_to_list)}
+        if body.add_to_list and body.priority == "blocker":
+            to_hub(bg, e, deal_id)
+        return out
 
     @app.patch("/v1/deals/{deal_id}")
     def set_deal(deal_id: int, body: DealPatch, u: User = Depends(user), e: Engine = Depends(eng)):
@@ -344,9 +365,11 @@ def create_app(engine: Engine | None = None) -> FastAPI:
         return {"ok": True}
 
     @app.patch("/v1/deals/{deal_id}/items")
-    def set_item(deal_id: int, body: ItemPatch, u: User = Depends(user), e: Engine = Depends(eng)):
+    def set_item(deal_id: int, body: ItemPatch, bg: BackgroundTasks, u: User = Depends(user),
+                 e: Engine = Depends(eng)):
         deal_or_404(e, deal_id)
-        if not any(i.key == body.key for i in e.store.get_items(deal_id)):
+        item = next((i for i in e.store.get_items(deal_id) if i.key == body.key), None)
+        if item is None:
             raise HTTPException(404, "That item isn't on this deal's list.")
         changes: dict = {}
         if body.status is not None:
@@ -362,7 +385,25 @@ def create_app(engine: Engine | None = None) -> FastAPI:
             changes["notes"] = body.notes[:2000]
         if changes:
             e.store.update_item(deal_id, body.key, by=u.email, **changes)
+            if item.priority == "blocker" and ("status" in changes or "due_date" in changes):
+                to_hub(bg, e, deal_id)
         return {"ok": True}
+
+    # ---- the Universal Team Hub: blockers ticked or unticked there (signed with HUB_SYNC_SECRET, no sign-in)
+    @app.post("/v1/hub/items")
+    async def hub_items(request: Request, e: Engine = Depends(eng)):
+        raw = await request.body()
+        if not hub.verify(e.secrets.hub_secret, raw, request.headers.get("x-hub-timestamp"),
+                          request.headers.get("x-hub-signature")):
+            raise HTTPException(401, "Bad signature.")
+        try:
+            body = HubItemsIn.model_validate_json(raw)
+        except ValueError as exc:
+            raise HTTPException(400, "Not a hub update.") from exc
+        deal_or_404(e, body.deal_id)
+        applied = hub.apply_updates(e.store, body.deal_id, [u.model_dump() for u in body.updates])
+        log.info("hub: %d of %d blocker changes applied", applied, len(body.updates))
+        return {"ok": True, "applied": applied}
 
     @app.post("/v1/deals/{deal_id}/feedback")
     def item_feedback(deal_id: int, body: ItemFeedbackIn, u: User = Depends(user), e: Engine = Depends(eng)):

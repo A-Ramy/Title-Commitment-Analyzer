@@ -229,8 +229,8 @@ def create_app(engine: Engine | None = None) -> FastAPI:
             raise HTTPException(404, "That deal doesn't exist.")
         return deal
 
-    @app.get("/healthz")
-    def healthz():
+    @app.get("/health")  # not /healthz: Cloud Run reserves paths ending in "z"
+    def health():
         return {"ok": True}
 
     @app.get("/v1/me")

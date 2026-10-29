@@ -41,6 +41,8 @@ def h(who: str) -> dict:
 
 def test_only_verified_company_accounts_get_in(setup):
     client, _ = setup
+    assert client.get("/health").json() == {"ok": True}  # Cloud Run swallows paths ending in "z"
+    assert client.get("/docs").status_code == 404
     assert client.get("/v1/me").status_code == 401
     assert client.get("/v1/me", headers=h("forged")).status_code == 401
     assert client.get("/v1/me", headers=h("outsider")).status_code == 403

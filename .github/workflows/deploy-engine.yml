@@ -77,7 +77,7 @@ jobs:
         run: |
           URL=$(gcloud run services describe "$SERVICE" --region "$REGION" --format='value(status.url)')
           check() { [ "$2" = "$3" ] && echo "ok   $1 ($2)" || { echo "FAIL $1: got $2, expected $3"; exit 1; }; }
-          check "health"            "$(curl -s -o /dev/null -w '%{http_code}' "$URL/healthz")" 200
+          check "health"            "$(curl -s -o /dev/null -w '%{http_code}' "$URL/health")" 200
           check "no sign-in"        "$(curl -s -o /dev/null -w '%{http_code}' "$URL/v1/me")" 401
           check "forged sign-in"    "$(curl -s -o /dev/null -w '%{http_code}' -H 'Authorization: Bearer forged' "$URL/v1/me")" 401
           check "no API docs"       "$(curl -s -o /dev/null -w '%{http_code}' "$URL/docs")" 404

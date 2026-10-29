@@ -26,6 +26,11 @@ from titleagent.models import ActionItem  # noqa: E402
 TABLES = ("settings", "lessons", "documents", "deals", "runs", "items", "feedback", "examples", "scores")
 
 
+def counts_line(counts: dict[str, int]) -> str:
+    """Plain text: GitHub hides every brace in the log (the key secret contains them)."""
+    return " · ".join(f"{k} {counts[k]}" for k in TABLES)
+
+
 def sql_counts(src: sql.Store) -> dict[str, int]:
     tables = {"settings": sql.settings_t, "lessons": sql.lessons_t, "documents": sql.documents_t,
               "deals": sql.deals_t, "runs": sql.runs_t, "items": sql.items_t, "feedback": sql.feedback_t,
@@ -122,16 +127,16 @@ def main() -> int:
         return 1
     src = sql.Store(secrets.database_url)
     before = sql_counts(src)
-    print("SQL database:", before)
+    print("SQL database:", counts_line(before))
     if "--dry-run" in sys.argv:
         return 0
     dst = sql.open_store(secrets)  # Firestore, because FIREBASE_PROJECT_ID is set
     copy(src, dst)
     after = firestore_counts(dst)
-    print("Firestore:   ", after)
+    print("Firestore:   ", counts_line(after))
     wrong = {k: (before[k], after[k]) for k in TABLES if before[k] != after[k]}
     if wrong:
-        print("Counts differ (SQL, Firestore):", wrong)
+        print("Counts differ (SQL / Firestore):", " · ".join(f"{k} {a}/{b}" for k, (a, b) in wrong.items()))
         return 1
     print("Every record copied; counts match.")
     return 0

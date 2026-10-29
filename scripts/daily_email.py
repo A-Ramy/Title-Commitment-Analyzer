@@ -6,9 +6,10 @@ run that gets through hands the email to Resend to deliver at 8:00 sharp, and la
 7:58 sends right away. Each run's outcome is saved in the app database so Settings can show it (the app itself never
 holds the Resend key).
 
-    uv run python scripts/daily_email.py [--dry-run] [--now]
+    uv run python scripts/daily_email.py [--dry-run] [--now] [--check]
 
 --now sends immediately, even if today's email already went out (manual runs from GitHub use it, to test).
+--check sends nothing and prints only where the data comes from and how links look (Run workflow → check only).
 """
 
 from __future__ import annotations
@@ -36,6 +37,13 @@ def main() -> int:
     if "--dry-run" in sys.argv:
         print(subject)
         print(html)
+        return 0
+    if "--check" in sys.argv:  # safe for public logs: where the data comes from and the link style, no deal details
+        source = f"Firestore ({secrets.firebase_project})" if secrets.firebase_project else "SQL database"
+        base = os.environ.get("APP_URL", "").rstrip("/") or "(APP_URL not set)"
+        print(f"Data: {source} · open deals: {len(store.list_deals(status='open'))} · "
+              f"links: {base}{'/#/deal/<id>' if secrets.firebase_project else '/deal?id=<id>'} · "
+              f"recipients: {len(settings['email_recipients'])} · Resend key set: {bool(secrets.resend_api_key)}")
         return 0
 
     force_now = "--now" in sys.argv

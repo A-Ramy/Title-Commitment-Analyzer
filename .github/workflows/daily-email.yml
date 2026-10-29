@@ -10,7 +10,12 @@ on:
     - cron: "47 9 * * 1-5"   # 5:47 / 4:47 AM
     - cron: "47 10 * * 1-5"  # 6:47 / 5:47 AM
     - cron: "17 12 * * 1-5"  # 8:17 / 7:17 AM: last try; sends right away if nothing went out yet
-  workflow_dispatch:  # Run workflow: sends a test email right away
+  workflow_dispatch:  # Run workflow: sends a test email right away (or, with "check only", sends nothing)
+    inputs:
+      check_only:
+        description: "Check only: send nothing, just show where the data comes from"
+        type: boolean
+        default: false
 
 concurrency:
   group: daily-email  # tries that start together run one after the other, so only one sends
@@ -23,7 +28,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
       - run: uv sync --no-dev --no-group app  # the Streamlit app's packages aren't needed here
-      - run: uv run python scripts/daily_email.py ${{ github.event_name == 'workflow_dispatch' && '--now' || '' }}
+      - run: uv run --no-sync python scripts/daily_email.py ${{ inputs.check_only && '--check' || github.event_name == 'workflow_dispatch' && '--now' || '' }}
         env:
           # Switch-over to v2: set the repository variable USE_FIRESTORE to true (Settings → Secrets and variables →
           # Actions → Variables) and APP_URL to https://title.totalchb.com. Then the email reads Firestore and links

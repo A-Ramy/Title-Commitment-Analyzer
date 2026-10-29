@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
       - run: uv sync --no-dev --no-group app  # the Streamlit app's packages aren't needed here
-      - run: uv run python scripts/copy_to_firestore.py ${{ inputs.dry_run && '--dry-run' || '' }}
+      - run: uv run --no-sync python scripts/copy_to_firestore.py ${{ inputs.dry_run && '--dry-run' || '' }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}

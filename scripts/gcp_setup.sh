@@ -12,7 +12,9 @@ set -uo pipefail
 
 PROJECT=title-commitment-agent
 REGION=us-east1
-GITHUB_REPO=RemyTCHB/Title-Commitment-Analyzer   # exactly as GitHub spells it (moved from A-Ramy, 2026-10-30)
+GITHUB_REPO=RemyTCHB/TITLE-COMMITMENT-AGENT
+# GitHub's permanent id for that repository: it survives renames and moves, and is never reused
+GITHUB_REPO_ID=1431672941
 
 RUNTIME=title-agent-engine@$PROJECT.iam.gserviceaccount.com
 DEPLOY=github-deploy@$PROJECT.iam.gserviceaccount.com
@@ -47,17 +49,17 @@ gcloud artifacts repositories add-iam-policy-binding title-agent --location="$RE
 gcloud iam service-accounts add-iam-policy-binding "$RUNTIME" --member="serviceAccount:$DEPLOY" \
   --role=roles/iam.serviceAccountUser >/dev/null
 
-echo "5/6 Keyless link from GitHub ($GITHUB_REPO only)…"
+echo "5/6 Keyless link from GitHub ($GITHUB_REPO only, by its id $GITHUB_REPO_ID)…"
 ok gcloud iam workload-identity-pools create github --location=global --display-name="GitHub"
 ok gcloud iam workload-identity-pools providers create-oidc title-agent --location=global \
   --workload-identity-pool=github --display-name="Title Agent repository" \
   --issuer-uri="https://token.actions.githubusercontent.com" \
-  --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository" \
-  --attribute-condition="assertion.repository == '$GITHUB_REPO'"
+  --attribute-mapping="google.subject=assertion.sub,attribute.repository_id=assertion.repository_id" \
+  --attribute-condition="assertion.repository_id == '$GITHUB_REPO_ID'"
 NUMBER=$(gcloud projects describe "$PROJECT" --format='value(projectNumber)')
 POOL="projects/$NUMBER/locations/global/workloadIdentityPools/github"
 gcloud iam service-accounts add-iam-policy-binding "$DEPLOY" --role=roles/iam.workloadIdentityUser \
-  --member="principalSet://iam.googleapis.com/$POOL/attribute.repository/$GITHUB_REPO" >/dev/null
+  --member="principalSet://iam.googleapis.com/$POOL/attribute.repository_id/$GITHUB_REPO_ID" >/dev/null
 
 echo "6/6 Done. Save this in GitHub (Settings → Secrets and variables → Actions → New repository secret):"
 echo

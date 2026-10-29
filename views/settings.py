@@ -96,8 +96,9 @@ email_value, email_sub, email_cls = run_status(settings.get(LAST_RUN))
 h.tiles([
     ("AI (Anthropic)", "Connected" if secrets.has_ai else "Not set", "ANTHROPIC_API_KEY",
      "up" if secrets.has_ai else "down"),
-    ("Database", "Postgres" if secrets.database_url else "Local file", "DATABASE_URL",
-     "up" if secrets.database_url else "muted"),
+    ("Database", "Firestore" if secrets.firebase_project else "Postgres" if secrets.database_url else "Local file",
+     "FIREBASE_PROJECT_ID" if secrets.firebase_project else "DATABASE_URL",
+     "up" if secrets.has_data_store else "muted"),
     ("Google", "Set Up" if secrets.has_google else "Not set",
      "export script" if script_mode else h.esc(sa_email) if secrets.has_google else "for Sheets / Docs exports",
      "up" if secrets.has_google else "muted"),

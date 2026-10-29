@@ -374,3 +374,21 @@ class Store:
     def list_scores(self) -> list[dict]:
         with self.engine.connect() as c:
             return [dict(r._mapping) for r in c.execute(select(scores_t).order_by(scores_t.c.run_at))]
+
+
+def open_store(secrets):
+    """Firestore when FIREBASE_PROJECT_ID is set (v2), else the SQL database. Used by the app and the scripts."""
+    if not secrets.firebase_project:
+        return Store(secrets.database_url)
+    import os
+
+    from titleagent.firestore_store import FirestoreStore, LocalBlobs
+
+    credentials = None
+    if secrets.firebase_credentials:
+        from google.oauth2 import service_account
+
+        credentials = service_account.Credentials.from_service_account_info(secrets.firebase_credentials)
+    blobs = LocalBlobs(DATA_DIR / "blobs") if os.environ.get("FIRESTORE_EMULATOR_HOST") else None  # local dev only
+    return FirestoreStore(project=secrets.firebase_project, bucket=secrets.firebase_bucket, credentials=credentials,
+                          blobs=blobs)

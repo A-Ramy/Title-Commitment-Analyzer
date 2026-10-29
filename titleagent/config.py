@@ -53,6 +53,11 @@ class Secrets:
     database_url: str | None
     google_service_account: dict | None
     resend_api_key: str | None
+    # Firebase (v2): when FIREBASE_PROJECT_ID is set the app's data lives in Firestore + Storage instead of the
+    # SQL database. Credentials: the service account key pasted as-is, or Google's default credentials (Cloud Run).
+    firebase_project: str | None = None
+    firebase_bucket: str | None = None
+    firebase_credentials: dict | None = None
     # Google exports through the Apps Script web app (titleagent/exports/google_export.gs): the easy setup
     google_export_url: str | None = None
     google_export_key: str | None = None
@@ -66,6 +71,11 @@ class Secrets:
     @property
     def has_ai(self) -> bool:
         return bool(self.anthropic_api_key)
+
+    @property
+    def has_data_store(self) -> bool:
+        """A real database is configured (Firestore or SQL), not the local file."""
+        return bool(self.firebase_project or self.database_url)
 
     @property
     def has_google(self) -> bool:
@@ -98,6 +108,15 @@ def _decode_service_account(raw_b64: str | None, table: dict | None, raw_json: s
         raise ValueError("GOOGLE_SERVICE_ACCOUNT_JSON_B64 is set but is not valid base64-encoded JSON.") from exc
 
 
+def _firebase_credentials(raw: str | None) -> dict | None:
+    if not raw:
+        return None
+    try:
+        return json.loads(raw)
+    except Exception as exc:  # never echo the value itself
+        raise ValueError("FIREBASE_SERVICE_ACCOUNT_JSON is set but is not the key file's JSON.") from exc
+
+
 def load_secrets() -> Secrets:
     load_dotenv(ROOT / ".env", override=False)
     st_secrets = _streamlit_secrets()
@@ -122,6 +141,9 @@ def load_secrets() -> Secrets:
             get("GOOGLE_SERVICE_ACCOUNT_JSON"),
         ),
         resend_api_key=get("RESEND_API_KEY"),
+        firebase_project=get("FIREBASE_PROJECT_ID"),
+        firebase_bucket=get("FIREBASE_STORAGE_BUCKET"),
+        firebase_credentials=_firebase_credentials(get("FIREBASE_SERVICE_ACCOUNT_JSON")),
         google_export_url=get("GOOGLE_EXPORT_URL"),
         google_export_key=get("GOOGLE_EXPORT_KEY"),
     )

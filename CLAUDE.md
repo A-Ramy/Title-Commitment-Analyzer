@@ -1,7 +1,8 @@
 # CLAUDE.md — Title Agent (Total Cash Home Buyers)
 
 Streamlit app that reviews title commitments and lists everything needed to close. `docs/PLAN.md` holds the owner's
-decisions (section 0); keep this file in sync when a rule changes.
+decisions (section 0); keep this file in sync when a rule changes. **v2 is in progress** (`docs/PLAN-v2.md`): the
+same engine on Cloud Run, Firestore data, a new page on Vercel at title.totalchb.com.
 
 ## Non-negotiables
 - **Never leave a numbered item behind.** Every Schedule B-I and B-II number must get a disposition; the numbering
@@ -29,11 +30,13 @@ decisions (section 0); keep this file in sync when a rule changes.
 ## Code map
 - `titleagent/` (no Streamlit): `pipeline.py` (steps), `prompts.py` (system prompt, seed lessons), `checklist.py`,
   `numbering.py`, `grounding.py`, `compare.py` (updated commitments), `llm.py` (Claude calls: structured output,
-  streaming, server-side fallback), `storage.py`, `exports/`, `emailer.py`, `training.py`, `demo.py`.
+  streaming, server-side fallback), `storage.py` (SQL; `open_store()` picks the store), `firestore_store.py` (v2,
+  same methods), `exports/`, `emailer.py`, `training.py`, `demo.py`.
 - `ui/` (brand shared with the Projection Tool: same `brand.css` / tokens; Streamlit pinned to the same version),
   `views/` one file per page, `app.py` navigation.
 - Model: `claude-opus-5-5`, effort `high` (accuracy first). The system prompt must stay identical across a run's
   calls (prompt caching): put per-deal details in the step's task, not the system prompt.
 
 ## Checks before pushing
-`uv run ruff check .` and `uv run pytest`. UI changes: run `TITLE_AGENT_DEMO=1 uv run streamlit run app.py` and look.
+`uv run ruff check .` and `uv run pytest` (Firestore tests too: `scripts/firestore_emulator.sh &` then
+`FIRESTORE_EMULATOR_HOST=127.0.0.1:8085 uv run pytest`). UI changes: run `TITLE_AGENT_DEMO=1 uv run streamlit run app.py` and look.

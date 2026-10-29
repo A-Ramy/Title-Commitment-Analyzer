@@ -22,12 +22,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from titleagent.config import load_secrets  # noqa: E402
 from titleagent.emailer import EASTERN, LAST_RUN, already_done, plan, run_record, send, summary_html  # noqa: E402
-from titleagent.storage import Store  # noqa: E402
+from titleagent.storage import open_store  # noqa: E402
 
 
 def main() -> int:
     secrets = load_secrets()
-    store = Store(secrets.database_url)
+    store = open_store(secrets)
     settings = store.get_settings()
     now = datetime.now(UTC)
     day = now.astimezone(EASTERN).date()
@@ -51,9 +51,10 @@ def main() -> int:
         store.set_setting(LAST_RUN, run_record(result, detail, now, day, deliver_at), by="daily email")
 
     # Not set up yet: skip quietly instead of failing (and emailing a failure notice) every morning
-    if not secrets.resend_api_key or not secrets.database_url:
-        print("Skipped: RESEND_API_KEY and DATABASE_URL must both be set as GitHub Actions secrets.")
-        if secrets.database_url:
+    if not secrets.resend_api_key or not secrets.has_data_store:
+        print("Skipped: RESEND_API_KEY and the database (DATABASE_URL or FIREBASE_PROJECT_ID) must be set as GitHub "
+              "Actions secrets.")
+        if secrets.has_data_store:
             record("skipped", "RESEND_API_KEY is not set in GitHub")
         return 0
     recipients = settings["email_recipients"]

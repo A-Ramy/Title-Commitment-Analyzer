@@ -6,7 +6,7 @@ import streamlit as st
 
 from titleagent.config import Secrets, demo_mode, load_secrets
 from titleagent.llm import LLM, ClaudeLLM
-from titleagent.storage import Store
+from titleagent.storage import Store, open_store
 
 
 @st.cache_resource
@@ -16,7 +16,7 @@ def get_secrets() -> Secrets:
 
 @st.cache_resource
 def get_store() -> Store:
-    return Store(get_secrets().database_url)
+    return open_store(get_secrets())
 
 
 def get_settings() -> dict:

@@ -12,7 +12,7 @@ set -uo pipefail
 
 PROJECT=title-commitment-agent
 REGION=us-east1
-GITHUB_REPO=A-Ramy/Title-Commitment-Analyzer   # exactly as GitHub spells it
+GITHUB_REPO=RemyTCHB/Title-Commitment-Analyzer   # exactly as GitHub spells it (moved from A-Ramy, 2026-10-30)
 
 RUNTIME=title-agent-engine@$PROJECT.iam.gserviceaccount.com
 DEPLOY=github-deploy@$PROJECT.iam.gserviceaccount.com

@@ -1,5 +1,5 @@
 """Send the daily summary at 8:00 AM Eastern on weekdays. Run on a schedule (.github/workflows/daily-email.yml) with
-DATABASE_URL and RESEND_API_KEY set; APP_URL (optional) adds an "Open" link per deal.
+FIREBASE_PROJECT_ID, FIREBASE_SERVICE_ACCOUNT_JSON and RESEND_API_KEY set; APP_URL adds an "Open" link per deal.
 
 GitHub's scheduler runs hours late or skips runs, so the workflow tries several times in the early morning: the first
 run that gets through hands the email to Resend to deliver at 8:00 sharp, and later runs see it's done. A run after
@@ -28,21 +28,24 @@ from titleagent.storage import open_store  # noqa: E402
 
 def main() -> int:
     secrets = load_secrets()
+    if not secrets.has_data_store:  # not set up: skip quietly instead of failing (and emailing a failure notice)
+        print("Skipped: FIREBASE_PROJECT_ID and FIREBASE_SERVICE_ACCOUNT_JSON must be set as GitHub Actions secrets.")
+        return 0
     store = open_store(secrets)
     settings = store.get_settings()
     now = datetime.now(UTC)
     day = now.astimezone(EASTERN).date()
     subject, html = summary_html(store.list_deals(status="open"), store.open_items_by_deal(), day,
-                                 os.environ.get("APP_URL", ""), hash_links=bool(secrets.firebase_project))
+                                 os.environ.get("APP_URL", ""))
     if "--dry-run" in sys.argv:
         print(subject)
         print(html)
         return 0
     if "--check" in sys.argv:  # safe for public logs: where the data comes from and the link style, no deal details
-        source = f"Firestore ({secrets.firebase_project})" if secrets.firebase_project else "SQL database"
+        source = f"Firestore ({secrets.firebase_project})"
         base = os.environ.get("APP_URL", "").rstrip("/") or "(APP_URL not set)"
         print(f"Data: {source} · open deals: {len(store.list_deals(status='open'))} · "
-              f"links: {base}{'/#/deal/<id>' if secrets.firebase_project else '/deal?id=<id>'} · "
+              f"links: {base}/#/deal/<id> · "
               f"recipients: {len(settings['email_recipients'])} · Resend key set: {bool(secrets.resend_api_key)}")
         return 0
 
@@ -58,12 +61,9 @@ def main() -> int:
     def record(result: str, detail: str) -> None:
         store.set_setting(LAST_RUN, run_record(result, detail, now, day, deliver_at), by="daily email")
 
-    # Not set up yet: skip quietly instead of failing (and emailing a failure notice) every morning
-    if not secrets.resend_api_key or not secrets.has_data_store:
-        print("Skipped: RESEND_API_KEY and the database (DATABASE_URL or FIREBASE_PROJECT_ID) must be set as GitHub "
-              "Actions secrets.")
-        if secrets.has_data_store:
-            record("skipped", "RESEND_API_KEY is not set in GitHub")
+    if not secrets.resend_api_key:
+        print("Skipped: RESEND_API_KEY must be set as a GitHub Actions secret.")
+        record("skipped", "RESEND_API_KEY is not set in GitHub")
         return 0
     recipients = settings["email_recipients"]
     if not recipients:

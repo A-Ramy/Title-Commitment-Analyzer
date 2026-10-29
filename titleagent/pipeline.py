@@ -6,7 +6,7 @@
    independent pass that only looks for what is missing, then the proof check on every quote, due dates, and the
    carry-over of statuses from the deal's previous list.
 
-Nothing here touches Streamlit or the database; the views call it and save the result.
+Nothing here touches the database; titleagent/flows.py calls it and saves the result.
 """
 
 from __future__ import annotations

@@ -111,9 +111,9 @@ def test_check_folder_needs_a_shared_drive_folder_it_can_write(monkeypatch):
 
 
 def test_service_account_pasted_as_json():
-    assert _decode_service_account(None, None, '{"client_email": "a@b.iam.gserviceaccount.com"}') == {
+    assert _decode_service_account(None, '{"client_email": "a@b.iam.gserviceaccount.com"}') == {
         "client_email": "a@b.iam.gserviceaccount.com"}
-    assert _decode_service_account(None, None, None) is None
+    assert _decode_service_account(None, None) is None
 
 
 def test_daily_email_status_for_settings():
@@ -140,7 +140,7 @@ def test_google_export_through_the_apps_script(monkeypatch):
     from titleagent.config import Secrets
     from titleagent.exports import google
 
-    secrets = Secrets(None, None, None, None, google_export_url="https://script.google.com/macros/s/x/exec",
+    secrets = Secrets(None, None, None, google_export_url="https://script.google.com/macros/s/x/exec",
                       google_export_key="k1")
     assert secrets.has_google
     sent = []
@@ -159,7 +159,7 @@ def test_google_export_through_the_apps_script(monkeypatch):
     assert sent[-1]["folder"] == "1Fold" and sent[-1]["kind"] == "sheet" and sent[-1]["data"] == "eGxzeA=="
     assert google.check(secrets, "1Fold") == (True, "Connected: exports go to “Title Checklists”.")
 
-    wrong = Secrets(None, None, None, None, google_export_url=secrets.google_export_url, google_export_key="nope")
+    wrong = Secrets(None, None, None, google_export_url=secrets.google_export_url, google_export_key="nope")
     ok, msg = google.check(wrong, "1Fold")
     assert not ok and "key doesn't match" in msg
 
@@ -167,7 +167,7 @@ def test_google_export_through_the_apps_script(monkeypatch):
     ok, msg = google.check(secrets, "1Fold")
     assert not ok and "Anyone" in msg
     assert "Drive service" in google._script_error("ReferenceError: Drive is not defined")
-    assert google.check(Secrets(None, None, None, None), "1Fold")[0] is False
+    assert google.check(Secrets(None, None, None), "1Fold")[0] is False
 
 
 def test_daily_email_goes_out_at_8_eastern():
@@ -210,10 +210,7 @@ def test_send_hands_resend_the_delivery_time(monkeypatch):
     assert bodies[0]["scheduled_at"] == "2026-10-29T08:00:00-04:00" and "scheduled_at" not in bodies[1]
 
 
-def test_email_links_follow_the_app():
+def test_email_links_open_the_deal():
     deals = [{"id": 7, "address": "1 Sample St", "deal_type": "Double Close", "closing_date": None, "tc": "Pat"}]
-    items = {7: [item("Payoff", key="a")]}
-    _, old = summary_html(deals, items, date(2026, 10, 25), "https://old.streamlit.app")
-    _, new = summary_html(deals, items, date(2026, 10, 25), "https://title.totalchb.com/", hash_links=True)
-    assert 'href="https://old.streamlit.app/deal?id=7"' in old
-    assert 'href="https://title.totalchb.com/#/deal/7"' in new
+    _, html = summary_html(deals, {7: [item("Payoff", key="a")]}, date(2026, 10, 25), "https://title.totalchb.com/")
+    assert 'href="https://title.totalchb.com/#/deal/7"' in html

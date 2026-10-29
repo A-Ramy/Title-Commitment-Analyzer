@@ -1,113 +1,66 @@
 # Title Agent — Total Cash Home Buyers
 
+**https://title.totalchb.com** · sign in with your @totalchb.com Google account.
+
 Upload a title commitment (and the purchase contract) and the Title Agent lists **everything that has to happen
 before the deal can close**: Closing Blockers, Before Closing items and Review / FYI, each traced to the page and
-wording it comes from. TCs work the list in the app and export it to Google Sheets, Google Docs, Word, PDF, Excel or
-CSV. The team trains it with worked commitments and **Report Missing Item**; admins approve every lesson.
+wording it comes from. TCs work the list in the app and export it (PDF, Word, Excel, CSV, Google Sheets / Docs,
+everything or Closing Blockers only). The team trains it with worked commitments and **Report Missing Item**; admins
+approve every lesson. A summary email goes out weekdays at 8:00 AM Eastern.
 
-Plan and decisions: [`docs/PLAN.md`](docs/PLAN.md). Project rules: [`CLAUDE.md`](CLAUDE.md).
+Plans and decisions: [`docs/PLAN.md`](docs/PLAN.md) (the team's rules) and [`docs/PLAN-v2.md`](docs/PLAN-v2.md) (how
+it runs today). Project rules: [`CLAUDE.md`](CLAUDE.md).
+
+## How it runs
+
+| Piece | Where | Folder |
+| --- | --- | --- |
+| The page (Universal Team Hub design) | Vercel, title.totalchb.com | `web/` |
+| The engine: reads commitments, runs reviews, builds exports, holds the AI key | Google Cloud Run | `engine/`, `titleagent/` |
+| Data: deals, lists, PDFs, lessons, settings | Firebase (Firestore + Storage), project `title-commitment-agent` | rules in `firebase/` |
+| Sign-in | Firebase Authentication (Google, @totalchb.com only) | |
+| The 8 AM email | GitHub Actions → Resend, from title-agent@totalchb.com | `scripts/daily_email.py` |
+| Google Sheets / Docs exports | A Google Apps Script in the team's Drive | `titleagent/exports/google_export.gs` |
+
+Every push deploys itself: Vercel rebuilds the page; `.github/workflows/deploy-engine.yml` rebuilds the engine, deploys
+it to Cloud Run (keyless sign-in to Google, `scripts/gcp_setup.sh`) and smoke-checks it.
 
 ## How a review works
 
 1. **Read** – Claude (Opus 5.5) reads the commitment PDF itself, scanned pages included, and reports Schedule A and
    every numbered Schedule B-I requirement and B-II exception.
-2. **Numbering check (code, not AI)** – the app reads the PDF text on its own and confirms every printed item number
-   was picked up. Gaps go back to the AI once; anything still missing shows in red on the coverage panel.
+2. **Numbering check (code, not AI)** – the engine reads the PDF text on its own and confirms every printed item
+   number was picked up. Gaps go back to the AI once; anything still missing shows in red.
 3. **Confirm** – the uploader confirms the deal details the agent read (address, deal type, closing date, TC).
 4. **Action list** – every B-I / B-II number gets a disposition (code checks none is skipped), plus the professional
-   checklist (`titleagent/checklist.py`, 34 checks incl. double close, novation, subject-to, seller financing) and
-   every approved lesson.
+   checklist (`titleagent/checklist.py`, 34 checks) and every approved lesson.
 5. **Second review** – an independent pass that only asks "what would stop this closing that isn't on the list?"
 6. **Proof** – every quote is checked against the page it cites (✓ / ✗; scanned pages can't be checked).
 
-Due dates come from the closing date (Settings). Updated commitments go on the same deal: statuses and notes carry
-over, and the list shows what's new and what the title company removed.
+## Working on it
 
-## Run it locally
-
-Requires [uv](https://docs.astral.sh/uv/).
+Requires [uv](https://docs.astral.sh/uv/), Node 20+ and Java 11+ (for the Firebase emulators).
 
 ```bash
-uv sync
-cp .env.example .env              # add ANTHROPIC_API_KEY
-uv run streamlit run app.py       # http://localhost:8501
+uv sync && (cd web && npm install)
+npx firebase-tools@13.29.1 emulators:start --project title-commitment-agent     # Auth, Firestore, Storage
+FIREBASE_PROJECT_ID=title-commitment-agent FIRESTORE_EMULATOR_HOST=127.0.0.1:8085 \
+  STORAGE_EMULATOR_HOST=http://127.0.0.1:9199 FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 \
+  ALLOWED_ORIGINS=http://127.0.0.1:5173 TITLE_AGENT_DEMO=1 uv run uvicorn engine.main:app --port 8090
+cd web && VITE_EMULATORS=1 VITE_ENGINE_URL=http://127.0.0.1:8090 npx vite        # http://127.0.0.1:5173
 ```
 
-Without a key, look at the UI with a made-up sample deal: `TITLE_AGENT_DEMO=1 uv run streamlit run app.py`
-(tick "Use the made-up sample commitment" on Analyze). For local work against real data without a sign-in, add
-`TITLE_AGENT_NO_LOGIN=1` to `.env`; never set it in the cloud.
+`TITLE_AGENT_DEMO=1` uses scripted answers on a made-up sample commitment (no AI cost); in the browser console,
+`__emulatorSignIn('you@totalchb.com')` signs in on the emulator.
 
-Tests and lint: `uv run pytest` · `uv run ruff check .`
+Checks: `uv run ruff check .` and `uv run pytest` (storage and engine tests need the Firestore emulator:
+`scripts/firestore_emulator.sh &` then `FIRESTORE_EMULATOR_HOST=127.0.0.1:8085 uv run pytest`); `cd web && npm run build`.
 
 Measure accuracy on real worked commitments (kept **outside** the repo; see the script's docstring for the
 `gold.json` format): `uv run python scripts/evaluate.py /path/to/examples`
 
-## Sign-in (the app is public, so it locks itself)
-
-Streamlit Community Cloud allows one private app per account and the Projection Tool uses it, so this app's URL is
-public. The app is **locked** until one of these is set in its secrets (template: `.streamlit/secrets.toml.example`):
-
-- **Team password (stopgap, 1 minute):** `APP_PASSWORD`. People enter their work email and the password once; the
-  browser stays signed in for 30 days (reloads and links from the daily email open straight in) until they click
-  Sign Out. Changing `APP_PASSWORD` signs everyone out. The email is not verified, so anyone with the password could
-  claim to be an admin.
-- **Google sign-in (recommended, ~15 minutes):** Google Cloud console → APIs & Services → Credentials → Create
-  OAuth client ID (Web application) → authorized redirect URI `https://YOUR-APP.streamlit.app/oauth2callback`.
-  Put the client ID and secret in the `[auth]` section with a random `cookie_secret`. Only verified Google accounts
-  at `ALLOWED_DOMAINS` (default `totalchb.com`) or listed in `ALLOWED_EMAILS` get in.
-
-## Go live (Streamlit Community Cloud, like the Projection Tool)
-
-1. **Database** – create a Postgres database (Neon or Supabase, free tier to start) and copy its connection string.
-2. **App** – on share.streamlit.io: New app → this repository, branch, `app.py`. (It can't be private on the free
-   plan while the Projection Tool is; the sign-in protects it.)
-3. **Secrets** (App → Settings → Secrets):
-   ```toml
-   ANTHROPIC_API_KEY = "sk-ant-..."
-   DATABASE_URL = "postgresql://..."
-   APP_PASSWORD = "..."   # or the Google sign-in [auth] section (see Sign-in above)
-   ```
-4. **Settings page** – add the admins (Owner, CTO, TC, TC Assistant), the TCs and the email recipients.
-5. **Training set** – on the Training tab, upload each worked commitment with the closer's list. The 10 lessons
-   learned from the first 8 examples are already built in.
-
-### Google Sheets / Docs exports
-**Easy way (about 5 minutes):** a small Google Apps Script (`titleagent/exports/google_export.gs`) saves the exports
-into any folder, as the team member who deploys it. No Google Cloud project, no service account. The app walks you
-through it: Settings → Google Exports → **Set up Google exports** (paste the script, add the Drive service, run
-`setup`, deploy as a web app open to Anyone, then add `GOOGLE_EXPORT_URL` and `GOOGLE_EXPORT_KEY` to the secrets).
-The key means only the app can use the script.
-
-**Or a service account on a Shared Drive** (when exports must not belong to a person):
-The app writes as a **service account** (a robot Google user), which has no Drive storage of its own, so exports go
-into a folder in a **Shared Drive**.
-1. **Google Cloud** (console.cloud.google.com, signed in with a totalchb.com account): create a project (e.g.
-   "Title Agent") → APIs & Services → Library → enable **Google Drive API** → IAM & Admin → Service Accounts → Create
-   (name `title-agent`, no roles) → open it → Keys → Add key → JSON. If key creation is blocked, a Workspace admin
-   turns off the organization policy *Disable service account key creation* for this project.
-2. **Shared Drive**: open the drive → Manage members → add the service account's email
-   (`title-agent@<project>.iam.gserviceaccount.com`) as **Content Manager**. If Drive refuses because it's outside
-   totalchb.com, a Workspace admin allows it (Admin console → Apps → Google Workspace → Drive and Docs → Sharing
-   settings, and the Shared Drive's own setting for people outside the organization).
-3. **Secrets** (Streamlit → App → Settings → Secrets): paste the key file between triple quotes:
-   ```toml
-   GOOGLE_SERVICE_ACCOUNT_JSON = '''
-   { ...the whole key file... }
-   '''
-   ```
-4. **App → Settings → Google Exports**: paste the folder's link, Save, click **Test Google Folder**.
-
-### Daily email (from @totalchb.com)
-1. resend.com → add the domain `totalchb.com` → add the DNS records it shows (2–3 records, one time).
-2. Create an API key. In this GitHub repository: Settings → Secrets → Actions: `DATABASE_URL`, `RESEND_API_KEY`;
-   Variables: `APP_URL` (the app's link). The key stays in GitHub; Settings → Connections shows when the
-   email last went out.
-3. `.github/workflows/daily-email.yml` delivers it at 8:00 AM Eastern every weekday, all year. GitHub's scheduler
-   runs late or skips runs, so it tries five times before 8:00 and the first try that gets through hands the email
-   to Resend to deliver at 8:00 sharp. **Run workflow** sends a test right away (it doesn't replace the 8:00 email).
-
 ## Privacy
 
-Commitments and contracts contain names, addresses and loan numbers. They are stored only in the app's private
-database, kept indefinitely (owner's decision), and never committed to git: `*.pdf`, exports and `.data/` are
-gitignored. Never put real deal data in tests, logs, issues or commit messages.
+Commitments and contracts contain names, addresses and loan numbers. They live only in the Firebase project, readable
+by signed-in @totalchb.com accounts (the security rules) and changed only through the engine. They are never committed
+to git: `*.pdf`, exports and `.data/` are gitignored, and tests use made-up data (`titleagent/demo.py`).

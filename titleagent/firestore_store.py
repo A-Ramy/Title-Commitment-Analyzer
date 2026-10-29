@@ -1,8 +1,7 @@
-"""The app's data in Firebase (Title Agent v2): Firestore for records, Cloud Storage for the PDFs and each review's
-full analysis. Same methods and return shapes as storage.Store, so the app, the daily email and the tests work with
-either one.
+"""The app's data in Firebase: Firestore for records, Cloud Storage for the PDFs and each review's full analysis.
+The page reads it live (web/src/data.js); the engine and the daily email change it through these methods.
 
-Layout (ids are the same integers as the SQL store, so links and the one-time copy keep them):
+Layout (integer ids, kept from the first app's database when the data was copied over on 2026-10-29):
     settings/{key}                       value, updated_at, updated_by
     deals/{id}                           deal fields (closing_date as YYYY-MM-DD)
     deals/{id}/items/{hash of key}       position, data (ActionItem), updated_at, updated_by

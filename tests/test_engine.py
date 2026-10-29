@@ -30,7 +30,7 @@ def setup():
     from tests.conftest import firestore_store
 
     store = firestore_store()
-    client = TestClient(create_app(Engine(secrets=Secrets(None, None, None, None), store=store,
+    client = TestClient(create_app(Engine(secrets=Secrets(None, None, None), store=store,
                                           llm=demo.scripted_llm, verify=verify)))
     return client, store
 

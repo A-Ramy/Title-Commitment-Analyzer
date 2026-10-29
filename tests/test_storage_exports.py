@@ -8,7 +8,6 @@ from titleagent import demo, pipeline
 from titleagent.exports import Checklist, document, tabular
 from titleagent.llm import Usage
 from titleagent.prompts import REVISED_SEED_LESSONS, SEED_LESSONS
-from titleagent.storage import Store, lessons_t
 
 
 def analysis():
@@ -16,16 +15,6 @@ def analysis():
     docs = pipeline.Documents(demo.sample_commitment_pdf())
     structure, gaps = pipeline.read_documents(llm, docs, [], usage)
     return pipeline.review(llm, docs, structure, pipeline.DealInfo(closing_date=date(2026, 11, 13)), [], usage, gaps)
-
-
-def test_revised_seed_lesson_rewritten_in_old_database(tmp_path):
-    url = f"sqlite:///{tmp_path / 't.db'}"
-    store = Store(url)
-    old, new = next(iter(REVISED_SEED_LESSONS.items()))
-    with store.engine.begin() as c:  # a database seeded before the owner changed the rule
-        c.execute(lessons_t.update().where(lessons_t.c.text == new).values(text=old))
-    assert old in store.active_lessons()
-    assert Store(url).active_lessons() == SEED_LESSONS
 
 
 def test_revised_seed_lesson_rewritten_in_firestore():
@@ -40,8 +29,7 @@ def test_revised_seed_lesson_rewritten_in_firestore():
     assert store.active_lessons() == SEED_LESSONS
 
 
-def test_store_round_trip(any_store):
-    store = any_store
+def test_store_round_trip(store):
     assert store.active_lessons() == SEED_LESSONS
     doc = store.save_document(b"%PDF-1.4 x", "c.pdf", "commitment", by="tc@x")
     deal = store.create_deal(by="tc@x", address="1427 Maple Ave", deal_type="Double Close",
@@ -118,33 +106,3 @@ def test_closing_blockers_only_export():
         .extract_text()
     assert ["", "No Closing Blockers on this deal."] in list(csv.reader(io.StringIO(
         tabular.to_csv(clean, "blockers").decode("utf-8-sig"))))
-
-
-def test_copy_to_firestore_keeps_everything(tmp_path):
-    from scripts.copy_to_firestore import TABLES, copy, firestore_counts, sql_counts
-    from tests.conftest import firestore_store
-
-    dst = firestore_store()
-    src = Store(f"sqlite:///{tmp_path / 't.db'}")
-    doc = src.save_document(b"%PDF-1.4 x", "c.pdf", "commitment", by="tc@x")
-    deal = src.create_deal(by="tc@x", address="1427 Maple Ave", closing_date=date(2026, 11, 13))
-    src.attach_document(doc, deal)
-    src.save_run(deal, analysis(), doc, None, False, by="tc@x")
-    key = src.get_items(deal)[0].key
-    src.update_item(deal, key, by="tc@x", status="Ordered", notes="payoff requested")
-    src.add_feedback("missing", "Water bill", by="tc@x", deal_id=deal)
-    src.add_lesson("A manual rule.", by="admin@x")
-    src.set_setting("tcs", ["Pat"])
-    src.add_score(src.add_example("Sample", doc, ["1. Payoff"]), 0.9, 9, 10, 11)
-
-    copy(src, dst, log=lambda *_: None)
-    copy(src, dst, log=lambda *_: None)  # a second run changes nothing
-    before, after = sql_counts(src), firestore_counts(dst)
-    assert {k: before[k] for k in TABLES} == after
-    assert dst.get_items(deal) == src.get_items(deal)  # statuses and notes as the TC left them
-    assert dst.get_deal(deal)["closing_date"] == date(2026, 11, 13)
-    assert dst.get_document(doc)["data"] == b"%PDF-1.4 x"
-    assert dst.latest_run(deal)["analysis"] == src.latest_run(deal)["analysis"]
-    assert dst.active_lessons() == src.active_lessons()
-    assert dst.get_settings()["tcs"] == ["Pat"]
-    assert dst.create_deal(by="x") == deal + 1  # new ids continue above the copied ones

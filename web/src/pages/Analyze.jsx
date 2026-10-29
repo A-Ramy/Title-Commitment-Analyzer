@@ -1,5 +1,5 @@
 // Analyze: upload the commitment (and the contract), the agent reads it, the uploader confirms the deal details,
-// then the full review runs and opens the deal. Same steps as the Streamlit app (titleagent/flows.py).
+// then the full review runs and opens the deal (engine: titleagent/flows.py).
 // #/analyze/update/<deal id> starts an updated commitment for that deal.
 import { doc, getDoc } from 'firebase/firestore';
 import { useEffect, useState } from 'preact/hooks';

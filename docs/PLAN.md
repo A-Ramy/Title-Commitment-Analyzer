@@ -1,3 +1,6 @@
+> **Status (2026-10-30):** the Streamlit version described below was retired. The team's rules and decisions here
+> still apply; how the app runs today is in [`PLAN-v2.md`](PLAN-v2.md).
+
 # Title Commitment Analyzer: Plan (draft for review)
 
 An app that reads an uploaded **title commitment** the way a professional title agent would and returns

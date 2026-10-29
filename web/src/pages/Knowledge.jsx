@@ -15,7 +15,7 @@ function useCol(name) {
   return rows;
 }
 
-// The same starting point as the Streamlit inbox: the admin edits it into a general rule.
+// A suggested starting point; the admin edits it into a general rule.
 function suggested(f) {
   const d = f.detail || {};
   if (d.suggested_lesson) return d.suggested_lesson;

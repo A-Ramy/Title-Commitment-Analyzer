@@ -1,13 +1,11 @@
 [project]
 name = "title-agent"
 version = "0.1.0"
-description = "Title Commitment Analyzer (Title Agent) for Total Cash Home Buyers"
+description = "Title Agent (Total Cash Home Buyers): the review engine behind title.totalchb.com"
 requires-python = ">=3.11"
-dependencies = [  # the engine and the scripts (engine/requirements.txt); the Streamlit app adds the "app" group
+dependencies = [  # the engine and the daily email (engine/requirements.txt: uv export --no-dev)
     "anthropic>=1.0",
     "pypdf>=5.0",
-    "sqlalchemy>=2.0",
-    "psycopg[binary]>=3.2",
     "pydantic>=2.7",
     "python-dotenv>=1.0",
     "openpyxl>=3.1",
@@ -22,12 +20,6 @@ dependencies = [  # the engine and the scripts (engine/requirements.txt); the St
 ]
 
 [dependency-groups]
-app = [  # the Streamlit app (requirements.txt for Streamlit Community Cloud)
-    "streamlit==1.66.0",  # same version as the Projection Tool, which shares brand.css
-    "Authlib>=1.3.2",  # Google sign-in (st.login)
-    "pandas>=2.2",
-    "gspread>=6.1",
-]
 dev = [
     "httpx>=0.27",
     "pytest>=8.2",
@@ -36,7 +28,7 @@ dev = [
 
 [tool.uv]
 package = false
-default-groups = ["dev", "app"]
+default-groups = ["dev"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

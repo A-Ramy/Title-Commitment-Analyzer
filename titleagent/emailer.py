@@ -26,7 +26,7 @@ def _open(items: list[ActionItem]) -> list[ActionItem]:
 
 
 def summary_html(deals: list[dict], items_by_deal: dict[int, list[ActionItem]], today: date,
-                 app_url: str = "", hash_links: bool = False) -> tuple[str, str]:
+                 app_url: str = "") -> tuple[str, str]:
     """(subject, html)."""
     soon = today + timedelta(days=SOON_DAYS)
     blocks, total_blockers, total_due = [], 0, 0
@@ -45,8 +45,7 @@ def summary_html(deals: list[dict], items_by_deal: dict[int, list[ActionItem]], 
             f"{' · <span style=color:#BD2239>OVERDUE</span>' if i.due_date and i.due_date < today.isoformat() else ''}"
             f"</li>" for i in sorted(blockers + [x for x in due if x not in blockers],
                                      key=lambda x: (x.priority != "blocker", x.due_date or "9999")))
-        path = f"/#/deal/{d['id']}" if hash_links else f"/deal?id={d['id']}"  # v2 page / Streamlit app
-        link = f' <a href="{escape(app_url.rstrip("/") + path)}">Open</a>' if app_url else ""
+        link = f' <a href="{escape(app_url.rstrip("/"))}/#/deal/{d["id"]}">Open</a>' if app_url else ""
         blocks.append(f"<h3 style='color:#4D458A;margin:18px 0 4px'>{escape(d['address'] or 'Deal ' + str(d['id']))}"
                       f"</h3><div style='color:#767388;font-size:13px'>{escape(d.get('deal_type') or '')}"
                       f"{f' · closing {closing}' if closing else ''} · TC {escape(d.get('tc') or 'unassigned')}"

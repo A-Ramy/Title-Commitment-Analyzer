@@ -11,7 +11,7 @@ const lines = v => (v || []).join('\n');
 const parse = t => t.replace(/,/g, '\n').split('\n').map(x => x.trim()).filter(Boolean);
 const ET = { timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };
 
-// The daily email's last run (written by scripts/daily_email.py), as on the Streamlit Settings tile.
+// The daily email's last run (written by scripts/daily_email.py).
 function emailStatus(last) {
   if (!last) return ['No Run Yet', 'sent from GitHub each weekday at 8:00 AM ET', 'muted'];
   const at = d => new Date(d).toLocaleString('en-US', ET) + ' ET';

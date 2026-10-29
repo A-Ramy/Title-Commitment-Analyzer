@@ -1,22 +1,24 @@
 # CLAUDE.md — Title Agent (Total Cash Home Buyers)
 
-Streamlit app that reviews title commitments and lists everything needed to close. `docs/PLAN.md` holds the owner's
-decisions (section 0); keep this file in sync when a rule changes. **v2 is live** (`docs/PLAN-v2.md`, switched
-2026-10-29): the same engine on Cloud Run (`engine/`), Firestore data, the page in `web/` on Vercel at
-title.totalchb.com **in the Universal Team Hub's design** (RemyTCHB/Universal-Task-Tracker: its stylesheet and
-components). The Streamlit app was deleted (2026-10-30); its code (`app.py`, `ui/`, `views/`) is unused, and the old Neon
-Postgres database is kept as a backup only. New work goes into `web/` and `engine/`.
+Reviews title commitments and lists everything needed to close. Live at **title.totalchb.com** (since 2026-10-29):
+the page in `web/` (Vercel, **the Universal Team Hub's design**: RemyTCHB/Universal-Task-Tracker's stylesheet and
+components), the engine in `engine/` + `titleagent/` (Cloud Run), data in Firebase (project `title-commitment-agent`).
+`docs/PLAN.md` holds the owner's decisions on the rules (section 0); `docs/PLAN-v2.md` how it runs. Keep this file in
+sync when a rule changes. (The first Streamlit version and its Neon database were retired on 2026-10-30.)
 
 ## Non-negotiables
 - **Never leave a numbered item behind.** Every Schedule B-I and B-II number must get a disposition; the numbering
   check (`titleagent/numbering.py`) is code, not AI, and its gaps are shown, never hidden. Don't weaken it.
 - **Privacy.** Commitments, contracts, exports and the closers' lists are real deal data: never commit them, never
   copy them into tests, fixtures, prompts, lessons, logs or commit messages. Tests use `titleagent/demo.py`
-  (made-up data). `*.pdf`, `.data/` and exports are gitignored.
+  (made-up data). `*.pdf`, `.data/` and exports are gitignored. The repository and its Actions logs are public:
+  scripts print counts, never deal details.
 - **Lessons are general rules** (no names, amounts, case numbers) and go live only after an admin approves them.
-- Secrets only from env / Streamlit secrets (`titleagent/config.py`). Never in code or chat.
-- **The app URL is public** (one private app per Streamlit account; Projection has it). `ui/auth.py` gates every
-  page: Google sign-in with the email allow-list, else `APP_PASSWORD`, else locked. Keep it first in `app.py`.
+- Secrets only from environment variables (`titleagent/config.py`): Cloud Run gets them from GitHub secrets at deploy.
+  Never in code or chat.
+- **Access**: only verified @totalchb.com Google accounts. The engine checks every request's Firebase ID token
+  (`engine/main.py`); the Firestore / Storage rules (`firebase/`) let the page read team data and write nothing but
+  the person's own uploads. Every change goes through the engine.
 
 ## The team's standard (from the 8 worked commitments, owner 2026-10-25, updated 2026-10-28)
 - **Closing Blocker** = needs money paid to, or a document from, someone outside the closing table, or a court /
@@ -31,19 +33,20 @@ Postgres database is kept as a backup only. New work goes into `web/` and `engin
 - The TC owns every item; `provided_by` is who actually has it.
 
 ## Code map
-- `titleagent/` (no Streamlit): `pipeline.py` (steps), `prompts.py` (system prompt, seed lessons), `checklist.py`,
-  `numbering.py`, `grounding.py`, `compare.py` (updated commitments), `llm.py` (Claude calls: structured output,
-  streaming, server-side fallback), `storage.py` (SQL; `open_store()` picks the store), `firestore_store.py` (v2,
-  same methods), `flows.py` (read / review / re-run / train / export without a screen), `exports/`, `emailer.py`,
-  `training.py`, `demo.py`.
-- `engine/main.py` (v2): the Cloud Run service (FastAPI) around `flows.py`; Firebase sign-in check on every request.
-  Its packages: `engine/requirements.txt` (`uv export --no-dev --no-group app`); the Streamlit app adds the `app`
-  group (`requirements.txt`).
-- `ui/` (brand shared with the Projection Tool: same `brand.css` / tokens; Streamlit pinned to the same version),
-  `views/` one file per page, `app.py` navigation.
+- `titleagent/`: `pipeline.py` (steps), `prompts.py` (system prompt, seed lessons), `checklist.py`, `numbering.py`,
+  `grounding.py`, `compare.py` (updated commitments), `llm.py` (Claude calls: structured output, streaming,
+  server-side fallback), `flows.py` (read / review / re-run / train / export), `firestore_store.py` (the data),
+  `storage.py` (`open_store()`), `exports/` (incl. `google_export.gs`), `emailer.py`, `training.py`, `demo.py`.
+- `engine/main.py`: the Cloud Run service (FastAPI) around `flows.py`. Packages: `engine/requirements.txt`
+  (`uv export --no-dev --no-hashes --no-emit-project --format requirements-txt -o engine/requirements.txt`).
+- `web/`: Vite + Preact. `src/pages/` one file per screen, `src/data.js` live Firestore reads, `src/api.js` engine
+  calls, `src/styles.css` the hub's tokens and components.
+- `scripts/daily_email.py` (GitHub Actions, 8:00 AM ET via Resend), `scripts/gcp_setup.sh` (one-time Google Cloud
+  setup), `scripts/evaluate.py` (accuracy on worked commitments kept outside the repo).
 - Model: `claude-opus-5-5`, effort `high` (accuracy first). The system prompt must stay identical across a run's
   calls (prompt caching): put per-deal details in the step's task, not the system prompt.
 
 ## Checks before pushing
-`uv run ruff check .` and `uv run pytest` (Firestore tests too: `scripts/firestore_emulator.sh &` then
-`FIRESTORE_EMULATOR_HOST=127.0.0.1:8085 uv run pytest`). UI changes: run `TITLE_AGENT_DEMO=1 uv run streamlit run app.py` and look.
+`uv run ruff check .`, `uv run pytest` with the Firestore emulator (`scripts/firestore_emulator.sh &` then
+`FIRESTORE_EMULATOR_HOST=127.0.0.1:8085 uv run pytest`), and `cd web && npm run build`. Page changes: run the
+emulators + engine + page locally (README → Working on it) and look, on a phone width too.

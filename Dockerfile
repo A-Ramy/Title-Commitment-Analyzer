@@ -1,5 +1,5 @@
 # Title Agent engine (v2) for Google Cloud Run: the Python review engine behind title.totalchb.com.
-# Built from GitHub by .github/workflows/deploy-engine.yml. The Streamlit app does not use this file.
+# Built from GitHub by .github/workflows/deploy-engine.yml.
 FROM python:3.12-slim
 
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1

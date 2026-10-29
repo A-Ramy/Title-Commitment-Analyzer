@@ -2,21 +2,13 @@
 
 from __future__ import annotations
 
-from datetime import date
-
 import streamlit as st
 
 from titleagent import pipeline
-from titleagent.exports import Checklist
+from titleagent.exports import checklist_for  # noqa: F401 (views/deal.py imports it from here)
 from titleagent.llm import AgentError, Usage
-from titleagent.models import Analysis, Coverage, StructureOut
+from titleagent.models import Analysis, StructureOut
 from ui.state import get_llm, get_settings, get_store, who
-
-
-def coverage_line(c: Coverage) -> str:
-    return (f"B-I {c.requirements_addressed}/{c.requirements_total} addressed · B-II {c.exceptions_addressed}/"
-            f"{c.exceptions_total} classified · {c.checklist_run} pro checks"
-            + ("" if c.complete else " · INCOMPLETE: see the app"))
 
 
 def read_step(documents: pipeline.Documents) -> tuple[StructureOut, dict, dict] | None:
@@ -68,23 +60,3 @@ def review_step(deal_id: int, documents: pipeline.Documents, structure: Structur
         s.update(label="Review complete", state="complete", expanded=False)
     store.save_run(deal_id, analysis, commitment_doc_id, contract_doc_id, updated_commitment, by=who())
     return analysis
-
-
-def checklist_for(deal: dict, analysis: dict | None, items) -> Checklist:
-    a = (analysis or {}).get("structure", {}).get("schedule_a", {})
-    insured = "; ".join(f"{p.get('proposed_insured')} (${p['amount']:,.0f})" if p.get("amount") else
-                        p.get("proposed_insured", "") for p in a.get("policies", []))
-    closing = deal.get("closing_date")
-    cov = (analysis or {}).get("coverage")
-    meta = [
-        ("Deal type", deal.get("deal_type") or ""),
-        ("Closing date", closing.strftime("%b %d, %Y") if isinstance(closing, date) else ""),
-        ("TC", deal.get("tc") or ""),
-        ("Title company", deal.get("title_company") or a.get("issuing_agent", "")),
-        ("Commitment #", a.get("commitment_number", "")),
-        ("Commitment date", a.get("commitment_date", "")),
-        ("Vested owner", a.get("vested_owner", "")),
-        ("Proposed insured", insured),
-    ]
-    return Checklist(title=deal.get("address") or f"Deal {deal['id']}", meta=meta, items=items,
-                     coverage_line=coverage_line(Coverage.model_validate(cov)) if cov else "")

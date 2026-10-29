@@ -1,0 +1,73 @@
+name: Deploy engine
+
+# Builds the Title Agent engine (Dockerfile) and deploys it to Cloud Run in the Firebase project. Runs when the engine
+# or the review code changes, or by hand (Run workflow). Signs in to Google without a key (scripts/gcp_setup.sh).
+on:
+  push:
+    branches: [claude/busy-archimedes-7ix22c]
+    paths: [engine/**, titleagent/**, assets/**, Dockerfile, .github/workflows/deploy-engine.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write  # the short-lived token GitHub trades for Google access
+
+concurrency:
+  group: deploy-engine
+  cancel-in-progress: false
+
+env:
+  PROJECT: title-commitment-agent
+  REGION: us-east1
+  SERVICE: title-agent-engine
+  IMAGE: us-east1-docker.pkg.dev/title-commitment-agent/title-agent/engine
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Skip until Google Cloud is set up
+        id: ready
+        env:
+          PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+        run: |
+          if [ -z "$PROVIDER" ]; then
+            echo "Skipped: run scripts/gcp_setup.sh in Cloud Shell and save GCP_WORKLOAD_IDENTITY_PROVIDER first."
+            echo "go=no" >> "$GITHUB_OUTPUT"
+          else
+            echo "go=yes" >> "$GITHUB_OUTPUT"
+          fi
+
+      - if: steps.ready.outputs.go == 'yes'
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: github-deploy@title-commitment-agent.iam.gserviceaccount.com
+
+      - if: steps.ready.outputs.go == 'yes'
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Build and push the image
+        if: steps.ready.outputs.go == 'yes'
+        run: |
+          gcloud auth configure-docker "$REGION-docker.pkg.dev" --quiet
+          docker build -t "$IMAGE:$GITHUB_SHA" .
+          docker push "$IMAGE:$GITHUB_SHA"
+
+      - name: Deploy to Cloud Run
+        if: steps.ready.outputs.go == 'yes'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GOOGLE_EXPORT_URL: ${{ secrets.GOOGLE_EXPORT_URL }}
+          GOOGLE_EXPORT_KEY: ${{ secrets.GOOGLE_EXPORT_KEY }}
+        run: |
+          # The engine checks every caller's Firebase sign-in itself, so Cloud Run lets requests through
+          # (--no-invoker-iam-check). Requests wait for reviews (1–3 minutes): 15-minute timeout.
+          gcloud run deploy "$SERVICE" --image "$IMAGE:$GITHUB_SHA" --region "$REGION" --quiet \
+            --service-account "title-agent-engine@$PROJECT.iam.gserviceaccount.com" \
+            --no-invoker-iam-check --timeout 900 --cpu 1 --memory 1Gi --concurrency 8 \
+            --min-instances 0 --max-instances 3 \
+            --set-env-vars "^@^FIREBASE_PROJECT_ID=$PROJECT@ALLOWED_DOMAINS=totalchb.com@ALLOWED_ORIGINS=https://title.totalchb.com,http://localhost:5173@ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY@GOOGLE_EXPORT_URL=$GOOGLE_EXPORT_URL@GOOGLE_EXPORT_KEY=$GOOGLE_EXPORT_KEY"
+          echo "Engine URL: $(gcloud run services describe "$SERVICE" --region "$REGION" --format='value(status.url)')"

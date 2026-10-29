@@ -32,6 +32,7 @@ BATCH = 400  # Firestore allows 500 writes per batch
 class Blobs(Protocol):
     def put(self, path: str, data: bytes, content_type: str) -> None: ...
     def get(self, path: str) -> bytes: ...
+    def delete(self, path: str) -> None: ...
 
 
 class GcsBlobs:
@@ -47,6 +48,9 @@ class GcsBlobs:
 
     def get(self, path: str) -> bytes:
         return self.bucket.blob(path).download_as_bytes()
+
+    def delete(self, path: str) -> None:
+        self.bucket.blob(path).delete()
 
 
 class LocalBlobs:
@@ -65,6 +69,9 @@ class LocalBlobs:
     def get(self, path: str) -> bytes:
         return (self.root / path).read_bytes()
 
+    def delete(self, path: str) -> None:
+        (self.root / path).unlink(missing_ok=True)
+
 
 class MemoryBlobs:
     """For tests and the emulator."""
@@ -77,6 +84,9 @@ class MemoryBlobs:
 
     def get(self, path: str) -> bytes:
         return self.files[path]
+
+    def delete(self, path: str) -> None:
+        self.files.pop(path, None)
 
 
 def _now() -> datetime:
@@ -354,3 +364,26 @@ class FirestoreStore:
 
     def list_scores(self) -> list[dict]:
         return sorted((s.to_dict() for s in self.db.collection("scores").stream()), key=lambda d: d["run_at"])
+
+    # ---- v2 engine: drafts between Read Documents and Run Full Review
+    def save_draft(self, draft: dict, by: str) -> str:
+        """The full draft (with what the agent read) goes to Storage; the doc holds what the confirm screen shows."""
+        import uuid
+
+        draft_id = uuid.uuid4().hex
+        self.blobs.put(f"drafts/{draft_id}.json", json.dumps(draft).encode(), "application/json")
+        self.db.document(f"drafts/{draft_id}").set({"id": draft_id, "by": by, "created_at": _now(),
+                                                    "prefill": draft["prefill"], "summary": draft["summary"],
+                                                    "update_for": draft.get("update_for")})
+        return draft_id
+
+    def get_draft(self, draft_id: str) -> dict | None:
+        snap = self.db.document(f"drafts/{draft_id}").get()
+        if not snap.exists:
+            return None
+        return {**json.loads(self.blobs.get(f"drafts/{draft_id}.json")), "by": snap.get("by")}
+
+    def delete_draft(self, draft_id: str) -> None:
+        self.db.document(f"drafts/{draft_id}").delete()
+        self.blobs.delete(f"drafts/{draft_id}.json")
+

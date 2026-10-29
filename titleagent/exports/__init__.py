@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
-from titleagent.models import PRIORITY_LABEL, ActionItem
+from titleagent.models import PRIORITY_LABEL, ActionItem, Coverage
 
 # What an export includes (Export List → Include). Every format takes the same choice.
 INCLUDE = {"all": "Everything", "action": "Action items only (no Review / FYI)", "blockers": "Closing Blockers only"}
@@ -69,3 +69,29 @@ def rows(checklist: Checklist, include: str = "all") -> list[list[str]]:
         out.append([str(n), PRIORITY_LABEL.get(i.priority, i.priority), i.category, i.title, i.action, i.owner,
                     i.provided_by, money(i.amount), i.due_date or "", i.status, source_text(i), i.notes])
     return out
+
+
+def coverage_line(c: Coverage) -> str:
+    return (f"B-I {c.requirements_addressed}/{c.requirements_total} addressed · B-II {c.exceptions_addressed}/"
+            f"{c.exceptions_total} classified · {c.checklist_run} pro checks"
+            + ("" if c.complete else " · INCOMPLETE: see the app"))
+
+
+def checklist_for(deal: dict, analysis: dict | None, items) -> Checklist:
+    a = (analysis or {}).get("structure", {}).get("schedule_a", {})
+    insured = "; ".join(f"{p.get('proposed_insured')} (${p['amount']:,.0f})" if p.get("amount") else
+                        p.get("proposed_insured", "") for p in a.get("policies", []))
+    closing = deal.get("closing_date")
+    cov = (analysis or {}).get("coverage")
+    meta = [
+        ("Deal type", deal.get("deal_type") or ""),
+        ("Closing date", closing.strftime("%b %d, %Y") if isinstance(closing, date) else ""),
+        ("TC", deal.get("tc") or ""),
+        ("Title company", deal.get("title_company") or a.get("issuing_agent", "")),
+        ("Commitment #", a.get("commitment_number", "")),
+        ("Commitment date", a.get("commitment_date", "")),
+        ("Vested owner", a.get("vested_owner", "")),
+        ("Proposed insured", insured),
+    ]
+    return Checklist(title=deal.get("address") or f"Deal {deal['id']}", meta=meta, items=items,
+                     coverage_line=coverage_line(Coverage.model_validate(cov)) if cov else "")

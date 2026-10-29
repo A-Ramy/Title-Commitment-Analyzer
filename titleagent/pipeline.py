@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date
 
@@ -73,8 +74,16 @@ def _gaps_text(gaps: dict[str, list[int]]) -> str:
     return "; ".join(f"Schedule {k} item(s) {', '.join(map(str, v))}" for k, v in gaps.items() if v)
 
 
-def read_documents(llm: LLM, documents: Documents, lessons: list[str], usage: Usage) -> tuple[StructureOut, dict]:
-    """Step 1. Returns the extraction and the numbering gaps still left after one retry."""
+def _say(progress: Callable[[str], None] | None, message: str) -> None:
+    if progress:
+        progress(message)
+
+
+def read_documents(llm: LLM, documents: Documents, lessons: list[str], usage: Usage,
+                   progress: Callable[[str], None] | None = None) -> tuple[StructureOut, dict]:
+    """Step 1. Returns the extraction and the numbering gaps still left after one retry. `progress` gets a short
+    line before each step (the v2 page shows it while the agent works)."""
+    _say(progress, "Reading every page (scanned pages are read as images)")
     text = read_pdf(documents.commitment)
     system = prompts.system_prompt(lessons)
     task = prompts.STRUCTURE_TASK.format(deal_types=", ".join(DEAL_TYPES))
@@ -82,6 +91,7 @@ def read_documents(llm: LLM, documents: Documents, lessons: list[str], usage: Us
                         usage=usage)
     gaps = numbering.check(text, structure.requirements, structure.exceptions)
     if any(gaps.values()):
+        _say(progress, "Numbering check: reading the missing item numbers again")
         retry = task + "\n\n" + prompts.RETRY_TASK.format(missing=_gaps_text(gaps))
         structure = llm.ask(step="structure", system=system, docs=documents.docs(), task=retry, schema=StructureOut,
                             usage=usage)
@@ -151,7 +161,8 @@ def coverage(structure: StructureOut, actions: ActionsOut, gaps: dict, deal_type
 
 def review(llm: LLM, documents: Documents, structure: StructureOut, deal: DealInfo, lessons: list[str],
            usage: Usage, gaps: dict | None = None, previous: list[ActionItem] | None = None,
-           updated_commitment: bool = False, offsets: dict | None = None) -> Analysis:
+           updated_commitment: bool = False, offsets: dict | None = None,
+           progress: Callable[[str], None] | None = None) -> Analysis:
     """Steps 2 and 3. `previous` is the deal's current list (statuses carry over); `updated_commitment` marks
     what is new and what the title company removed."""
     text = read_pdf(documents.commitment)
@@ -163,16 +174,20 @@ def review(llm: LLM, documents: Documents, structure: StructureOut, deal: DealIn
                      "proposed insured, price vs policy amount, closing date vs the commitment deadline, assignment "
                      "rights.") if documents.contract else ""
     task = prompts.ACTIONS_TASK.format(deal=deal.describe(), structure=structure_json, contract_note=contract_note)
+    _say(progress, f"Writing the action list with {len(lessons)} team lessons and the professional checklist")
     actions = llm.ask(step="actions", system=system, docs=docs, task=task, schema=ActionsOut, usage=usage)
     missing = _undisposed(structure, actions)
     if missing:
+        _say(progress, "Giving every numbered item a disposition")
         retry = task + "\n\n" + prompts.ACTIONS_RETRY.format(missing=", ".join(missing))
         actions = llm.ask(step="actions", system=system, docs=docs, task=retry, schema=ActionsOut, usage=usage)
 
     listed = json.dumps([{"priority": i.priority, "title": i.title, "sources": [s.ref for s in i.sources]}
                          for i in actions.items], indent=1)
+    _say(progress, "Second, independent review for anything missing")
     second = llm.ask(step="review", system=system, docs=docs, task=prompts.REVIEW_TASK.format(items=listed),
                      schema=ReviewOut, usage=usage)
+    _say(progress, "Checking every quote against its page")
 
     items = [_to_item(o, "commitment", text, deal.closing_date, offsets) for o in actions.items]
     items += [_to_item(o, "review", text, deal.closing_date, offsets) for o in second.missing_items]

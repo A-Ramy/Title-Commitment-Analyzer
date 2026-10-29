@@ -32,7 +32,11 @@ design** (RemyTCHB/Universal-Task-Tracker: its stylesheet and components), not t
 - `titleagent/` (no Streamlit): `pipeline.py` (steps), `prompts.py` (system prompt, seed lessons), `checklist.py`,
   `numbering.py`, `grounding.py`, `compare.py` (updated commitments), `llm.py` (Claude calls: structured output,
   streaming, server-side fallback), `storage.py` (SQL; `open_store()` picks the store), `firestore_store.py` (v2,
-  same methods), `exports/`, `emailer.py`, `training.py`, `demo.py`.
+  same methods), `flows.py` (read / review / re-run / train / export without a screen), `exports/`, `emailer.py`,
+  `training.py`, `demo.py`.
+- `engine/main.py` (v2): the Cloud Run service (FastAPI) around `flows.py`; Firebase sign-in check on every request.
+  Its packages: `engine/requirements.txt` (`uv export --no-dev --no-group app`); the Streamlit app adds the `app`
+  group (`requirements.txt`).
 - `ui/` (brand shared with the Projection Tool: same `brand.css` / tokens; Streamlit pinned to the same version),
   `views/` one file per page, `app.py` navigation.
 - Model: `claude-opus-5-5`, effort `high` (accuracy first). The system prompt must stay identical across a run's

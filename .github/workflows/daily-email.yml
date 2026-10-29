@@ -22,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
-      - run: uv sync --no-dev
+      - run: uv sync --no-dev --no-group app  # the Streamlit app's packages aren't needed here
       - run: uv run python scripts/daily_email.py ${{ github.event_name == 'workflow_dispatch' && '--now' || '' }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}

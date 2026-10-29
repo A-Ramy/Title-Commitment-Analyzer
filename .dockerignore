@@ -1,0 +1,5 @@
+*
+!engine/
+!titleagent/
+!assets/
+**/__pycache__

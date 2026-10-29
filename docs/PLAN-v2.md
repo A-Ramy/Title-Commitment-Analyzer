@@ -31,8 +31,13 @@ GitHub: code; pushes deploy the page (Vercel) and the engine (Cloud Run); Action
    the counts; it runs from GitHub (Actions → **Copy to Firestore**) with the repository's secrets, and is re-run on
    switch-over day so anything added meanwhile comes over. Until then the Streamlit app stays on Postgres
    (setting `FIREBASE_PROJECT_ID` in its secrets would switch it and the daily email to Firestore, if ever needed).
-2. **Engine service** on Cloud Run: sign-in check, read documents, run review (progress in Firestore), exports,
-   feedback and lessons. Dockerfile; deploy from GitHub.
+2. **Engine service** on Cloud Run *(built 2026-10-30)*: `engine/main.py` (FastAPI) around `titleagent/flows.py`
+   (the screens' flows without a screen). Firebase ID-token check (verified @totalchb.com; admins from Settings);
+   read → confirm → review, re-run, training, exports (incl. Closing Blockers only), Google export, list edits,
+   report missing, item feedback, lessons, settings. Long steps write their current step to `jobs/{id}`; uploads
+   come through Storage `uploads/<uid>/`. Tested end to end against the Firestore and Auth emulators, also as the
+   built container. `Dockerfile` (engine only, `engine/requirements.txt`); `.github/workflows/deploy-engine.yml`
+   builds and deploys on every engine change, signing in to Google without a key (`scripts/gcp_setup.sh`).
 3. **New page** on Vercel built from the Universal Team Hub's design (its stylesheet and components, so the
    apps look and work alike): Analyze, Deal, Deals, Training, Knowledge, Settings; Firebase Google sign-in;
    Firestore and Storage security rules.
@@ -53,7 +58,10 @@ GitHub: code; pushes deploy the page (Vercel) and the engine (Cloud Run); Action
    Actions) as `FIREBASE_SERVICE_ACCOUNT_JSON`, with `FIREBASE_PROJECT_ID`. Used by the copy and the daily email.
    If Google blocks key creation, a Workspace admin turns off the organization policy *Disable service account key
    creation* for this project.
-6. Domain: add `title.totalchb.com` in Vercel (phase 3) and one DNS record where totalchb.com's DNS is managed.
+6. **Engine (phase 2)**: in Cloud Shell, run `scripts/gcp_setup.sh` (pasted); save the value it prints in GitHub as
+   `GCP_WORKLOAD_IDENTITY_PROVIDER`, and add `ANTHROPIC_API_KEY` (and `GOOGLE_EXPORT_URL` / `GOOGLE_EXPORT_KEY`)
+   as GitHub secrets. Then Actions → Deploy engine → Run workflow.
+7. Domain: add `title.totalchb.com` in Vercel (phase 3) and one DNS record where totalchb.com's DNS is managed.
 
 ## Costs
 Cloud Run about $0–5/month at 30–100 reviews (it sleeps between them); Firestore and Storage most likely within the

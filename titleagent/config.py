@@ -128,7 +128,7 @@ def load_secrets() -> Secrets:
         firebase_credentials=_firebase_credentials(get("FIREBASE_SERVICE_ACCOUNT_JSON")),
         google_export_url=get("GOOGLE_EXPORT_URL"),
         google_export_key=get("GOOGLE_EXPORT_KEY"),
-        hub_url=get("HUB_URL") or ("https://tasks.totalchb.com/api/title-agent" if get("HUB_SYNC_SECRET") else None),
+        hub_url=get("HUB_URL") or ("https://hub.totalchb.com/api/title-agent" if get("HUB_SYNC_SECRET") else None),
         hub_secret=get("HUB_SYNC_SECRET"),
     )
 

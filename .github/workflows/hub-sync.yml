@@ -1,6 +1,6 @@
 name: Universal Team Hub sync
 
-# Every open deal's Closing Blockers to the Universal Team Hub (tasks.totalchb.com), and back any blocker ticked or
+# Every open deal's Closing Blockers to the Universal Team Hub (hub.totalchb.com), and back any blocker ticked or
 # unticked there (scripts/hub_sync.py). The engine also sends a deal right after each change; this run catches up
 # anything missed. Logs show counts only.
 on:
@@ -22,7 +22,7 @@ jobs:
       - run: uv sync --no-dev
       - name: Can the hub be reached? (an unsigned request should get 401)
         run: |
-          URL="${HUB_URL:-https://tasks.totalchb.com/api/title-agent}"
+          URL="${HUB_URL:-https://hub.totalchb.com/api/title-agent}"
           echo "hub answers: $(curl -s -o /dev/null -w '%{http_code} after %{time_total}s, %{num_redirects} redirects' -X POST "$URL" || echo 'no connection')"
         env:
           HUB_URL: ${{ vars.HUB_URL }}
@@ -31,5 +31,5 @@ jobs:
           FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
           HUB_SYNC_SECRET: ${{ secrets.HUB_SYNC_SECRET }}
-          HUB_URL: ${{ vars.HUB_URL }}  # optional; default https://tasks.totalchb.com/api/title-agent
+          HUB_URL: ${{ vars.HUB_URL }}  # optional; default https://hub.totalchb.com/api/title-agent
           APP_URL: ${{ vars.APP_URL }}  # https://title.totalchb.com

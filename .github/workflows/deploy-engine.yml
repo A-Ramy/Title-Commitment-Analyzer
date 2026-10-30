@@ -75,7 +75,7 @@ jobs:
             --service-account "title-agent-engine@$PROJECT.iam.gserviceaccount.com" \
             --no-invoker-iam-check --timeout 900 --cpu 1 --memory 1Gi --concurrency 8 \
             --min-instances 0 --max-instances 3 \
-            --set-env-vars "^@^FIREBASE_PROJECT_ID=$PROJECT@ALLOWED_DOMAINS=totalchb.com@ALLOWED_ORIGINS=https://title.totalchb.com,https://title-commitment-agent.vercel.app,http://localhost:5173@ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY@GOOGLE_EXPORT_URL=$GOOGLE_EXPORT_URL@GOOGLE_EXPORT_KEY=$GOOGLE_EXPORT_KEY@HUB_SYNC_SECRET=$HUB_SYNC_SECRET@RESEND_API_KEY=$RESEND_API_KEY@TASKS_AUDIENCE=$TASKS_AUDIENCE@TASKS_CALLER=$TASKS_CALLER"
+            --set-env-vars "^|^FIREBASE_PROJECT_ID=$PROJECT|ALLOWED_DOMAINS=totalchb.com|ALLOWED_ORIGINS=https://title.totalchb.com,https://title-commitment-agent.vercel.app,http://localhost:5173|ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY|GOOGLE_EXPORT_URL=$GOOGLE_EXPORT_URL|GOOGLE_EXPORT_KEY=$GOOGLE_EXPORT_KEY|HUB_SYNC_SECRET=$HUB_SYNC_SECRET|RESEND_API_KEY=$RESEND_API_KEY|TASKS_AUDIENCE=$TASKS_AUDIENCE|TASKS_CALLER=$TASKS_CALLER"
           echo "Engine URL: $(gcloud run services describe "$SERVICE" --region "$REGION" --format='value(status.url)')"
 
       - name: Smoke check (up, refuses anyone not signed in, browser rules)

@@ -84,8 +84,8 @@ def _day(iso: str) -> str:
     return f"{d:%b} {d.day}"
 
 
-def _chip(text: str, color: str, bg: str) -> str:
-    return (f'<span style="{HEAD};display:inline-block;font-size:12px;letter-spacing:.04em;color:{color};'
+def _chip(text: str, color: str, bg: str, size: int = 12) -> str:
+    return (f'<span style="{HEAD};display:inline-block;font-size:{size}px;letter-spacing:.04em;color:{color};'
             f'background:{bg};border-radius:999px;padding:3px 10px;white-space:nowrap">{escape(text)}</span>')
 
 
@@ -99,33 +99,23 @@ def _due(i: ActionItem, today: date) -> str:
         return ""
     days = (date.fromisoformat(i.due_date) - today).days
     if days < 0:
-        return _chip(f"Overdue · {_day(i.due_date)}", RED, RED_BG)
+        return _chip(f"Overdue · {_day(i.due_date)}", RED, RED_BG, 11)
     if days == 0:
-        return _chip("Due today", ORANGE, ORANGE_BG)
+        return _chip("Due today", ORANGE, ORANGE_BG, 11)
     return _chip(f"Due {_day(i.due_date)}", ORANGE if days <= SOON_DAYS else INDIGO,
-                 ORANGE_BG if days <= SOON_DAYS else INDIGO_BG)
+                 ORANGE_BG if days <= SOON_DAYS else INDIGO_BG, 11)
 
 
-STATUS_CHIP = {"Ordered": (INDIGO, INDIGO_BG), "Received": (GREEN, GREEN_BG)}
+def _dot(color: str) -> str:
+    return f'<span style="display:inline-block;width:9px;height:9px;border-radius:9px;background:{color}"></span>'
 
 
 def _row(i: ActionItem, today: date) -> str:
-    """One item as the app's task card: a colored edge by priority, the headline, the action, then chips."""
-    label, color, bg = TAG.get(i.priority, TAG["fyi"])
-    chips = [_chip(label, color, bg), _due(i, today)]
-    if i.status in STATUS_CHIP:
-        chips.append(_chip(i.status, *STATUS_CHIP[i.status]))
-    sub = " · ".join(x for x in (f"Provided by {i.provided_by}" if i.provided_by else "",
-                                 f"${i.amount:,.0f}" if i.amount else "") if x)
-    return (
-        f'<tr><td style="padding:6px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
-        f'style="border-collapse:separate;background:#ffffff;border:1px solid {LINE};'
-        f'border-left:4px solid {BAR.get(i.priority, INDIGO)};border-radius:10px"><tr><td style="padding:12px 14px">'
-        f'<div style="{HEAD};font-size:16px;line-height:1.3;color:{INDIGO}">{escape(i.title)}</div>'
-        f'<div style="{TEXT};font-size:14px;line-height:1.45;color:{BODY};padding-top:2px">{escape(i.action)}</div>'
-        f'<div style="padding-top:8px;line-height:2">{" ".join(c for c in chips if c)}</div>'
-        + (f'<div style="{TEXT};font-size:13px;color:{MUTED}">{escape(sub)}</div>' if sub else "")
-        + "</td></tr></table></td></tr>")
+    """One item, one line: a dot in the priority's color, the headline, and the due date on the right."""
+    return (f'<tr><td width="16" valign="top" style="padding:7px 0 0">{_dot(BAR.get(i.priority, INDIGO))}</td>'
+            f'<td valign="top" style="{TEXT};font-size:14px;line-height:1.4;color:{INK};padding:3px 8px 3px 0">'
+            f"{escape(i.title)}</td>"
+            f'<td valign="top" align="right" style="padding:2px 0;white-space:nowrap">{_due(i, today)}</td></tr>')
 
 
 def _closing(d: dict, today: date) -> str:
@@ -144,22 +134,26 @@ def _table(rows: str, style: str = "") -> str:
 
 
 def _deal(d: dict, rows: list[ActionItem], blockers: int, today: date, base: str) -> str:
-    """A deal as the app's card: the address, its details, its blockers count and closing chip, then the items."""
-    name = d.get("address") or f"Deal {d['id']}"
-    meta = " · ".join(x for x in (d.get("deal_type"), f"TC {d.get('tc') or 'unassigned'}", d.get("title_company"))
-                      if x)
-    count = (_chip(f"{blockers} open blocker{'s' if blockers != 1 else ''}", RED, RED_BG) if blockers
-             else _chip("No blockers", GREEN, GREEN_BG))
+    """A deal at a glance: the address (a link to the deal) and its closing chip, its details, then one line per
+    open Closing Blocker or item due soon."""
+    name = escape(d.get("address") or f"Deal {d['id']}")
     href = f"{base}/#/deal/{d['id']}"
-    link = f'<tr><td style="padding-top:10px">{_button(href, "Open The Deal")}</td></tr>' if base else ""
-    inner = _table(
-        f'<tr><td style="{HEAD};font-size:20px;line-height:1.25;color:{INDIGO}">{escape(name)}</td></tr>'
-        f'<tr><td style="{TEXT};font-size:14px;color:{MUTED};padding:2px 0 8px">{escape(meta)}</td></tr>'
-        f'<tr><td style="padding-bottom:6px;line-height:2">{count} {_closing(d, today)}</td></tr>'
-        + "".join(_row(i, today) for i in rows) + link)
-    card = _table(f'<tr><td style="padding:18px 18px 14px">{inner}</td></tr>',
-                  f"background:{INDIGO_BG};border-radius:16px")
-    return f'<tr><td style="padding:0 0 16px">{card}</td></tr>'
+    if base:
+        name = f'<a href="{escape(href)}" style="color:{INDIGO};text-decoration:none">{name}</a>'
+    meta = " · ".join(x for x in (d.get("deal_type"), f"TC {d.get('tc') or 'unassigned'}") if x)
+    count = (f'<b style="color:{RED}">{blockers} open blocker{"s" if blockers != 1 else ""}</b>' if blockers
+             else f'<b style="color:{GREEN}">No blockers</b>')
+    head = _table(
+        f'<tr><td valign="top" style="{HEAD};font-size:17px;line-height:1.3;padding-right:8px">{name}</td>'
+        f'<td valign="top" align="right" style="white-space:nowrap">{_closing(d, today)}</td></tr>')
+    link = (f'<div style="padding-top:8px;text-align:right"><a href="{escape(href)}" style="{HEAD};font-size:14px;'
+            f'color:{RED};text-decoration:none">Open The Deal &rarr;</a></div>' if base else "")
+    card = (f'<tr><td style="padding:14px 16px">{head}'
+            f'<div style="{TEXT};font-size:13px;color:{MUTED};padding:2px 0 8px">{escape(meta)} · {count}</div>'
+            f'<div style="border-top:1px solid {LINE};padding-top:6px">'
+            f'{_table("".join(_row(i, today) for i in rows))}</div>{link}</td></tr>')
+    return (f'<tr><td style="padding:0 0 12px">'
+            f'{_table(card, f"background:#ffffff;border:1px solid {LINE};border-radius:14px")}</td></tr>')
 
 
 def _stat(value: int, label: str, color: str) -> str:
@@ -248,8 +242,11 @@ def branded_html(deals: list[dict], items_by_deal: dict[int, list[ActionItem]], 
         f'<tr><td style="background:#ffffff;padding:12px 18px 8px">'
         f'<table role="presentation" width="100%" cellpadding="0" cellspacing="6" style="border-collapse:separate">'
         f"<tr>{stats}</tr></table></td></tr>"
-        f'<tr><td style="background:#ffffff;padding:12px 24px 8px">{_table(body)}</td></tr>'
-        f'<tr><td align="center" style="background:#ffffff;border-radius:0 0 20px 20px;padding:8px 24px 26px">'
+        f'<tr><td style="background:#ffffff;padding:0 24px 10px;{TEXT};font-size:12px;color:{MUTED}">'
+        f"{_dot(RED)} Closing Blocker &nbsp; {_dot(ORANGE)} Before Closing, due soon &nbsp; "
+        f"Tap an address to open the deal.</td></tr>"
+        f'<tr><td style="background:{INDIGO_BG};padding:16px 16px 6px">{_table(body)}</td></tr>'
+        f'<tr><td align="center" style="background:#ffffff;border-radius:0 0 20px 20px;padding:20px 24px 26px">'
         f'{_button(f"{base}/" if base else SITE, f"Open The {APP}", INDIGO)}</td></tr>'
         f'<tr><td align="center" style="{TEXT};font-size:12px;line-height:1.6;color:{MUTED};padding:18px 12px 0">'
         f"{footer}</td></tr>")

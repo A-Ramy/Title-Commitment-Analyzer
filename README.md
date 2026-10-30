@@ -1,12 +1,15 @@
-# Title Agent — Total Cash Home Buyers
+# Title Commitment Agent — Total Cash Home Buyers
 
 **https://title.totalchb.com** · sign in with your @totalchb.com Google account.
 
-Upload a title commitment (and the purchase contract) and the Title Agent lists **everything that has to happen
+Upload a title commitment (and the purchase contract) and the Title Commitment Agent lists **everything that has to happen
 before the deal can close**: Closing Blockers, Before Closing items and Review / FYI, each traced to the page and
 wording it comes from. TCs work the list in the app and export it (PDF, Word, Excel, CSV, Google Sheets / Docs,
 everything or Closing Blockers only). The team trains it with worked commitments and **Report Missing Item**; admins
 approve every lesson. A summary email goes out weekdays at 8:00 AM Eastern.
+
+The user guide for the team: [`docs/guide/Title_Commitment_Agent_User_Guide.pdf`](docs/guide/Title_Commitment_Agent_User_Guide.pdf)
+(rebuilt with `uv run python docs/guide/build_guide.py`).
 
 Plans and decisions: [`docs/PLAN.md`](docs/PLAN.md) (the team's rules) and [`docs/PLAN-v2.md`](docs/PLAN-v2.md) (how
 it runs today). Project rules: [`CLAUDE.md`](CLAUDE.md).

@@ -56,7 +56,7 @@ export function Deals() {
       <section class="hero">
         <div class="hero-text">
           <div class="eyebrow-row"><span class="eyebrow">Total Cash Home Buyers</span></div>
-          <h1 class="title">Title <span class="accent">Agent</span></h1>
+          <h1 class="title">Title Commitment <span class="accent">Agent</span></h1>
           <p class="lede">Every Commitment Reviewed, Every Item Needed To Close.</p>
         </div>
         <div class="stats">

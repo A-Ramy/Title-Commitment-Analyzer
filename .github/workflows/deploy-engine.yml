@@ -1,6 +1,6 @@
 name: Deploy engine
 
-# Builds the Title Agent engine (Dockerfile) and deploys it to Cloud Run in the Firebase project. Runs when the engine
+# Builds the Title Commitment Agent engine (Dockerfile) and deploys it to Cloud Run in the Firebase project. Runs when the engine
 # or the review code changes, or by hand (Run workflow). Signs in to Google without a key (scripts/gcp_setup.sh).
 on:
   push:

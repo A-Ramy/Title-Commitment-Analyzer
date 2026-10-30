@@ -50,7 +50,8 @@ def test_only_verified_company_accounts_get_in(setup):
     assert client.get("/v1/me", headers=h("tc")).json() == {"email": "pat.tc@totalchb.com", "admin": True}
     ref = client.get("/v1/reference", headers=h("tc")).json()
     assert "Double Close" in ref["deal_types"] and sum(len(g["checks"]) for g in ref["checklist"]) == 34
-    assert ref["connections"]["google"] is None and "function doPost" in ref["google_script"]
+    assert ref["connections"]["google"] is None and ref["connections"]["hub"] is False
+    assert "function doPost" in ref["google_script"]
     assert ref["settings_defaults"]["due_offsets"]["payoff"] == 10
     assert client.get("/v1/reference").status_code == 401
 

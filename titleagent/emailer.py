@@ -50,12 +50,12 @@ def summary_html(deals: list[dict], items_by_deal: dict[int, list[ActionItem]], 
                       f"</h3><div style='color:#767388;font-size:13px'>{escape(d.get('deal_type') or '')}"
                       f"{f' · closing {closing}' if closing else ''} · TC {escape(d.get('tc') or 'unassigned')}"
                       f"{link}</div><ul>{lines}</ul>")
-    subject = (f"Title Agent: {total_blockers} open blocker{'s' if total_blockers != 1 else ''}, "
+    subject = (f"Title Commitment Agent: {total_blockers} open blocker{'s' if total_blockers != 1 else ''}, "
                f"{total_due} due soon ({today:%b %d})")
-    html = (f"<div style='font-family:Arial,sans-serif;max-width:680px'><h2 style='color:#4D458A'>Title Agent daily "
-            f"summary · {today:%A, %b %d}</h2>"
+    html = (f"<div style='font-family:Arial,sans-serif;max-width:680px'><h2 style='color:#4D458A'>"
+            f"Title Commitment Agent daily summary · {today:%A, %b %d}</h2>"
             + ("".join(blocks) or "<p>No open blockers and nothing due in the next 3 days.</p>")
-            + "<p style='color:#767388;font-size:12px'>Total Cash Home Buyers · Title Agent</p></div>")
+            + "<p style='color:#767388;font-size:12px'>Total Cash Home Buyers · Title Commitment Agent</p></div>")
     return subject, html
 
 
@@ -64,7 +64,7 @@ def send(api_key: str, sender: str, recipients: list[str], subject: str, html: s
     """Sends now, or hands the email to Resend to deliver at deliver_at."""
     if not recipients:
         raise ValueError("No recipients set (Settings → Daily email).")
-    body = {"from": f"Title Agent <{sender}>", "to": recipients, "subject": subject, "html": html}
+    body = {"from": f"Title Commitment Agent <{sender}>", "to": recipients, "subject": subject, "html": html}
     if deliver_at:
         body["scheduled_at"] = deliver_at.isoformat()
     r = requests.post(RESEND_URL, headers={"Authorization": f"Bearer {api_key}"}, timeout=30, json=body)

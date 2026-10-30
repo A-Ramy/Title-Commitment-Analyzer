@@ -1,4 +1,4 @@
-# CLAUDE.md — Title Agent (Total Cash Home Buyers)
+# CLAUDE.md — Title Commitment Agent (Total Cash Home Buyers)
 
 Reviews title commitments and lists everything needed to close. Live at **title.totalchb.com** (since 2026-10-29):
 the page in `web/` (Vercel, **the Universal Team Hub's design**: RemyTCHB/HUB's stylesheet and

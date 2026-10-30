@@ -1,10 +1,10 @@
 /**
- * Title Agent → Google Drive (Total Cash Home Buyers).
+ * Title Commitment Agent → Google Drive (Total Cash Home Buyers).
  *
  * Saves the app's Google Sheets / Docs exports into the folder set in the app
  * (Settings → Google Exports), as the Google account that deploys this script.
  * Nothing to edit: paste, add the Drive service, run setup, deploy.
- * Only the Title Agent can use it: every request must carry the key setup() prints.
+ * Only the Title Commitment Agent can use it: every request must carry the key setup() prints.
  */
 
 const SHEET = 'application/vnd.google-apps.spreadsheet';

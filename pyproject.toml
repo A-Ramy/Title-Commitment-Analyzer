@@ -1,7 +1,7 @@
 [project]
 name = "title-agent"
 version = "0.1.0"
-description = "Title Agent (Total Cash Home Buyers): the review engine behind title.totalchb.com"
+description = "Title Commitment Agent (Total Cash Home Buyers): the review engine behind title.totalchb.com"
 requires-python = ">=3.11"
 dependencies = [  # the engine and the daily email (engine/requirements.txt: uv export --no-dev)
     "anthropic>=1.0",

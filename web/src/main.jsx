@@ -26,7 +26,7 @@ function Header({ user, me, page }) {
   return (
     <header class="header">
       <div class="header-row">
-        <a class="logo" href="#/" aria-label="Title Agent home">
+        <a class="logo" href="#/" aria-label="Title Commitment Agent home">
           <img src={theme === 'dark' ? '/logo-full-white.png' : '/logo-full.png'} alt="Total Cash Home Buyers" />
         </a>
         <Seg cls="glass dark-on" label="Theme" value={theme} onChange={setTheme} options={[
@@ -55,7 +55,7 @@ function Header({ user, me, page }) {
 function Gate({ error, busy, onSignIn }) {
   return (
     <section class="card gate">
-      <h2>Sign In To The <span class="accent">Title Agent</span></h2>
+      <h2>Sign In To The Title Commitment <span class="accent">Agent</span></h2>
       <p>Every item needed to close, read from the title commitment. Sign in with your company Google account
         (@totalchb.com).</p>
       <button class="btn primary pill" onClick={onSignIn} disabled={busy}>

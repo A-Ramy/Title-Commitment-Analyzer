@@ -167,7 +167,7 @@ class FirestoreStore:
         if next(iter(lessons.limit(1).stream()), None) is not None:
             return
         for t in SEED_LESSONS:
-            self.add_lesson(t, source="seed", by="Title Agent", approved_by="Initial training set")
+            self.add_lesson(t, source="seed", by="Title Commitment Agent", approved_by="Initial training set")
 
     # ---- settings
     def get_settings(self) -> dict:

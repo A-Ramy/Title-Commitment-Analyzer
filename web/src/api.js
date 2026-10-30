@@ -17,7 +17,7 @@ async function call(method, path, body, { raw = false } = {}) {
       body: body ? JSON.stringify(body) : undefined,
     });
   } catch {
-    throw new ApiError("Couldn't reach the Title Agent. Check your connection and try again.");
+    throw new ApiError("Couldn't reach the Title Commitment Agent. Check your connection and try again.");
   }
   if (!res.ok) {
     let detail = '';

@@ -2,7 +2,7 @@
   "name": "title-agent-web",
   "private": true,
   "version": "2.0.0",
-  "description": "Title Agent v2: the page at title.totalchb.com (Universal Team Hub design)",
+  "description": "Title Commitment Agent v2: the page at title.totalchb.com (Universal Team Hub design)",
   "type": "module",
   "scripts": {
     "dev": "vite",

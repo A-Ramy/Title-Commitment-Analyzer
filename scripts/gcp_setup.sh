@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One-time Google Cloud setup for the Title Agent engine (v2, docs/PLAN-v2.md). Run it in Cloud Shell
+# One-time Google Cloud setup for the Title Commitment Agent engine (v2, docs/PLAN-v2.md). Run it in Cloud Shell
 # (console.cloud.google.com → the >_ button, top right) signed in as the project owner. Safe to run again.
 #
 # It creates, in the Firebase project:
@@ -36,17 +36,17 @@ gcloud services enable run.googleapis.com artifactregistry.googleapis.com iamcre
 
 echo "2/6 Image registry…"
 ok gcloud artifacts repositories create title-agent --repository-format=docker --location="$REGION" \
-  --description="Title Agent engine images"
+  --description="Title Commitment Agent engine images"
 
 echo "3/6 The engine's identity (Firestore + Storage only)…"
-ok gcloud iam service-accounts create title-agent-engine --display-name="Title Agent engine (Cloud Run)"
+ok gcloud iam service-accounts create title-agent-engine --display-name="Title Commitment Agent engine (Cloud Run)"
 for role in roles/datastore.user roles/storage.objectAdmin; do
   retry gcloud projects add-iam-policy-binding "$PROJECT" --member="serviceAccount:$RUNTIME" --role="$role" \
     --condition=None
 done
 
 echo "4/6 GitHub's deploy identity (update the engine, push its image)…"
-ok gcloud iam service-accounts create github-deploy --display-name="GitHub deploys the Title Agent engine"
+ok gcloud iam service-accounts create github-deploy --display-name="GitHub deploys the Title Commitment Agent engine"
 retry gcloud projects add-iam-policy-binding "$PROJECT" --member="serviceAccount:$DEPLOY" --role=roles/run.admin \
   --condition=None
 retry gcloud artifacts repositories add-iam-policy-binding title-agent --location="$REGION" \
@@ -57,7 +57,7 @@ retry gcloud iam service-accounts add-iam-policy-binding "$RUNTIME" --member="se
 echo "5/6 Keyless link from GitHub ($GITHUB_REPO only, by its id $GITHUB_REPO_ID)…"
 ok gcloud iam workload-identity-pools create github --location=global --display-name="GitHub"
 ok gcloud iam workload-identity-pools providers create-oidc title-agent --location=global \
-  --workload-identity-pool=github --display-name="Title Agent repository" \
+  --workload-identity-pool=github --display-name="Title Commitment Agent repository" \
   --issuer-uri="https://token.actions.githubusercontent.com" \
   --attribute-mapping="google.subject=assertion.sub,attribute.repository_id=assertion.repository_id" \
   --attribute-condition="assertion.repository_id == '$GITHUB_REPO_ID'"

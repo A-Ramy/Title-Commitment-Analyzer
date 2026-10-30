@@ -143,6 +143,8 @@ export function Settings({ me }) {
         <div class="card tile"><span>Database</span><b class="green">Firestore</b><small>title-commitment-agent</small></div>
         <div class="card tile"><span>Google</span><b class={google ? 'green' : 'muted'}>{google ? 'Set Up' : 'Not Set'}</b>
           <small>{google === 'script' ? 'export script' : google ? 'service account' : 'for Sheets / Docs exports'}</small></div>
+        <div class="card tile"><span>Team Hub</span><b class={ref?.connections?.hub ? 'green' : 'muted'}>{ref ? (ref.connections.hub ? 'Connected' : 'Not Set') : '…'}</b>
+          <small>Closing Blockers go to hub.totalchb.com</small></div>
         <div class="card tile"><span>Daily Email</span><b class={eCls}>{eValue}</b><small>{eSub}</small></div>
       </div>
     </>

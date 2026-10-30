@@ -1,7 +1,7 @@
-# Title Agent v2: private, fast, on title.totalchb.com
+# Title Commitment Agent v2: private, fast, on title.totalchb.com
 
 Owner's goals (2026-10-29): **privacy, speed, our own domain.** Built the way the Universal Team Hub is built
-(Vercel page + Firebase sign-in + Firestore), keeping everything the Title Agent already does.
+(Vercel page + Firebase sign-in + Firestore), keeping everything the Title Commitment Agent already does.
 
 ## Decisions (owner, 2026-10-29)
 | Question | Decision |

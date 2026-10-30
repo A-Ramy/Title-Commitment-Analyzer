@@ -66,7 +66,7 @@ function LessonRow({ x, admin }) {
       <div class="row-text" style="cursor:default">
         <span style="font-size:15px;color:var(--text-body)">{x.text}</span>
         <span class="row-sub" style="font-size:13px">{(x.source || '').replace(/^./, c => c.toUpperCase())} · {x.created_by}
-          · {when(x.created_at)}{x.approved_by ? ` · approved by ${x.approved_by}` : ''}</span>
+          {' · '}{when(x.created_at)}{x.approved_by ? ` · approved by ${x.approved_by}` : ''}</span>
       </div>
       <button class="switch" role="switch" aria-checked={!!x.active} aria-label={x.active ? 'Turn this lesson off' : 'Turn this lesson on'}
         disabled={!admin} onClick={flip} title={admin ? '' : 'Only admins change lessons'} />

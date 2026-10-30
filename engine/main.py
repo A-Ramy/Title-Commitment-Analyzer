@@ -1,4 +1,4 @@
-"""Title Agent engine (v2, docs/PLAN-v2.md): the private service behind title.totalchb.com.
+"""Title Commitment Agent engine (v2, docs/PLAN-v2.md): the private service behind title.totalchb.com.
 
 It holds the AI key and runs everything that needs the server: reading commitments, reviews, training comparisons,
 exports, and every change to the data (the page reads Firestore live; the security rules keep it read-only). Every
@@ -151,7 +151,7 @@ class LessonPatch(BaseModel):
 
 # ---------------------------------------------------------------- app
 def create_app(engine: Engine | None = None) -> FastAPI:
-    app = FastAPI(title="Title Agent engine", docs_url=None, redoc_url=None, openapi_url=None)
+    app = FastAPI(title="Title Commitment Agent engine", docs_url=None, redoc_url=None, openapi_url=None)
     origins = [o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "https://title.totalchb.com").split(",")
                if o.strip()]
     app.add_middleware(CORSMiddleware, allow_origins=origins, allow_methods=["*"], allow_headers=["*"],
@@ -174,7 +174,7 @@ def create_app(engine: Engine | None = None) -> FastAPI:
         email = str(claims.get("email") or "").lower()
         s = e.secrets
         if not (claims.get("email_verified") and email_allowed(email, s.allowed_emails, s.allowed_domains)):
-            raise HTTPException(403, f"{email or 'This account'} doesn't have access to the Title Agent.")
+            raise HTTPException(403, f"{email or 'This account'} doesn't have access to the Title Commitment Agent.")
         admins = [a.strip().lower() for a in e.store.get_settings().get("admins", []) if a.strip()]
         return User(email=email, uid=str(claims.get("uid") or claims.get("user_id") or ""),
                     admin=not admins or email in admins)
@@ -267,7 +267,8 @@ def create_app(engine: Engine | None = None) -> FastAPI:
                           for g in checklist.GROUPS],
             "connections": {"ai": s.has_ai or demo_mode(),
                             "google": "script" if s.google_export_url and s.google_export_key
-                            else "service_account" if s.google_service_account else None},
+                            else "service_account" if s.google_service_account else None,
+                            "hub": s.has_hub},
             "google_script": google.SCRIPT,
             "settings_defaults": {k: v for k, v in DEFAULT_SETTINGS.items() if k != "our_entities"},
         }

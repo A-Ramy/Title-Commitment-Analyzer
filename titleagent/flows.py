@@ -1,4 +1,4 @@
-"""The Title Agent's flows without any screen: read the documents, confirm and review, re-run, train, export.
+"""The Title Commitment Agent's flows without any screen: read the documents, confirm and review, re-run, train, export.
 The v2 engine (engine/main.py) runs these; `progress` gets a short line for the page to show while the agent works.
 `store` is a firestore_store.FirestoreStore (storage.open_store)."""
 

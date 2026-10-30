@@ -1,5 +1,5 @@
-// Settings (admins change them; everyone can see them): people, the daily email, due dates, the Google folder, and
-// what is connected. Saved through the engine (PUT /v1/settings).
+// Settings (admins change them; everyone can see them): the daily email, due dates, the Google folder, and what is
+// connected. People (admins, TCs) are on the Team tab. Saved through the engine (PUT /v1/settings).
 import { useEffect, useState } from 'preact/hooks';
 import { api } from '../api.js';
 import { useReference, useSettings } from '../data.js';
@@ -36,7 +36,7 @@ export function Settings({ me }) {
   const [showScript, setShowScript] = useState(false);
   useEffect(() => {
     if (s && !f) {
-      setF({ admins: lines(s.admins), tcs: lines(s.tcs), email_recipients: lines(s.email_recipients),
+      setF({ email_recipients: lines(s.email_recipients),
         email_from: s.email_from || 'title-agent@totalchb.com', due_offsets: { ...(s.due_offsets || {}) },
         google_folder_id: s.google_folder_id || '' });
     }
@@ -46,7 +46,7 @@ export function Settings({ me }) {
   const save = async () => {
     setBusy('save');
     try {
-      await api.putSettings({ admins: parse(f.admins), tcs: parse(f.tcs), email_recipients: parse(f.email_recipients),
+      await api.putSettings({ email_recipients: parse(f.email_recipients),
         email_from: f.email_from.trim(), due_offsets: f.due_offsets, google_folder_id: f.google_folder_id.trim() });
       toast('Saved.');
     } catch (e) { toast(e.message, true); } finally { setBusy(''); }
@@ -63,20 +63,15 @@ export function Settings({ me }) {
         <div class="hero-text">
           <div class="eyebrow-row"><span class="eyebrow">{admin ? 'Admins Only' : 'Read Only: Only Admins Change Settings'}</span></div>
           <h1 class="title">Settings</h1>
-          <p class="lede">The Team, The Daily Email, Due Dates And The Google Folder.</p>
+          <p class="lede">The Daily Email, Due Dates And The Google Folder. People Are On The Team Tab.</p>
         </div>
       </section>
 
       <fieldset disabled={!admin} style="border:none;margin:0;padding:0;display:flex;flex-direction:column;gap:18px;min-width:0">
-        <section class="card" style="padding:24px;display:flex;flex-direction:column;gap:14px">
+        <section class="card" style="padding:24px;display:flex;flex-direction:column;gap:10px">
           <h2 style="font-size:20px;font-weight:800">People</h2>
-          <div class="two">
-            <label class="field"><span>Admins (Emails, One Per Line)</span>
-              <textarea class="input" rows={4} value={f.admins} onInput={set('admins')} /></label>
-            <label class="field"><span>TCs (Names, One Per Line)</span>
-              <textarea class="input" rows={4} value={f.tcs} onInput={set('tcs')} /></label>
-          </div>
-          <span class="row-sub">Admins approve lessons and change settings. No admins listed means everyone is an admin (first-time setup).</span>
+          <span class="row-sub">Set on the <a href="#/team">Team</a> tab: Managers are the admins (they approve lessons and
+            change settings) and everyone in TC is in the TC list. Admins now: {(s.admins || []).join(', ') || 'everyone (no team saved yet)'}.</span>
         </section>
 
         <section class="card" style="padding:24px;display:flex;flex-direction:column;gap:14px">

@@ -46,6 +46,11 @@ DEFAULT_SETTINGS: dict = {
     "our_entities": ["Total Cash Home Buyers, LLC", "Total Cash Home Buyers LLC"],
 }
 
+# The Team tab (owner 2026-10-30, as in the Universal Team Hub): name, sign-in email, role, department and photo.
+# Managers are the admins; everyone in TC is in the TC list. The team lives only in the app's database
+# (settings/team): names and emails stay out of this public repository.
+TEAM_ROLES = ("manager", "lead", "member")  # Manager, Team Leader, Member
+TEAM_DEPTS = ("TC",)
 
 @dataclass(frozen=True)
 class Secrets:

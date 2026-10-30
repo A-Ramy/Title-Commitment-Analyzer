@@ -136,6 +136,16 @@ class ItemPatch(BaseModel):
     due_date: str | None = Field(default=None, description="YYYY-MM-DD, or empty to clear")
     notes: str | None = None
 
+class TeamPerson(BaseModel):
+    name: str = Field(min_length=1, max_length=80)
+    email: str = Field(min_length=3, max_length=120)
+    role: Literal["manager", "lead", "member"]
+    dept: Literal["TC", ""] = ""
+    photo: str = Field(default="", max_length=120_000, description="'' or a small square JPEG as a data: URL")
+
+class TeamIn(BaseModel):
+    people: list[TeamPerson] = Field(max_length=60)
+
 class HubUpdate(BaseModel):
     key: str
     status: str
@@ -485,6 +495,33 @@ def create_app(engine: Engine | None = None) -> FastAPI:
                 value = {**DEFAULT_SETTINGS["due_offsets"],
                          **{k: int(v) for k, v in dict(value).items() if k in DEFAULT_SETTINGS["due_offsets"]}}
             e.store.set_setting(key, value, by=u.email)
+        return {"ok": True}
+
+    @app.put("/v1/team")
+    def put_team(body: TeamIn, u: User = Depends(admin), e: Engine = Depends(eng)):
+        """The Team tab. Also sets who the admins are (the managers) and the TC list (everyone in TC, leaders first)."""
+        s, people, seen = e.secrets, [], set()
+        for p in body.people:
+            email = p.email.strip().lower()
+            if not email_allowed(email, s.allowed_emails, s.allowed_domains):
+                raise HTTPException(400, f"{email} isn't a company sign-in (@totalchb.com).")
+            if email in seen:
+                raise HTTPException(400, f"{email} is on the team twice.")
+            if p.photo and not re.match(r"^data:image/(jpeg|png);base64,[A-Za-z0-9+/=]+$", p.photo):
+                raise HTTPException(400, "A photo must be a picture file.")
+            seen.add(email)
+            people.append({"name": " ".join(p.name.split()), "email": email, "role": p.role,
+                           "dept": "" if p.role == "manager" else p.dept, "photo": p.photo})
+        if sum(len(p["photo"]) for p in people) > 700_000:  # one settings record holds them all (1 MB at most)
+            raise HTTPException(400, "The photos are too large together: remove one or two.")
+        managers = [p["email"] for p in people if p["role"] == "manager"]
+        if u.email not in managers:
+            raise HTTPException(400, "Keep yourself a Manager: another manager can change your role.")
+        tc = [p for p in people if p["dept"] == "TC"]
+        e.store.set_setting("team", people, by=u.email)
+        e.store.set_setting("admins", managers, by=u.email)
+        e.store.set_setting("tcs", [p["name"] for p in tc if p["role"] == "lead"]
+                            + [p["name"] for p in tc if p["role"] != "lead"], by=u.email)
         return {"ok": True}
 
     @app.post("/v1/google/check")

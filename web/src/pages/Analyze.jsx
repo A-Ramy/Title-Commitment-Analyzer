@@ -7,7 +7,7 @@ import { api, jobId } from '../api.js';
 import { useDeals, useJob, useReference, useSettings } from '../data.js';
 import { db } from '../firebase.js';
 import { go } from '../router.js';
-import { Icon, Spinner, fmtDate, useToast } from '../ui.jsx';
+import { DatePicker, Icon, Spinner, fmtDate, useMenu, useToast } from '../ui.jsx';
 
 const DRAFT_KEY = 'ta-draft';  // the draft survives a refresh (this tab only)
 const MAX_MB = 50;
@@ -94,6 +94,7 @@ function Confirm({ draft, onDone, onStartOver }) {
   const [f, setF] = useState({ address: p.address || '', state: p.state || '', deal_type: p.deal_type || '',
     closing_date: p.closing_date || '', tc: p.tc || '', title_company: p.title_company || '', notes: p.notes || '' });
   const [job, setJob] = useState(null);
+  const closing = useMenu();
   useEffect(() => { if (!f.tc && tcs.length) setF(x => ({ ...x, tc: tcs[0] })); }, [tcs.length]);
   const set = k => e => setF({ ...f, [k]: e.currentTarget.value });
   const missing = Object.entries(s.missing || {}).filter(([, v]) => v?.length);
@@ -121,8 +122,11 @@ function Confirm({ draft, onDone, onStartOver }) {
             {!f.deal_type && <option value="">Choose…</option>}
             {(ref?.deal_types || [f.deal_type]).filter(Boolean).map(t => <option key={t}>{t}</option>)}
           </select></label>
-        <label class="field"><span>Closing Date</span>
-          <input class="input" type="date" value={f.closing_date} onInput={set('closing_date')} /></label>
+        <div class="field"><span>Closing Date</span>
+          <button type="button" class={`input date-field ${f.closing_date ? '' : 'muted'}`} onClick={closing.open}
+            aria-haspopup="dialog"><Icon name="calendar" />{f.closing_date ? fmtDate(f.closing_date) : 'Pick the closing date'}</button>
+          <DatePicker menu={closing} value={f.closing_date} label="Closing Date" setText="Set Closing Date"
+            onSet={v => setF(x => ({ ...x, closing_date: v }))} /></div>
         <label class="field"><span>TC (Owns Every Item)</span>
           {tcs.length ? (
             <select class="input" value={f.tc} onChange={set('tc')}>{tcs.map(t => <option key={t}>{t}</option>)}</select>

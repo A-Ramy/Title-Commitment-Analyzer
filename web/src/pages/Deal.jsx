@@ -7,7 +7,7 @@ import { api, jobId } from '../api.js';
 import { DONE, PRIORITY, PRIORITY_ORDER, STATUSES, isOpen, useDeal, useItems, useJob, useLatestRun } from '../data.js';
 import { db, storage } from '../firebase.js';
 import { go } from '../router.js';
-import { Icon, Menu, Modal, Seg, Spinner, daysUntil, fmtDate, money, useMenu, useToast, when } from '../ui.jsx';
+import { DatePicker, Icon, Menu, Modal, Seg, Spinner, daysUntil, fmtDate, money, useMenu, useToast, when } from '../ui.jsx';
 
 const STATUS_CLS = { Open: 's-open', Ordered: 's-ordered', Received: 's-received', Cleared: 's-cleared', Waived: 's-waived' };
 const PROOF = { true: '✓', false: '✗' };
@@ -17,7 +17,7 @@ const GROUP = { blocker: 'Closing Blockers', before: 'Before Closing', fyi: 'Rev
 // ---------------------------------------------------------------- one item
 function ItemCard({ item, deal, open, onToggle, onChange }) {
   const status = useMenu();
-  const [editDue, setEditDue] = useState(false);
+  const due = useMenu();
   const [notes, setNotes] = useState(item.notes || '');
   useEffect(() => setNotes(item.notes || ''), [item.notes]);
   const owner = item.owner === 'TC' ? deal.tc || 'TC' : item.owner;
@@ -52,17 +52,11 @@ function ItemCard({ item, deal, open, onToggle, onChange }) {
                 <span class={`status ${STATUS_CLS[s]}`} style="cursor:inherit">{s}</span>
               </button>))}
           </Menu>
-          {editDue ? (
-            <input type="date" class="input" style="width:auto;padding:6px 10px;font-size:14px" autoFocus
-              value={item.due_date || ''} aria-label="Due date"
-              onChange={e => { onChange({ due_date: e.currentTarget.value || '' }); setEditDue(false); }}
-              onBlur={() => setEditDue(false)} />
-          ) : (
-            <button class={`mini ${late ? 'has' : item.due_date ? '' : 'muted'}`} onClick={() => setEditDue(true)}
-              title={late ? 'Overdue' : 'Due date'} disabled={removed}>
-              <Icon name="calendar" />{item.due_date ? fmtDate(item.due_date, false) : 'Due'}
-            </button>
-          )}
+          <button class={`mini ${late ? 'has' : item.due_date ? '' : 'muted'}`} onClick={due.open}
+            title={late ? 'Overdue' : 'Due date'} disabled={removed} aria-haspopup="dialog">
+            <Icon name="calendar" />{item.due_date ? fmtDate(item.due_date, false) : 'Due'}
+          </button>
+          <DatePicker menu={due} value={item.due_date || ''} title={item.title} onSet={v => onChange({ due_date: v })} />
           <button class={`mini ${item.notes ? '' : 'muted'}`} title={item.notes || 'Notes'} onClick={onToggle}>
             <Icon name="note" />
           </button>

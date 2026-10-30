@@ -16,6 +16,7 @@ const P = {
     'M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z',
   file: 'M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2zM14 2v6h6',
   flag: 'M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7',
+  camera: 'M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3zM12 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z',
   x: 'M18 6 6 18M6 6l12 12', out: 'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9',
   sheet: 'M3 3h18v18H3zM3 9h18M3 15h18M9 3v18', book: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15zM20 17v5H6.5a2.5 2.5 0 0 1 0-5',
   cap: 'M22 10 12 5 2 10l10 5 10-5zM6 12v5c3 3 9 3 12 0v-5', folder: 'M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z',
@@ -60,7 +61,7 @@ export function useMenu() {
   return { at, open, close: () => setAt(null) };
 }
 
-export function Menu({ menu, children, label }) {
+export function Menu({ menu, children, label, cls = '', keepOpen = false }) {
   const box = useRef(null);
   useLayoutEffect(() => {  // keep it on screen
     const el = box.current;
@@ -78,8 +79,58 @@ export function Menu({ menu, children, label }) {
   return (
     <>
       <div class="scrim" onClick={menu.close} />
-      <div class="menu" ref={box} role="menu" aria-label={label} style={menu.at} onClick={menu.close}>{children}</div>
+      <div class={`menu ${cls}`} ref={box} role={keepOpen ? 'dialog' : 'menu'} aria-label={label} style={menu.at}
+        onClick={keepOpen ? undefined : menu.close}>{children}</div>
     </>
+  );
+}
+
+// ---------------------------------------------------------------- the hub's due date picker
+// A month calendar in a menu, as in the Universal Team Hub: today ringed, the chosen day filled, Remove and Set.
+// Days only (the title items have a due day, not a time). value and onSet use YYYY-MM-DD; '' removes it.
+const WEEK = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+const pad = n => String(n).padStart(2, '0');
+const isoOf = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+export function DatePicker({ menu, value, onSet, label = 'Due Date', title = '', setText = 'Set Due Date' }) {
+  const start = value ? new Date(`${value}T12:00`) : new Date();
+  const [view, setView] = useState({ y: start.getFullYear(), m: start.getMonth() });
+  const [pick, setPick] = useState(value || '');
+  useEffect(() => {  // each time it opens: the saved day, and its month
+    if (!menu.at) return;
+    const d = value ? new Date(`${value}T12:00`) : new Date();
+    setView({ y: d.getFullYear(), m: d.getMonth() }); setPick(value || '');
+  }, [menu.at]);
+  const today = isoOf(new Date());
+  const first = new Date(view.y, view.m, 1).getDay(), days = new Date(view.y, view.m + 1, 0).getDate();
+  const cells = [...Array(first).fill(0), ...Array.from({ length: days }, (_, i) => i + 1)];
+  const shift = n => setView(v => { const m = v.m + n; return { y: v.y + Math.floor(m / 12), m: ((m % 12) + 12) % 12 }; });
+  const done = v => { menu.close(); onSet(v); };
+  const month = new Date(view.y, view.m, 1).toLocaleString('en-US', { month: 'long', year: 'numeric' });
+  const summary = pick ? new Date(`${pick}T12:00`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : '';
+  return (
+    <Menu menu={menu} label={label} cls="dp-menu" keepOpen>
+      <div class="dp-title"><b>{label}</b>{title && <span>{title}</span>}</div>
+      <div class="dp-nav">
+        <button type="button" class="dp-round" aria-label="Previous month" onClick={() => shift(-1)}><Icon name="back" stroke={2.5} /></button>
+        <span>{month}</span>
+        <button type="button" class="dp-round" aria-label="Next month" onClick={() => shift(1)}><Icon name="right" stroke={2.5} /></button>
+      </div>
+      <div class="dp-grid">
+        {WEEK.map(w => <span key={w} class="dp-week">{w}</span>)}
+        {cells.map((d, i) => {
+          if (!d) return <span key={`b${i}`} />;
+          const v = `${view.y}-${pad(view.m + 1)}-${pad(d)}`;
+          return (
+            <button key={v} type="button" class={`dp-day ${v === pick ? 'on' : ''} ${v === today ? 'today' : ''} ${v < today ? 'past' : ''}`}
+              aria-label={v} aria-pressed={v === pick} onClick={() => setPick(v)}>{d}</button>);
+        })}
+      </div>
+      <div class="dp-summary">{pick ? `${label.replace(' Date', '')} ${summary}` : 'Pick a day on the calendar.'}</div>
+      <div class="dp-actions">
+        {value && <button type="button" class="dp-remove" onClick={() => done('')}>Remove</button>}
+        <button type="button" class="dp-set" disabled={!pick} onClick={() => done(pick)}>{setText}</button>
+      </div>
+    </Menu>
   );
 }
 

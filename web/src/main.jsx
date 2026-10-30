@@ -13,12 +13,26 @@ import { Deals } from './pages/Deals.jsx';
 import { Analyze } from './pages/Analyze.jsx';
 import { Knowledge } from './pages/Knowledge.jsx';
 import { Settings } from './pages/Settings.jsx';
+import { Team } from './pages/Team.jsx';
+import { useSettings } from './data.js';
 import { Training } from './pages/Training.jsx';
 
 const TABS = [
   { value: 'deals', label: 'Deals' }, { value: 'analyze', label: 'Analyze' },
-  { value: 'training', label: 'Training' }, { value: 'knowledge', label: 'Knowledge' },
+  { value: 'training', label: 'Training' }, { value: 'knowledge', label: 'Knowledge' }, { value: 'team', label: 'Team' },
 ];
+
+// Your photo from the Team tab, or your initials.
+function MyAvatar({ user, onClick }) {
+  const s = useSettings();
+  const mine = (s?.team || []).find(p => p.email === (user.email || '').toLowerCase());
+  return (
+    <button class="avatar" title={user.email} aria-label={`Signed in as ${user.email}`} onClick={onClick}>
+      {initials(mine?.name || user.displayName || user.email)}
+      {mine?.photo && <img src={mine.photo} alt="" />}
+    </button>
+  );
+}
 
 function Header({ user, me, page }) {
   const [theme, setTheme] = useTheme();
@@ -36,9 +50,7 @@ function Header({ user, me, page }) {
           <>
             <Seg cls="caps dark-on tabs" label="Pages" value={page === 'deal' ? 'deals' : page}
               onChange={v => go(v === 'deals' ? '' : v)} options={TABS} />
-            <button class="avatar" title={user.email} aria-label={`Signed in as ${user.email}`} onClick={menu.open}>
-              {initials(user.displayName || user.email)}
-            </button>
+            <MyAvatar user={user} onClick={menu.open} />
             <Menu menu={menu} label="Account">
               <div class="label">{user.email}{me?.admin ? ' · admin' : ''}</div>
               <button onClick={() => go('settings')}><Icon name="settings" /> Settings</button>
@@ -98,8 +110,9 @@ function App() {
               : page === 'analyze' ? <Analyze arg={arg} sub={sub} />
                 : page === 'training' ? <Training />
                   : page === 'knowledge' ? <Knowledge me={me} />
-                    : page === 'settings' ? <Settings me={me} />
-                      : <Deals />}
+                    : page === 'team' ? <Team me={me} />
+                      : page === 'settings' ? <Settings me={me} />
+                        : <Deals />}
       </main>
     </ToastHost>
   );

@@ -1,4 +1,4 @@
-// Hash routes: #/  #/deal/12  #/analyze  #/training  #/knowledge  #/settings
+// Hash routes: #/  #/deal/12  #/analyze  #/training  #/knowledge  #/team  #/settings
 import { useEffect, useState } from 'preact/hooks';
 
 const read = () => (location.hash.replace(/^#\/?/, '') || 'deals').split('/');

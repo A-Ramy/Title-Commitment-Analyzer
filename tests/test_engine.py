@@ -186,3 +186,27 @@ def test_morning_run_only_for_the_scheduler_and_sends_once(setup, monkeypatch):
     assert "Closing Blocker" in sent[0][0]
     assert client.post("/v1/tasks/morning", headers=h("sched")).json()["email"] == "done" and len(sent) == 1
     assert store.get_settings()["email_last_run"]["result"] == "sent"
+
+
+def test_team_tab_sets_admins_and_tcs(setup):
+    client, store = setup
+    photo = "data:image/jpeg;base64,/9j/4AAQSkZJRg=="
+    team = [{"name": "Pat  Tc", "email": "Pat.TC@totalchb.com", "role": "manager", "dept": "TC", "photo": photo},
+            {"name": "Sam Member", "email": "sam@totalchb.com", "role": "member", "dept": "TC"},
+            {"name": "Lee Leader", "email": "lee@totalchb.com", "role": "lead", "dept": "TC"},
+            {"name": "Out Of Tc", "email": "ops@totalchb.com", "role": "member", "dept": ""}]
+    assert client.put("/v1/team", json={"people": team}, headers=h("tc")).json() == {"ok": True}
+    s = store.get_settings()
+    assert s["admins"] == ["pat.tc@totalchb.com"] and s["tcs"] == ["Lee Leader", "Sam Member"]
+    assert s["team"][0] == {"name": "Pat Tc", "email": "pat.tc@totalchb.com", "role": "manager", "dept": "",
+                            "photo": photo}
+    # now only managers change it, nobody can drop their own manager role, and only company sign-ins are allowed
+    assert client.put("/v1/team", json={"people": team}, headers=h("owner")).status_code == 403
+    demoted = [{**team[0], "role": "member"}, *team[1:]]
+    assert client.put("/v1/team", json={"people": demoted}, headers=h("tc")).status_code == 400
+    outsider = [*team, {"name": "X", "email": "x@gmail.com", "role": "member"}]
+    assert client.put("/v1/team", json={"people": outsider}, headers=h("tc")).status_code == 400
+    twice = [*team, {"name": "Again", "email": "sam@totalchb.com", "role": "member"}]
+    assert client.put("/v1/team", json={"people": twice}, headers=h("tc")).status_code == 400
+    bad_photo = [{**team[0], "photo": "javascript:alert(1)"}, *team[1:]]
+    assert client.put("/v1/team", json={"people": bad_photo}, headers=h("tc")).status_code == 400

@@ -385,8 +385,10 @@ def story() -> list:
         ["ANALYZE", "Upload a new or updated commitment (section 4)."],
         ["TRAINING", "Optional: measure the agent on a commitment your team already worked (section 12)."],
         ["KNOWLEDGE", "What the agent knows: the Feedback Inbox, the team's lessons and the professional checklist."],
+        ["TEAM", "Who's on the team: photos, roles (Manager, Team Leader, Member) and department, as in the Team Hub."],
         ["Sun / moon", "Light or dark look. Your choice is remembered on that browser."],
-        ["Your initials", "Your account (with <b>admin</b> if you are one), <b>Settings</b> and <b>Sign Out</b>."],
+        ["Your photo", "Your account (with <b>admin</b> if you are one), <b>Settings</b> and <b>Sign Out</b>. Your "
+                       "initials show until a manager adds your photo on the Team tab."],
     ], [0.2, 0.8])]
     s += [shot("13-menu", "Click your initials for Settings and Sign Out.", 0.45, crop=(0.58, 0.0, 0.86, 0.25))]
     s += [P("On a phone", "h2"),
@@ -414,8 +416,9 @@ def story() -> list:
         ["Property Address / State", "Matches the contract."],
         ["Deal Type", "Wholesale (Assignment), Double Close, Novation / Listing, Fix &amp; Flip, Buy &amp; Hold, "
                       "Subject-To or Seller Financing. It changes which checks the agent runs, so get it right."],
-        ["Closing Date", "Every due date is counted back from it. If you don't know it yet, add it later and re-run."],
-        ["TC (Owns Every Item)", "Who owns this deal's list. The names come from Settings."],
+        ["Closing Date", "Click it and pick the day on the calendar, then <b>Set Closing Date</b>. Every due date is "
+                         "counted back from it. If you don't know it yet, add it later and re-run."],
+        ["TC (Owns Every Item)", "Who owns this deal's list: everyone in TC on the Team tab."],
         ["Title Company", "Usually filled in from the commitment."],
         ["Notes For The Agent", "Anything it can't see in the documents, e.g. \"seller is behind on payments\"."],
     ], [0.27, 0.73])]
@@ -487,11 +490,14 @@ def story() -> list:
         "<b>Tick the box</b> on the left when an item is done: it becomes <b>Cleared</b> and fades. Tick it again to "
         "reopen it.",
         "Click the <b>status</b> (OPEN, ORDERED…) to pick another one.",
-        "Click the <b>date</b> to change when it's due.",
+        "Click the <b>date</b> (or <b>Due</b>): the Team Hub's calendar opens. Pick the day, then <b>Set Due Date</b> "
+        "(<b>Remove</b> clears it). A blocker's new date goes to the Team Hub too.",
         "Open the item, type in <b>Notes</b> (e.g. \"Payoff requested from servicer 10/26\") and click "
         "<b>Save Notes</b>.",
     ]), shot("07-status-menu", "Changing a status. Every change saves at once and shows on everyone's screen.", 1.0,
-             crop=(0.14, 0.22, 0.86, 0.66))]
+             crop=(0.14, 0.22, 0.86, 0.66)),
+          shot("24-due-picker", "The due date calendar, the same as the Team Hub's.", 0.5,
+               crop=(0.495, 0.385, 0.775, 0.855))]
     s += [table(["Status", "Use it when"], [
         ["Open", "Nothing has been done yet."],
         ["Ordered", "You've requested it (payoff letter ordered, estoppel requested, affidavit sent for signature)."],
@@ -623,8 +629,8 @@ def story() -> list:
 
     # ---- 12
     s += section(12, "For The Owner And Admins",
-                 "Admins approve what the agent learns and set up the team. Admins are listed in Settings; everyone "
-                 "else can see Settings and Knowledge but not change them.")
+                 "Admins approve what the agent learns and set up the team. The admins are the Managers on the Team "
+                 "tab; everyone else can see Team, Settings and Knowledge but not change them.")
     s += [P("Approving lessons (Knowledge tab)", "h2"),
           shot("16-knowledge", "Knowledge: how the agent scores, the active lessons, the checklist, and the Feedback "
                                "Inbox.", 1.0, crop=(0.14, 0.12, 0.86, 1.0), max_h=4.4)]
@@ -642,12 +648,23 @@ def story() -> list:
             "commitments the team provided. Further down: the training examples with their latest score, and "
             "<b>The Professional Checklist</b> (34 checks the agent runs on every deal)."),
           shot("17-lessons", "Lessons: each one can be turned off and on.", 1.0, crop=(0.14, 0.56, 0.86, 1.0))]
+    s += [CondPageBreak(4.5 * inch), P("The Team tab", "h2"),
+          P("The same team as the Universal Team Hub's Managers and TC department. Managers are the admins; everyone "
+            "in TC is in the TC list when you confirm a deal."),
+          shot("23-team", "The Team tab: photos, roles and departments (made-up names).", 1.0,
+               crop=(0.14, 0.19, 0.86, 0.93), max_h=4.6)]
+    s += [steps([
+        "Open <b>TEAM</b>. The first time, it starts with you as a Manager. To add someone, fill in "
+        "<b>Add A Person</b> (name, @totalchb.com sign-in email, role and department) and click <b>Add</b>.",
+        "Click a person's picture to add or change their photo (it's cropped to a circle), click a name to fix it, "
+        "and pick their <b>Role</b> and <b>Department</b>. The × removes them.",
+        "Click <b>Save Changes</b>. From then on the Managers are the admins and everyone in TC is in the TC list. "
+        "You can't take away your own Manager role: another manager does that.",
+    ])]
     s += [CondPageBreak(3.6 * inch), P("Settings", "h2"),
           P("Click your initials → <b>Settings</b>. Change what you need, then click <b>Save Settings</b>.")]
     s += [table(["Setting", "What to put"], [
-        ["Admins", "Emails of the people who approve lessons and change settings, one per line. With nobody listed, "
-                   "everyone is an admin, so keep at least one."],
-        ["TCs", "Names of the TCs, one per line. You pick from this list when confirming a deal."],
+        ["People", "Shows who the admins are. Admins and TCs are set on the Team tab."],
         ["Daily Email: Send To", "Everyone who gets the morning summary, one per line."],
         ["Daily Email: Send From", "title-agent@totalchb.com (leave as is)."],
         ["Due Dates", "Days before closing for each kind of item (payoffs 10, curative 14, documents 5, bring-down 5, "
@@ -669,7 +686,7 @@ def story() -> list:
                         "later that morning."],
     ], [0.22, 0.78])]
     s += [box("Access is the company Google account: when someone leaves and their @totalchb.com account is "
-              "closed, they can no longer sign in. Remove them from Admins and TCs too.", "warn")]
+              "closed, they can no longer sign in. Remove them on the Team tab too.", "warn")]
     s += [P("Training (optional)", "h2"),
           P("To measure the agent, open <b>TRAINING</b>, upload a commitment your team already worked, pick the deal "
             "type, paste the closer's list as is and click <b>Compare With Agent</b>. You'll see what both found, "

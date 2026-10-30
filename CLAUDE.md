@@ -40,7 +40,11 @@ sync when a rule changes. (The first Streamlit version and its Neon database wer
 - `engine/main.py`: the Cloud Run service (FastAPI) around `flows.py`. Packages: `engine/requirements.txt`
   (`uv export --no-dev --no-hashes --no-emit-project --format requirements-txt -o engine/requirements.txt`).
 - `web/`: Vite + Preact. `src/pages/` one file per screen, `src/data.js` live Firestore reads, `src/api.js` engine
-  calls, `src/styles.css` the hub's tokens and components.
+  calls, `src/styles.css` the hub's tokens and components. Copy the hub's look from RemyTCHB/HUB (`app/app.dc.html`),
+  e.g. the due date picker (`ui.jsx` DatePicker, days only) and Team Members (`pages/Team.jsx`).
+- Team tab (owner 2026-10-30): `settings/team` (name, email, role manager / lead / member, dept TC, a small photo as a
+  data: URL), saved by `PUT /v1/team`, which also sets `admins` (the managers) and `tcs` (everyone in TC). Names
+  and emails live only in the database, never in this public repository.
 - `titleagent/hub.py`: the Universal Team Hub connection. Only Closing Blockers go (one task per deal, "Title -
   <address>", in Monz's list, tagged "Title Commitment Agent"); a blocker cleared here is done there and the reverse.
   Sent after each review / re-run / blocker change (engine, in the background) and caught up each weekday

@@ -262,7 +262,7 @@ def cover(c, doc) -> None:
     c.drawString(MARGIN, PAGE_H - 6.85 * inch, "For: Transaction Coordinators and the Owner")
     c.setFont("Nunito", 10)
     c.setFillColor(MUTED)
-    c.drawString(MARGIN, PAGE_H - 7.12 * inch, f"Version 2.1 · {date.today():%B %Y} · title.totalchb.com")
+    c.drawString(MARGIN, PAGE_H - 7.12 * inch, f"Version 2.2 · {date.today():%B %Y} · title.totalchb.com")
     c.setFillColor(colors.white)
     c.setFont("Nunito-Bold", 9.5)
     c.drawString(MARGIN, 0.62 * inch, "Total Cash Home Buyers · Internal use only")
@@ -318,7 +318,9 @@ def story() -> list:
               "up in the hub as tasks (section 10). Old links from earlier emails still open the right deal. "
               "New in 2.1: the 8 AM email lists Closing Blockers only and goes out on time from Google Cloud; "
               "the Team Hub's date calendar; Team (Managers, from your photo) with roles and photos; "
-              "Settings → Permissions for Team Leaders and Members; and picking who gets the email.", "good",
+              "Settings → Permissions for Team Leaders and Members; and picking who gets the email. "
+              "New in 2.2: every export is also saved in the team's Google Drive folder, in a folder for its type, "
+              "with the date and time in its name; and due dates take a time, as in the Team Hub.", "good",
               "What's new in version 2")]
     s.append(PageBreak())
 
@@ -492,14 +494,15 @@ def story() -> list:
         "<b>Tick the box</b> on the left when an item is done: it becomes <b>Cleared</b> and fades. Tick it again to "
         "reopen it.",
         "Click the <b>status</b> (OPEN, ORDERED…) to pick another one.",
-        "Click the <b>date</b> (or <b>Due</b>): the Team Hub's calendar opens. Pick the day, then <b>Set Due Date</b> "
-        "(<b>Remove</b> clears it). A blocker's new date goes to the Team Hub too.",
+        "Click the <b>date</b> (or <b>Due</b>): the Team Hub's calendar opens. Pick the day, set the time with the "
+        "<b>−</b> / <b>+</b> buttons (hour, then minutes in steps of 5; Eastern time, 5:00 PM unless you change it), "
+        "then <b>Set Due Date</b>. <b>Remove</b> clears both. A blocker's new date and time go to the Team Hub too.",
         "Open the item, type in <b>Notes</b> (e.g. \"Payoff requested from servicer 10/26\") and click "
         "<b>Save Notes</b>.",
     ]), shot("07-status-menu", "Changing a status. Every change saves at once and shows on everyone's screen.", 1.0,
              crop=(0.14, 0.22, 0.86, 0.66)),
-          shot("24-due-picker", "The due date calendar, the same as the Team Hub's.", 0.5,
-               crop=(0.495, 0.385, 0.775, 0.855))]
+          shot("24-due-picker", "The due date calendar and time, the same as the Team Hub's.", 0.45,
+               crop=(0.49, 0.254, 0.777, 0.817))]
     s += [table(["Status", "Use it when"], [
         ["Open", "Nothing has been done yet."],
         ["Ordered", "You've requested it (payoff letter ordered, estoppel requested, affidavit sent for signature)."],
@@ -563,11 +566,21 @@ def story() -> list:
         "At the top, pick <b>Everything</b>, <b>No Review / FYI</b> or <b>Closing Blockers Only</b>. The number shows "
         "how many items each one has. A partial export says what was left out, and a blockers-only file is titled "
         "<b>Closing Blockers</b>.",
-        "Click <b>PDF</b>, <b>Word</b>, <b>Excel</b> or <b>CSV</b>: the file downloads with the property address "
-        "in its name.",
-        "Or click <b>Google Sheets</b> or <b>Google Docs</b>: the file is created in the team's shared Google Drive "
-        "folder and opens in a new tab. Everyone with access to that folder can see it.",
-    ]), shot("09-export", "Export List, set to Closing Blockers Only.", 0.7, crop=(0.27, 0.26, 0.73, 0.74))]
+        "Click <b>PDF</b>, <b>Word</b>, <b>Excel</b> or <b>CSV</b>: the file downloads to your computer with the "
+        "property address and the date and time in its name. A copy is also saved in the team's Google Drive "
+        "folder, in the folder for its type; the message at the bottom says where it went.",
+        "Or click <b>Google Sheets</b> or <b>Google Docs</b>: the file is created only in the team's Google Drive "
+        "folder (in <b>Google Sheets</b> or <b>Google Docs</b>) and opens in a new tab. Nothing downloads.",
+    ]), shot("09-export", "Export List, set to Closing Blockers Only.", 0.7, crop=(0.27, 0.222, 0.73, 0.778))]
+    s += [table(["In the team's Drive folder", "What goes there"], [
+        ["PDF · Word · Excel · CSV", "A copy of every download of that type."],
+        ["Google Sheets · Google Docs", "Every Google export (they go only here)."],
+    ], [0.35, 0.65]),
+          P("Each folder is made the first time it's needed. Every file is named with the address, Title Checklist "
+            "or Closing Blockers, and the date and time (Eastern), e.g. <i>1427 Maple Ave, Columbus, OH · Closing "
+            "Blockers · 2026-10-30 02:05 PM ET.pdf</i>, so earlier exports are kept, never replaced. Everyone with "
+            "access to the folder can see them. If the copy can't be saved, the download still works and the "
+            "message says why.")]
     s += [box("Exports contain names, addresses and loan numbers. Send them only to people on the deal.", "warn")]
 
     # ---- 10
@@ -592,7 +605,8 @@ def story() -> list:
         ["You clear a blocker here (tick or status)", "It's ticked done in the hub."],
         ["Someone ticks a blocker done in the hub", "It turns <b>Cleared</b> here. Unticking it there makes it "
                                                     "<b>Open</b> here again."],
-        ["You change a blocker's due date", "The subtask's date follows."],
+        ["You change a blocker's due date or time", "The subtask's date and time follow (a date without a time is "
+                                                    "9:00 AM there)."],
         ["You Report a Missing Closing Blocker (added to the list)", "A new subtask appears."],
         ["An updated commitment removes a blocker", "It's no longer sent to the hub."],
         ["Anything was missed (the hub was busy, a connection dropped)", "It's sent again with the next change, "
@@ -626,7 +640,8 @@ def story() -> list:
           P(f"Every weekday at 8:00 AM Eastern, everyone on the list gets one email from the <b>{APP}</b> "
             "(title-agent@totalchb.com) with every open deal's open <b>Closing Blockers</b>, and nothing else: "
             "the totals at the top (open deals, open blockers, due in the next 3 days, overdue), then one card per "
-            "deal with each blocker's headline and due date. Tap an address to open the deal. Deals without open "
+            "deal with each blocker's headline and due date (and time, when one is set). "
+            "Tap an address to open the deal. Deals without open "
             "blockers are listed at the end. It's built at 8:00 from the list as it stands, so clear what's done "
             "before then. With no open deals it still arrives and says so.")]
 
@@ -681,8 +696,12 @@ def story() -> list:
         ["Daily Email: Send From", "title-agent@totalchb.com (leave as is)."],
         ["Due Dates", "Days before closing for each kind of item (payoffs 10, curative 14, documents 5, bring-down 5, "
                       "closing 0)."],
-        ["Google Drive Folder", "The link of the shared folder for Google Sheets / Docs exports. After changing it, "
-                                "Save, then click <b>Test Google Folder</b>. The setup steps are under it."],
+        ["Google Drive Folder", "The link of the shared folder where every export is saved (a folder per type "
+                                "inside it). After changing it, Save, then click <b>Test Google Folder</b>. The "
+                                "setup steps are under it. If the test says the script is the old version, open the "
+                                "script at script.google.com, paste the new one from <b>Copy The Script</b> over "
+                                "it, Save, then Deploy → Manage deployments → edit → Version: New version → "
+                                "Deploy. The link and key stay the same."],
     ], [0.27, 0.73])]
     s += [P("Connections", "h2"),
           P("The tiles at the bottom of Settings show whether everything the app depends on is working. They're set "
@@ -691,7 +710,7 @@ def story() -> list:
     s += [table(["Tile", "What it tells you"], [
         ["AI (Anthropic)", "<b>Connected</b>: reviews can run."],
         ["Database", "<b>Firestore</b>: the deals live in the company's own Firebase project."],
-        ["Google", "<b>Set Up</b>: Google Sheets / Docs exports work (saved by the export script)."],
+        ["Google", "<b>Set Up</b>: exports are saved in the Drive folder (by the export script)."],
         ["Team Hub", "<b>Connected</b>: Closing Blockers go to hub.totalchb.com and ticks come back."],
         ["Daily Email", "<b>Sending</b>: it went out (with the time and how many people). <b>Skipped</b> or "
                         "<b>Failed</b>: the reason is shown; a failed email is tried again within minutes, and again "
@@ -747,6 +766,9 @@ def story() -> list:
                                            "Connections → Daily Email, which shows what happened."],
         ["Google Sheets / Docs shows an error.", "The message says what's wrong. Use Excel or Word for now and tell an "
                                                  "admin (Settings → Test Google Folder)."],
+        ["It says Downloaded, but not saved in the Drive folder.", "You have the file; only the Drive copy is "
+                                                                   "missing. Tell an admin (Settings → Test Google "
+                                                                   "Folder)."],
         ["I can't see Report Missing Item, or can't approve lessons.", "Your role doesn't allow it yet. A manager "
                                                                          "can turn it on: Settings → Permissions."],
         ["How do I change someone's role or photo?", "Managers: your photo, top right → Team. Pick the role, click "
@@ -766,7 +788,8 @@ def story() -> list:
         ("Something's missing", "Deal → Report Missing Item → fill it in → Send Feedback."),
         ("Something's wrong", "Open the item → Feedback → Wrong Information / Not Needed → set it to Waived."),
         ("Send the list", "Deal → Export List → Everything / No Review / FYI / Closing Blockers Only → PDF, Word, "
-                          "Excel, CSV, Google Sheets or Docs."),
+                          "Excel, CSV, Google Sheets or Docs. A copy is kept in the team's Drive folder."),
+        ("Set a due date", "Click the date on the item → pick the day → − / + for the time → Set Due Date."),
         ("Deal closed", "Bottom of the deal → Mark Deal Closed."),
     ]
     s.append(table(["I want to…", "Do this"], [[a, b] for a, b in ref], [0.25, 0.75]))

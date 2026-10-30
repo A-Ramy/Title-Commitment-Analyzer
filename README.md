@@ -5,7 +5,7 @@
 Upload a title commitment (and the purchase contract) and the Title Commitment Agent lists **everything that has to happen
 before the deal can close**: Closing Blockers, Before Closing items and Review / FYI, each traced to the page and
 wording it comes from. TCs work the list in the app and export it (PDF, Word, Excel, CSV, Google Sheets / Docs,
-everything or Closing Blockers only). The team trains it with worked commitments and **Report Missing Item**; admins
+everything or Closing Blockers only; every export is also saved in the team's Drive folder, a folder per type). The team trains it with worked commitments and **Report Missing Item**; admins
 approve every lesson. A summary email goes out weekdays at 8:00 AM Eastern. Team (Managers, from the account menu) holds
 who's who (photos, roles, the TC department), as in the Universal Team Hub; Managers are the admins and
 Settings → Permissions says what Team Leaders and Members may do.

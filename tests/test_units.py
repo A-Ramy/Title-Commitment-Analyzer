@@ -210,6 +210,19 @@ def test_send_hands_resend_the_delivery_time(monkeypatch):
     assert bodies[0]["scheduled_at"] == "2026-10-29T08:00:00-04:00" and "scheduled_at" not in bodies[1]
 
 
+def test_daily_email_is_branded_and_lists_every_open_deal():
+    deals = [{"id": 7, "address": "1 Sample St", "deal_type": "Double Close", "closing_date": "2026-11-20",
+              "tc": "Pat"}, {"id": 8, "address": "2 Example Ave", "deal_type": "Fix & Flip", "closing_date": None,
+                             "tc": "Sam"}]
+    items = {7: [item("Payoff", key="a", due="2026-10-20")], 8: []}
+    _, html = summary_html(deals, items, date(2026, 10, 25), "https://title.totalchb.com", branded=True)
+    assert 'src="https://title.totalchb.com/logo-full.png"' in html and "Title Commitment" in html
+    assert "1 open Closing Blocker across 2 open deals" in html  # the inbox preview line
+    assert "Overdue · Oct 20" in html and "On Track" in html and "2 Example Ave" in html
+    _, quiet = summary_html(deals[1:], {8: []}, date(2026, 10, 25), "https://title.totalchb.com", branded=True)
+    assert "nothing due in the next 3 days" in quiet and "2 Example Ave" in quiet
+
+
 def test_email_links_open_the_deal():
     deals = [{"id": 7, "address": "1 Sample St", "deal_type": "Double Close", "closing_date": None, "tc": "Pat"}]
     _, html = summary_html(deals, {7: [item("Payoff", key="a")]}, date(2026, 10, 25), "https://title.totalchb.com/")

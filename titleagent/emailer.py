@@ -19,6 +19,8 @@ EASTERN = ZoneInfo("America/New_York")
 SEND_AT = time(8, 0)
 LATEST_TO_SCHEDULE = time(7, 58)  # a run after this sends right away instead
 SOON_DAYS = 3
+# The daily email in the app's design (branded_html), drafted 2026-10-30: it goes out once the owner approves it.
+BRANDED = False
 
 
 def _open(items: list[ActionItem]) -> list[ActionItem]:
@@ -26,8 +28,10 @@ def _open(items: list[ActionItem]) -> list[ActionItem]:
 
 
 def summary_html(deals: list[dict], items_by_deal: dict[int, list[ActionItem]], today: date,
-                 app_url: str = "") -> tuple[str, str]:
-    """(subject, html)."""
+                 app_url: str = "", branded: bool | None = None) -> tuple[str, str]:
+    """(subject, html). The branded design once BRANDED is on; until then the plain email."""
+    if BRANDED if branded is None else branded:
+        return branded_html(deals, items_by_deal, today, app_url)
     soon = today + timedelta(days=SOON_DAYS)
     blocks, total_blockers, total_due = [], 0, 0
     for d in deals:
@@ -56,6 +60,210 @@ def summary_html(deals: list[dict], items_by_deal: dict[int, list[ActionItem]], 
             f"Title Commitment Agent daily summary · {today:%A, %b %d}</h2>"
             + ("".join(blocks) or "<p>No open blockers and nothing due in the next 3 days.</p>")
             + "<p style='color:#767388;font-size:12px'>Total Cash Home Buyers · Title Commitment Agent</p></div>")
+    return subject, html
+
+
+# ---------------------------------------------------------------- the branded email
+# The app's look (web/src/styles.css: TCHB indigo / red / green, Baloo 2 headings, Nunito Sans text, white cards on a
+# soft grey page) in what email programs accept: tables and inline styles. Baloo 2 and Nunito Sans load where the
+# email program allows web fonts (Apple Mail, iPhone); elsewhere (Gmail, Outlook) Arial stands in.
+APP = "Title Commitment Agent"
+SITE = "https://title.totalchb.com"
+INDIGO, RED, GREEN, ORANGE = "#4D458A", "#BD2239", "#109648", "#B45309"
+INK, BODY, MUTED, LINE, PAGE = "#211E33", "#47445A", "#767388", "#EEEDF2", "#F7F7F9"
+RED_BG, GREEN_BG, ORANGE_BG, INDIGO_BG = "#FBF0F2", "#EAF7EF", "#FFF1E0", "#F5F4FA"
+HEAD = "font-family:'Baloo 2','Nunito Sans',Arial,sans-serif;font-weight:700"
+TEXT = "font-family:'Nunito Sans',Arial,sans-serif"
+BAR = {"blocker": RED, "before": ORANGE, "fyi": INDIGO}
+TAG = {"blocker": ("Closing Blocker", RED, RED_BG), "before": ("Before Closing", ORANGE, ORANGE_BG),
+       "fyi": ("Review / FYI", INDIGO, INDIGO_BG)}
+
+
+def _day(iso: str) -> str:
+    d = date.fromisoformat(iso)
+    return f"{d:%b} {d.day}"
+
+
+def _chip(text: str, color: str, bg: str) -> str:
+    return (f'<span style="{HEAD};display:inline-block;font-size:12px;letter-spacing:.04em;color:{color};'
+            f'background:{bg};border-radius:999px;padding:3px 10px;white-space:nowrap">{escape(text)}</span>')
+
+
+def _button(href: str, label: str, color: str = RED) -> str:
+    return (f'<a href="{escape(href)}" style="{HEAD};display:inline-block;font-size:15px;color:#ffffff;'
+            f'background:{color};border-radius:999px;padding:10px 22px;text-decoration:none">{escape(label)}</a>')
+
+
+def _due(i: ActionItem, today: date) -> str:
+    if not i.due_date:
+        return ""
+    days = (date.fromisoformat(i.due_date) - today).days
+    if days < 0:
+        return _chip(f"Overdue · {_day(i.due_date)}", RED, RED_BG)
+    if days == 0:
+        return _chip("Due today", ORANGE, ORANGE_BG)
+    return _chip(f"Due {_day(i.due_date)}", ORANGE if days <= SOON_DAYS else INDIGO,
+                 ORANGE_BG if days <= SOON_DAYS else INDIGO_BG)
+
+
+STATUS_CHIP = {"Ordered": (INDIGO, INDIGO_BG), "Received": (GREEN, GREEN_BG)}
+
+
+def _row(i: ActionItem, today: date) -> str:
+    """One item as the app's task card: a colored edge by priority, the headline, the action, then chips."""
+    label, color, bg = TAG.get(i.priority, TAG["fyi"])
+    chips = [_chip(label, color, bg), _due(i, today)]
+    if i.status in STATUS_CHIP:
+        chips.append(_chip(i.status, *STATUS_CHIP[i.status]))
+    sub = " · ".join(x for x in (f"Provided by {i.provided_by}" if i.provided_by else "",
+                                 f"${i.amount:,.0f}" if i.amount else "") if x)
+    return (
+        f'<tr><td style="padding:6px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+        f'style="border-collapse:separate;background:#ffffff;border:1px solid {LINE};'
+        f'border-left:4px solid {BAR.get(i.priority, INDIGO)};border-radius:10px"><tr><td style="padding:12px 14px">'
+        f'<div style="{HEAD};font-size:16px;line-height:1.3;color:{INDIGO}">{escape(i.title)}</div>'
+        f'<div style="{TEXT};font-size:14px;line-height:1.45;color:{BODY};padding-top:2px">{escape(i.action)}</div>'
+        f'<div style="padding-top:8px;line-height:2">{" ".join(c for c in chips if c)}</div>'
+        + (f'<div style="{TEXT};font-size:13px;color:{MUTED}">{escape(sub)}</div>' if sub else "")
+        + "</td></tr></table></td></tr>")
+
+
+def _closing(d: dict, today: date) -> str:
+    if not d.get("closing_date"):
+        return _chip("No closing date", MUTED, LINE)
+    days = (date.fromisoformat(d["closing_date"]) - today).days
+    text = (f"{-days}d past closing" if days < 0 else "Closing today" if days == 0
+            else f"Closing {_day(d['closing_date'])} · {days}d")
+    return _chip(text, RED if days < 0 else ORANGE if days <= 7 else INDIGO,
+                 RED_BG if days < 0 else ORANGE_BG if days <= 7 else INDIGO_BG)
+
+
+def _table(rows: str, style: str = "") -> str:
+    return (f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+            f'style="border-collapse:separate;{style}">{rows}</table>')
+
+
+def _deal(d: dict, rows: list[ActionItem], blockers: int, today: date, base: str) -> str:
+    """A deal as the app's card: the address, its details, its blockers count and closing chip, then the items."""
+    name = d.get("address") or f"Deal {d['id']}"
+    meta = " · ".join(x for x in (d.get("deal_type"), f"TC {d.get('tc') or 'unassigned'}", d.get("title_company"))
+                      if x)
+    count = (_chip(f"{blockers} open blocker{'s' if blockers != 1 else ''}", RED, RED_BG) if blockers
+             else _chip("No blockers", GREEN, GREEN_BG))
+    href = f"{base}/#/deal/{d['id']}"
+    link = f'<tr><td style="padding-top:10px">{_button(href, "Open The Deal")}</td></tr>' if base else ""
+    inner = _table(
+        f'<tr><td style="{HEAD};font-size:20px;line-height:1.25;color:{INDIGO}">{escape(name)}</td></tr>'
+        f'<tr><td style="{TEXT};font-size:14px;color:{MUTED};padding:2px 0 8px">{escape(meta)}</td></tr>'
+        f'<tr><td style="padding-bottom:6px;line-height:2">{count} {_closing(d, today)}</td></tr>'
+        + "".join(_row(i, today) for i in rows) + link)
+    card = _table(f'<tr><td style="padding:18px 18px 14px">{inner}</td></tr>',
+                  f"background:{INDIGO_BG};border-radius:16px")
+    return f'<tr><td style="padding:0 0 16px">{card}</td></tr>'
+
+
+def _stat(value: int, label: str, color: str) -> str:
+    return (f'<td width="25%" align="center" style="padding:12px 4px;background:#ffffff;border:1px solid {LINE};'
+            f'border-radius:12px"><div style="{HEAD};font-size:28px;line-height:1;color:{color}">{value}</div>'
+            f'<div style="{TEXT};font-size:12px;color:{MUTED};padding-top:4px">{escape(label)}</div></td>')
+
+
+def _note(text: str) -> str:
+    return (f'<tr><td style="padding:8px 0 16px"><div style="{TEXT};font-size:15px;color:{BODY};'
+            f'background:{GREEN_BG};border-radius:12px;padding:16px">{escape(text)}</div></td></tr>')
+
+
+def _on_track(d: dict, base: str) -> str:
+    name = escape(d.get("address") or f"Deal {d['id']}")
+    if base:
+        name = (f'<a href="{escape(base)}/#/deal/{d["id"]}" style="color:{INDIGO};font-weight:700;'
+                f'text-decoration:none">{name}</a>')
+    else:
+        name = f"<b>{name}</b>"
+    closing = f" · closing {_day(d['closing_date'])}" if d.get("closing_date") else ""
+    return (f'<tr><td style="{TEXT};font-size:14px;color:{BODY};padding:3px 0"><span style="color:{GREEN}">'
+            f'&#10003;</span> {name} <span style="color:{MUTED}">· nothing due{closing}</span></td></tr>')
+
+
+FONTS = ("https://fonts.googleapis.com/css2?family=Baloo+2:wght@700&amp;family=Nunito+Sans:wght@400;700"
+         "&amp;display=swap")
+
+
+def branded_html(deals: list[dict], items_by_deal: dict[int, list[ActionItem]], today: date,
+                 app_url: str = "") -> tuple[str, str]:
+    """(subject, html): every open deal's open Closing Blockers and anything due in the next 3 days, in the app's
+    design. Deals with nothing to report are listed at the end, so every open deal shows."""
+    soon = (today + timedelta(days=SOON_DAYS)).isoformat()
+    base = app_url.rstrip("/")
+    cards, quiet = [], []
+    total_blockers = total_due = overdue = 0
+    for d in deals:
+        items = _open(items_by_deal.get(d["id"], []))
+        blockers = [i for i in items if i.priority == "blocker"]
+        due = [i for i in items if i.due_date and i.due_date <= soon]
+        total_blockers += len(blockers)
+        total_due += len(due)
+        overdue += sum(1 for i in items if i.due_date and i.due_date < today.isoformat())
+        rows = sorted(blockers + [x for x in due if x not in blockers],
+                      key=lambda x: (x.priority != "blocker", x.due_date or "9999"))
+        if rows:
+            cards.append(_deal(d, rows, len(blockers), today, base))
+        else:
+            quiet.append(d)
+    subject = (f"{APP}: {total_blockers} open blocker{'s' if total_blockers != 1 else ''}, "
+               f"{total_due} due soon ({today:%b %d})")
+    preheader = (f"{total_blockers} open Closing Blocker{'s' if total_blockers != 1 else ''} across {len(deals)} open "
+                 f"deal{'s' if len(deals) != 1 else ''} · {total_due} due in the next {SOON_DAYS} days"
+                 + (f" · {overdue} overdue" if overdue else ""))
+    if not deals:
+        body = _note("No open deals today. Analyze a commitment to start one.")
+    elif not cards:
+        body = _note(f"No open Closing Blockers and nothing due in the next {SOON_DAYS} days.")
+    else:
+        body = "".join(cards)
+    if quiet:
+        body += (f'<tr><td style="{HEAD};font-size:17px;color:{INDIGO};padding:4px 0 6px">On Track</td></tr>'
+                 + "".join(_on_track(d, base) for d in quiet))
+    stats = (_stat(len(deals), "Open Deals", INDIGO)
+             + _stat(total_blockers, "Open Blockers", RED if total_blockers else GREEN)
+             + _stat(total_due, "Due Soon", ORANGE if total_due else GREEN)
+             + _stat(overdue, "Overdue", RED if overdue else GREEN))
+    header = _table(
+        f'<tr><td><img src="{escape(base or SITE)}/logo-full.png" width="150" height="46" '
+        f'alt="Total Cash Home Buyers" style="display:block;border:0"></td>'
+        f'<td align="right" style="{HEAD};font-size:12px;letter-spacing:.08em;text-transform:uppercase;'
+        f'color:{INDIGO}">Daily Summary</td></tr>')
+    hero = (f'<div style="{HEAD};font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:{RED}">'
+            f"{today:%A}, {today:%B} {today.day}</div>"
+            f'<div style="{HEAD};font-size:30px;line-height:1.2;color:{INDIGO};padding-top:4px">'
+            f'Title Commitment <span style="color:{RED}">Agent</span></div>'
+            f'<div style="{TEXT};font-size:15px;color:{BODY};padding-top:6px">Every open deal\'s Closing Blockers '
+            f"and anything due in the next {SOON_DAYS} days.</div>")
+    footer = (f"Sent weekdays at 8:00 AM Eastern to the team list in Settings. Closing Blockers are also in the "
+              f"Universal Team Hub.<br>Total Cash Home Buyers · {APP} · Internal use only")
+    rows = (
+        f'<tr><td style="background:#ffffff;border-radius:20px 20px 0 0;padding:18px 24px;'
+        f'border-bottom:1px solid {LINE}">{header}</td></tr>'
+        f'<tr><td style="background:#ffffff;padding:24px 24px 8px">{hero}</td></tr>'
+        f'<tr><td style="background:#ffffff;padding:12px 18px 8px">'
+        f'<table role="presentation" width="100%" cellpadding="0" cellspacing="6" style="border-collapse:separate">'
+        f"<tr>{stats}</tr></table></td></tr>"
+        f'<tr><td style="background:#ffffff;padding:12px 24px 8px">{_table(body)}</td></tr>'
+        f'<tr><td align="center" style="background:#ffffff;border-radius:0 0 20px 20px;padding:8px 24px 26px">'
+        f'{_button(f"{base}/" if base else SITE, f"Open The {APP}", INDIGO)}</td></tr>'
+        f'<tr><td align="center" style="{TEXT};font-size:12px;line-height:1.6;color:{MUTED};padding:18px 12px 0">'
+        f"{footer}</td></tr>")
+    html = (
+        '<!doctype html><html lang="en"><head><meta charset="utf-8">'
+        '<meta name="viewport" content="width=device-width,initial-scale=1">'
+        '<meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light">'
+        f'<title>{escape(subject)}</title><link href="{FONTS}" rel="stylesheet"></head>'
+        f'<body style="margin:0;padding:0;background:{PAGE}">'
+        f'<div style="display:none;max-height:0;overflow:hidden;opacity:0">{escape(preheader)}</div>'
+        f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:{PAGE}"><tr>'
+        f'<td align="center" style="padding:24px 12px">'
+        f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px">{rows}'
+        "</table></td></tr></table></body></html>")
     return subject, html
 
 

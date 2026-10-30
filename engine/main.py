@@ -137,7 +137,8 @@ class DealPatch(BaseModel):
 class ItemPatch(BaseModel):
     key: str
     status: str | None = None
-    due_date: str | None = Field(default=None, description="YYYY-MM-DD, or empty to clear")
+    due_date: str | None = Field(default=None, description="YYYY-MM-DD, or empty to clear (the time too)")
+    due_time: str | None = Field(default=None, description="HH:MM, 24-hour Eastern, or empty for the day only")
     notes: str | None = None
 
 class TeamPerson(BaseModel):
@@ -440,11 +441,17 @@ def create_app(engine: Engine | None = None) -> FastAPI:
                 changes["due_date"] = date.fromisoformat(body.due_date).isoformat() if body.due_date else None
             except ValueError as exc:
                 raise HTTPException(400, "Due date must be YYYY-MM-DD.") from exc
+            if not body.due_date:
+                changes["due_time"] = None
+        if body.due_time is not None and body.due_date != "":
+            if body.due_time and not re.fullmatch(r"([01]\d|2[0-3]):[0-5]\d", body.due_time):
+                raise HTTPException(400, "Due time must be HH:MM (24-hour).")
+            changes["due_time"] = body.due_time or None
         if body.notes is not None:
             changes["notes"] = body.notes[:2000]
         if changes:
             e.store.update_item(deal_id, body.key, by=u.email, **changes)
-            if item.priority == "blocker" and ("status" in changes or "due_date" in changes):
+            if item.priority == "blocker" and changes.keys() & {"status", "due_date", "due_time"}:
                 to_hub(bg, e, deal_id)
         return {"ok": True}
 

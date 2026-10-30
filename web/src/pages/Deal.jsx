@@ -7,7 +7,7 @@ import { api, jobId } from '../api.js';
 import { DONE, PRIORITY, PRIORITY_ORDER, STATUSES, isOpen, useDeal, useItems, useJob, useLatestRun } from '../data.js';
 import { db, storage } from '../firebase.js';
 import { go } from '../router.js';
-import { DatePicker, Icon, Menu, Modal, Seg, Spinner, daysUntil, fmtDate, money, useMenu, useToast, when } from '../ui.jsx';
+import { DatePicker, Icon, Menu, Modal, Seg, Spinner, daysUntil, fmtDate, money, timeText, useMenu, useToast, when } from '../ui.jsx';
 
 const STATUS_CLS = { Open: 's-open', Ordered: 's-ordered', Received: 's-received', Cleared: 's-cleared', Waived: 's-waived' };
 const PROOF = { true: '✓', false: '✗' };
@@ -54,9 +54,10 @@ function ItemCard({ item, deal, open, onToggle, onChange }) {
           </Menu>
           <button class={`mini ${late ? 'has' : item.due_date ? '' : 'muted'}`} onClick={due.open}
             title={late ? 'Overdue' : 'Due date'} disabled={removed} aria-haspopup="dialog">
-            <Icon name="calendar" />{item.due_date ? fmtDate(item.due_date, false) : 'Due'}
+            <Icon name="calendar" />{item.due_date ? fmtDate(item.due_date, false) + (item.due_time ? ` · ${timeText(item.due_time)}` : '') : 'Due'}
           </button>
-          <DatePicker menu={due} value={item.due_date || ''} title={item.title} onSet={v => onChange({ due_date: v })} />
+          <DatePicker menu={due} value={item.due_date || ''} time={item.due_time || ''} title={item.title}
+            onSet={(due_date, due_time) => onChange({ due_date, due_time })} />
           <button class={`mini ${item.notes ? '' : 'muted'}`} title={item.notes || 'Notes'} onClick={onToggle}>
             <Icon name="note" />
           </button>

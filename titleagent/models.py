@@ -183,12 +183,26 @@ class ActionItem(BaseModel):
     amount: float | None = None
     due_rule: str = "none"
     due_date: str | None = None
+    due_time: str | None = None  # "HH:MM", 24-hour Eastern, from the due date picker; None = the day only
     why: str = ""
     sources: list[Source] = []
     origin: Literal["commitment", "checklist", "contract", "review", "feedback"] = "commitment"
     status: str = "Open"
     notes: str = ""
     change: Literal["", "new", "removed"] = ""  # vs the previous commitment for this deal
+
+
+def time_text(hhmm: str | None) -> str:
+    """'17:00' → '5:00 PM' ('' when there's no time)."""
+    if not hhmm:
+        return ""
+    h, m = (int(x) for x in hhmm.split(":"))
+    return f"{(h + 11) % 12 + 1}:{m:02d} {'AM' if h < 12 else 'PM'}"
+
+
+def due_text(item: ActionItem) -> str:
+    """The due date as exports show it: '2026-11-05' or '2026-11-05 5:00 PM'."""
+    return " ".join(x for x in (item.due_date or "", time_text(item.due_time) if item.due_date else "") if x)
 
 
 class Coverage(BaseModel):

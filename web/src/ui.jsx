@@ -9,7 +9,7 @@ const P = {
   chevron: 'm6 9 6 6 6-6', back: 'm15 18-6-6 6-6', right: 'm9 18 6-6-6-6', check: 'M20 6 9 17l-5-5',
   calendar: 'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z',
   note: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8',
-  download: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3', plus: 'M5 12h14M12 5v14',
+  download: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3', plus: 'M5 12h14M12 5v14', minus: 'M5 12h14',
   refresh: 'M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5',
   upload: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12',
   search: 'm21 21-4.3-4.3M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14Z', settings:
@@ -92,22 +92,42 @@ export function Menu({ menu, children, label, cls = '', keepOpen = false }) {
 const WEEK = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 const pad = n => String(n).padStart(2, '0');
 const isoOf = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-export function DatePicker({ menu, value, onSet, label = 'Due Date', title = '', setText = 'Set Due Date' }) {
+// A due date picker as in the Universal Team Hub: a month calendar and, with time, hour and minute steppers (Eastern,
+// 5-minute steps, 5:00 PM until one is picked). onSet(day, time): '' and '' for Remove; time is 'HH:MM' or ''.
+export const timeText = hhmm => {
+  if (!hhmm) return '';
+  const [h, m] = hhmm.split(':').map(Number);
+  return `${(h + 11) % 12 + 1}:${pad(m)} ${h < 12 ? 'AM' : 'PM'}`;
+};
+
+export function DatePicker({ menu, value, time, onSet, label = 'Due Date', title = '', setText = 'Set Due Date' }) {
+  const withTime = time !== undefined;
   const start = value ? new Date(`${value}T12:00`) : new Date();
   const [view, setView] = useState({ y: start.getFullYear(), m: start.getMonth() });
   const [pick, setPick] = useState(value || '');
-  useEffect(() => {  // each time it opens: the saved day, and its month
+  const [hm, setHm] = useState([17, 0]);
+  useEffect(() => {  // each time it opens: the saved day and time, and its month
     if (!menu.at) return;
     const d = value ? new Date(`${value}T12:00`) : new Date();
     setView({ y: d.getFullYear(), m: d.getMonth() }); setPick(value || '');
+    setHm(time ? time.split(':').map(Number) : [17, 0]);
   }, [menu.at]);
   const today = isoOf(new Date());
   const first = new Date(view.y, view.m, 1).getDay(), days = new Date(view.y, view.m + 1, 0).getDate();
   const cells = [...Array(first).fill(0), ...Array.from({ length: days }, (_, i) => i + 1)];
   const shift = n => setView(v => { const m = v.m + n; return { y: v.y + Math.floor(m / 12), m: ((m % 12) + 12) % 12 }; });
-  const done = v => { menu.close(); onSet(v); };
+  const hhmm = `${pad(hm[0])}:${pad(hm[1])}`;
+  const done = (v, t) => { menu.close(); onSet(v, t); };
+  const step = (i, n) => setHm(([h, m]) => i === 0 ? [(h + n + 24) % 24, m]
+    : [h, n > 0 ? (Math.floor(m / 5) * 5 + 5) % 60 : (Math.ceil(m / 5) * 5 + 55) % 60]);
   const month = new Date(view.y, view.m, 1).toLocaleString('en-US', { month: 'long', year: 'numeric' });
   const summary = pick ? new Date(`${pick}T12:00`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : '';
+  const stepper = (i, name, val) => (
+    <div class="dp-step" role="group" aria-label={name}>
+      <button type="button" class="dp-round" aria-label={`Earlier ${name.toLowerCase()}`} onClick={() => step(i, -1)}><Icon name="minus" size={16} stroke={2.5} /></button>
+      <b>{pad(val)}</b>
+      <button type="button" class="dp-round" aria-label={`Later ${name.toLowerCase()}`} onClick={() => step(i, 1)}><Icon name="plus" size={16} stroke={2.5} /></button>
+    </div>);
   return (
     <Menu menu={menu} label={label} cls="dp-menu" keepOpen>
       <div class="dp-title"><b>{label}</b>{title && <span>{title}</span>}</div>
@@ -126,10 +146,15 @@ export function DatePicker({ menu, value, onSet, label = 'Due Date', title = '',
               aria-label={v} aria-pressed={v === pick} onClick={() => setPick(v)}>{d}</button>);
         })}
       </div>
-      <div class="dp-summary">{pick ? `${label.replace(' Date', '')} ${summary}` : 'Pick a day on the calendar.'}</div>
+      {withTime && (
+        <div class="dp-time">
+          <div class="dp-clock">{stepper(0, 'Hour', hm[0])}<b>:</b>{stepper(1, 'Minutes', hm[1])}</div>
+          <span>{timeText(hhmm)} ET</span>
+        </div>)}
+      <div class="dp-summary">{pick ? `${label.replace(' Date', '')} ${summary}${withTime ? `, ${timeText(hhmm)} ET` : ''}` : 'Pick a day on the calendar.'}</div>
       <div class="dp-actions">
-        {value && <button type="button" class="dp-remove" onClick={() => done('')}>Remove</button>}
-        <button type="button" class="dp-set" disabled={!pick} onClick={() => done(pick)}>{setText}</button>
+        {value && <button type="button" class="dp-remove" onClick={() => done('', '')}>Remove</button>}
+        <button type="button" class="dp-set" disabled={!pick} onClick={() => done(pick, withTime ? hhmm : '')}>{setText}</button>
       </div>
     </Menu>
   );

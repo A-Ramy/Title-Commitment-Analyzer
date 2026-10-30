@@ -68,6 +68,13 @@ def test_only_closing_blockers_go_and_hub_changes_come_back(store):
     assert sent["blockers"][0] == {"key": "1", "priority": "blocker", "title": "Item 1", "action": "Do 1",
                                    "sources": ["B-I 1"], "due_date": "2026-11-05", "status": "Open"}
     assert out["applied"] == 1
+    # a time picked here goes as an Eastern time (the hub reads it as is; a day alone is 9:00 AM there)
+    store.update_item(deal_id, "4", due_date="2026-11-06", due_time="17:30")
+    store.update_item(deal_id, "1", due_date="2026-11-01", due_time="08:05")  # the day the clocks go back
+    sent = hub.payload(store, deal_id)["blockers"]
+    assert [b["due_date"] for b in sent] == ["2026-11-01T08:05:00-05:00", "2026-11-06T17:30:00-05:00"]
+    store.update_item(deal_id, "1", due_date="2026-10-30", due_time="09:00")
+    assert hub.payload(store, deal_id)["blockers"][0]["due_date"] == "2026-10-30T09:00:00-04:00"
     items = {i.key: i for i in store.get_items(deal_id)}
     assert items["1"].status == "Cleared" and items["2"].status == "Open"
     assert store.get_deal(deal_id)["hub_task"] == "ta-x"

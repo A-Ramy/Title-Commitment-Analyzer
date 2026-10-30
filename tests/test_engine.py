@@ -93,6 +93,15 @@ def test_a_full_deal_through_the_engine(setup):
     key = items[0].key
     assert client.patch(f"/v1/deals/{deal_id}/items", headers=h("tc"),
                         json={"key": key, "status": "Ordered", "notes": "payoff requested"}).status_code == 200
+    # a due date with a time (the picker), a bad time, then Remove clears both
+    patch = lambda body: client.patch(f"/v1/deals/{deal_id}/items", headers=h("tc"), json={"key": key, **body})  # noqa: E731
+    assert patch({"due_date": "2026-11-05", "due_time": "17:30"}).status_code == 200
+    got = store.get_items(deal_id)[0]
+    assert (got.due_date, got.due_time) == ("2026-11-05", "17:30")
+    assert patch({"due_date": "2026-11-05", "due_time": "25:00"}).status_code == 400
+    assert patch({"due_date": "", "due_time": ""}).status_code == 200
+    got = store.get_items(deal_id)[0]
+    assert (got.due_date, got.due_time) == (None, None)
     assert client.patch(f"/v1/deals/{deal_id}/items", headers=h("tc"),
                         json={"key": key, "status": "Done-ish"}).status_code == 400
     assert client.patch(f"/v1/deals/{deal_id}/items", headers=h("tc"),

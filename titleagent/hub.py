@@ -19,10 +19,13 @@ import json
 import logging
 import time
 from datetime import UTC, datetime
+from zoneinfo import ZoneInfo
 
 import requests
 
 from titleagent.models import STATUSES
+
+EASTERN = ZoneInfo("America/New_York")
 
 log = logging.getLogger("hub")
 APP_URL = "https://title.totalchb.com"
@@ -51,13 +54,22 @@ def verify(secret: str | None, body: bytes, ts: str | None, sig: str | None, now
     return hmac.compare_digest(signature(secret, body, t), sig)
 
 
+def _due(item) -> str | None:
+    """The day ('2026-11-05': the hub makes it 9:00 AM ET), or with the time picked here, as an ISO time with its
+    Eastern offset ('2026-11-05T17:00:00-05:00')."""
+    if not item.due_date or not item.due_time:
+        return item.due_date
+    h, m = (int(x) for x in item.due_time.split(":"))
+    return datetime.fromisoformat(item.due_date).replace(hour=h, minute=m, tzinfo=EASTERN).isoformat()
+
+
 def payload(store, deal_id: int, app_url: str = APP_URL) -> dict | None:
     """What the hub gets for a deal: its address, a link back, and its Closing Blockers (nothing else)."""
     deal = store.get_deal(deal_id)
     if not deal:
         return None
     blockers = [{"key": i.key, "priority": i.priority, "title": i.title, "action": i.action,
-                 "sources": [s.ref for s in i.sources], "due_date": i.due_date, "status": i.status}
+                 "sources": [s.ref for s in i.sources], "due_date": _due(i), "status": i.status}
                 for i in store.get_items(deal_id) if i.priority == "blocker" and i.change != "removed"]
     return {"deal": {"id": deal_id, "address": deal.get("address") or "", "url": f"{app_url}/#/deal/{deal_id}"},
             "blockers": blockers}

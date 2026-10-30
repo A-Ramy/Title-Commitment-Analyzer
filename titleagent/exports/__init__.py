@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
-from titleagent.models import PRIORITY_LABEL, ActionItem, Coverage
+from titleagent.models import PRIORITY_LABEL, ActionItem, Coverage, due_text
 
 # What an export includes (Export List → Include). Every format takes the same choice.
 INCLUDE = {"all": "Everything", "action": "Action items only (no Review / FYI)", "blockers": "Closing Blockers only"}
@@ -73,7 +73,7 @@ def rows(checklist: Checklist, include: str = "all") -> list[list[str]]:
     out = []
     for n, i in enumerate(checklist.visible(include), 1):
         out.append([str(n), PRIORITY_LABEL.get(i.priority, i.priority), i.category, i.title, i.action, i.owner,
-                    i.provided_by, money(i.amount), i.due_date or "", i.status, source_text(i), i.notes])
+                    i.provided_by, money(i.amount), due_text(i), i.status, source_text(i), i.notes])
     return out
 
 

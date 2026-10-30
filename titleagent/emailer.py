@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 
 import requests
 
-from titleagent.models import DONE_STATUSES, ActionItem
+from titleagent.models import DONE_STATUSES, ActionItem, time_text
 
 RESEND_URL = "https://api.resend.com/emails"
 LAST_RUN = "email_last_run"  # settings key the daily script writes, Settings reads
@@ -62,12 +62,12 @@ def _button(href: str, label: str, color: str = RED) -> str:
 def _due(i: ActionItem, today: date) -> str:
     if not i.due_date:
         return ""
-    days = (_date(i.due_date) - today).days
+    days, at = (_date(i.due_date) - today).days, f", {time_text(i.due_time)}" if i.due_time else ""
     if days < 0:
         return _chip(f"Overdue · {_day(i.due_date)}", RED, RED_BG, 11)
     if days == 0:
-        return _chip("Due today", ORANGE, ORANGE_BG, 11)
-    return _chip(f"Due {_day(i.due_date)}", ORANGE if days <= SOON_DAYS else INDIGO,
+        return _chip(f"Due today{at.replace(',', '')}", ORANGE, ORANGE_BG, 11)
+    return _chip(f"Due {_day(i.due_date)}{at}", ORANGE if days <= SOON_DAYS else INDIGO,
                  ORANGE_BG if days <= SOON_DAYS else INDIGO_BG, 11)
 
 

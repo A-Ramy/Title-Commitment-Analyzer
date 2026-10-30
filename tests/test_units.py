@@ -286,3 +286,16 @@ def test_email_links_open_the_deal():
     deals = [{"id": 7, "address": "1 Sample St", "deal_type": "Double Close", "closing_date": None, "tc": "Pat"}]
     _, html = summary_html(deals, {7: [item("Payoff", key="a")]}, date(2026, 10, 25), "https://title.totalchb.com/")
     assert 'href="https://title.totalchb.com/#/deal/7"' in html
+
+
+def test_due_time_in_exports_and_the_email():
+    from titleagent.emailer import _due
+    from titleagent.models import ActionItem, due_text, time_text
+
+    i = ActionItem(key="k", priority="blocker", category="Other", title="T", action="A", provided_by="Seller",
+                   due_date="2026-11-05", due_time="17:30")
+    assert (time_text("00:05"), time_text("12:00"), time_text("17:30"), time_text(None)) == (
+        "12:05 AM", "12:00 PM", "5:30 PM", "")
+    assert due_text(i) == "2026-11-05 5:30 PM" and due_text(i.model_copy(update={"due_time": None})) == "2026-11-05"
+    assert "Due Nov 5, 5:30 PM" in _due(i, date(2026, 11, 1))
+    assert "Due today 5:30 PM" in _due(i, date(2026, 11, 5))

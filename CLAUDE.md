@@ -41,7 +41,7 @@ sync when a rule changes. (The first Streamlit version and its Neon database wer
   (`uv export --no-dev --no-hashes --no-emit-project --format requirements-txt -o engine/requirements.txt`).
 - `web/`: Vite + Preact. `src/pages/` one file per screen, `src/data.js` live Firestore reads, `src/api.js` engine
   calls, `src/styles.css` the hub's tokens and components. Copy the hub's look from RemyTCHB/HUB (`app/app.dc.html`),
-  e.g. the due date picker (`ui.jsx` DatePicker, days only) and Team Members (`pages/Team.jsx`).
+  e.g. the due date picker (`ui.jsx` DatePicker: the day, and for item due dates an hour and minute in Eastern time, saved as `due_time` "HH:MM"; the closing date is the day only) and Team Members (`pages/Team.jsx`).
 - Team (owner 2026-10-30; Managers only, from the account menu): `settings/team` (name, email, role manager / lead /
   member, dept TC, a photo as a small data: URL or the hub's photo URL), saved by `PUT /v1/team`, which also sets
   `admins` (the managers) and `tcs` (everyone in TC). It was copied once from the hub's Managers and TC department

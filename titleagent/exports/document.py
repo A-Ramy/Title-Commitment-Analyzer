@@ -7,7 +7,7 @@ from xml.sax.saxutils import escape
 
 from titleagent.config import ROOT
 from titleagent.exports import Checklist, money, source_text
-from titleagent.models import PRIORITY_LABEL
+from titleagent.models import PRIORITY_LABEL, due_text
 
 LOGO = ROOT / "assets" / "logo-full.png"
 INDIGO, RED, MUTED = "#4D458A", "#BD2239", "#767388"
@@ -75,7 +75,7 @@ def to_pdf(checklist: Checklist, include: str = "all") -> bytes:
                 Paragraph(escape(i.action) + (f"<br/><i>{escape(i.notes)}</i>" if i.notes else ""), body),
                 Paragraph(f"{escape(i.provided_by)}<br/><font color='{MUTED}' size='7'>Owner: {escape(i.owner)}"
                           "</font>", body),
-                Paragraph(escape(i.due_date or ""), body), Paragraph(escape(money(i.amount)), body),
+                Paragraph(escape(due_text(i)), body), Paragraph(escape(money(i.amount)), body),
                 Paragraph(escape(i.status), body),
             ])
         tbl = Table(data, colWidths=[w * inch for w in widths], repeatRows=1)
@@ -157,7 +157,7 @@ def to_docx(checklist: Checklist, include: str = "all") -> bytes:
             c[1].text = f"{i.title}\n{i.category} · {source_text(i)}"
             c[2].text = i.action + (f"\nNote: {i.notes}" if i.notes else "")
             c[3].text = f"{i.provided_by}\nOwner: {i.owner}"
-            c[4].text, c[5].text, c[6].text = i.due_date or "", money(i.amount), i.status
+            c[4].text, c[5].text, c[6].text = due_text(i), money(i.amount), i.status
         for row in tbl.rows:
             for w, cell in zip([0.3, 2.6, 3.6, 1.4, 0.8, 0.8, 0.8], row.cells, strict=True):
                 cell.width = Inches(w)

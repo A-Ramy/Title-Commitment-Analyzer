@@ -7,7 +7,7 @@ before the deal can close**: Closing Blockers, Before Closing items and Review /
 wording it comes from. TCs work the list in the app and export it (PDF, Word, Excel, CSV, Google Sheets / Docs,
 everything or Closing Blockers only). The team trains it with worked commitments and **Report Missing Item**; admins
 approve every lesson. A summary email goes out weekdays at 8:00 AM Eastern. Team (Managers, from the account menu) holds
-who's who (photos, roles, the TC department), copied from the Universal Team Hub; Managers are the admins and
+who's who (photos, roles, the TC department), as in the Universal Team Hub; Managers are the admins and
 Settings → Permissions says what Team Leaders and Members may do.
 
 The user guide for the team: [`docs/guide/Title_Commitment_Agent_User_Guide.pdf`](docs/guide/Title_Commitment_Agent_User_Guide.pdf)

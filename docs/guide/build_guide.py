@@ -262,7 +262,7 @@ def cover(c, doc) -> None:
     c.drawString(MARGIN, PAGE_H - 6.85 * inch, "For: Transaction Coordinators and the Owner")
     c.setFont("Nunito", 10)
     c.setFillColor(MUTED)
-    c.drawString(MARGIN, PAGE_H - 7.12 * inch, f"Version 2.0 · {date.today():%B %Y} · title.totalchb.com")
+    c.drawString(MARGIN, PAGE_H - 7.12 * inch, f"Version 2.1 · {date.today():%B %Y} · title.totalchb.com")
     c.setFillColor(colors.white)
     c.setFont("Nunito-Bold", 9.5)
     c.drawString(MARGIN, 0.62 * inch, "Total Cash Home Buyers · Internal use only")
@@ -315,8 +315,11 @@ def story() -> list:
               "section 12.", "tip", "Who reads what"),
           box(f"The Title Agent is now the <b>{APP}</b>, at <b>title.totalchb.com</b>. It looks and works like "
               "the Universal Team Hub, you sign in with your company Google account, and its Closing Blockers show "
-              "up in the hub as tasks (section 10). Old links from earlier emails still open the right deal.",
-              "good", "What's new in version 2")]
+              "up in the hub as tasks (section 10). Old links from earlier emails still open the right deal. "
+              "New in 2.1: the 8 AM email lists Closing Blockers only and goes out on time from Google Cloud; "
+              "the Team Hub's date calendar; Team (Managers, from your photo) with roles and photos; "
+              "Settings → Permissions for Team Leaders and Members; and picking who gets the email.", "good",
+              "What's new in version 2")]
     s.append(PageBreak())
 
     # ---- 1
@@ -523,7 +526,8 @@ def story() -> list:
     s += section(7, "When The Agent Misses Something",
                  "This is how the agent gets better. Report every miss, even small ones.")
     s += [steps([
-        "On the deal, click <b>Report Missing Item</b>.",
+        "On the deal, click <b>Report Missing Item</b>. (Don't see it? A manager can allow it: Settings → "
+        "Permissions.)",
         "Fill in <b>What's Missing</b>, <b>Where In The Document</b> (e.g. B-II #9, page 4) and <b>Why It Would "
         "Stop Or Delay The Closing</b>.",
         "Pick the <b>Priority</b> and <b>Who Has To Provide It</b>. Leave <b>Add it to this deal's list now</b> "
@@ -635,7 +639,8 @@ def story() -> list:
           shot("16-knowledge", "Knowledge: how the agent scores, the active lessons, the checklist, and the Feedback "
                                "Inbox.", 1.0, crop=(0.14, 0.12, 0.86, 1.0), max_h=4.4)]
     s += [steps([
-        "Open <b>KNOWLEDGE</b>. <b>Feedback Waiting</b> shows how many items need an admin.",
+        "Open <b>KNOWLEDGE</b>. <b>Feedback Waiting</b> shows how many items need approving. Managers can always "
+        "approve; Team Leaders and Members can if Settings → Permissions allows it.",
         "Read each card in the <b>Feedback Inbox</b> (Missing Item, Not Needed, Wrong Info or Training Gap). The "
         "suggested lesson is in the text box.",
         "Edit it into a <b>general rule</b> the agent can apply to every commitment. Good: \"When a city lists unpaid "
@@ -656,9 +661,7 @@ def story() -> list:
           shot("23-team", "Team: photos, roles and departments (made-up names).", 1.0,
                crop=(0.14, 0.12, 0.86, 0.92), max_h=4.6)]
     s += [steps([
-        "Click <b>Copy From The Team Hub</b>: the hub's Managers and TC department arrive with their photos. "
-        "Check them (nothing is saved yet).",
-        "To add someone else, fill in <b>Add A Person</b> (name, @totalchb.com sign-in email, role and department) "
+        "To add someone, fill in <b>Add A Person</b> (name, @totalchb.com sign-in email, role and department) "
         "and click <b>Add</b>.",
         "Click a person's picture to add or change their photo (it's cropped to a circle), click a name to fix it, "
         "and pick their <b>Role</b> and <b>Department</b>. The × removes them.",
@@ -744,6 +747,10 @@ def story() -> list:
                                            "Connections → Daily Email, which shows what happened."],
         ["Google Sheets / Docs shows an error.", "The message says what's wrong. Use Excel or Word for now and tell an "
                                                  "admin (Settings → Test Google Folder)."],
+        ["I can't see Report Missing Item, or can't approve lessons.", "Your role doesn't allow it yet. A manager "
+                                                                         "can turn it on: Settings → Permissions."],
+        ["How do I change someone's role or photo?", "Managers: your photo, top right → Team. Pick the role, click "
+                                                     "the picture for a new photo, then Save Changes."],
         ["Who sees my changes?", "Everyone on the team, immediately. Your email is recorded on each change."],
     ], [0.38, 0.62])]
 

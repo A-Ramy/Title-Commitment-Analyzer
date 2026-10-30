@@ -44,9 +44,9 @@ sync when a rule changes. (The first Streamlit version and its Neon database wer
   e.g. the due date picker (`ui.jsx` DatePicker, days only) and Team Members (`pages/Team.jsx`).
 - Team (owner 2026-10-30; Managers only, from the account menu): `settings/team` (name, email, role manager / lead /
   member, dept TC, a photo as a small data: URL or the hub's photo URL), saved by `PUT /v1/team`, which also sets
-  `admins` (the managers) and `tcs` (everyone in TC). Copy From The Team Hub: `POST /v1/team/from-hub` → the hub's
-  `POST /api/title-agent/team` (signed like the sync; the hub's Managers and TC department). Names and emails live
-  only in the databases, never in this public repository.
+  `admins` (the managers) and `tcs` (everyone in TC). It was copied once from the hub's Managers and TC department
+  (2026-10-30; the copy button was then removed, the hub's `/api/title-agent/team` stays unused). Names and emails
+  live only in the database, never in this public repository.
 - Permissions (`settings.permissions`, Settings): what Team Leaders and Members may do (`approve_lessons`,
   `report_missing`); Managers always can. The engine checks them (`allowed()` in `engine/main.py`); `/v1/me` returns
   `role` and `can` for the page.

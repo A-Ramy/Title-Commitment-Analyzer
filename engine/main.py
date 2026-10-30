@@ -547,19 +547,6 @@ def create_app(engine: Engine | None = None) -> FastAPI:
                             + [p["name"] for p in tc if p["role"] != "lead"], by=u.email)
         return {"ok": True}
 
-    @app.post("/v1/team/from-hub")
-    def team_from_hub(u: User = Depends(admin), e: Engine = Depends(eng)):
-        """The Universal Team Hub's Managers and TC department, for a manager to check and save on the Team tab."""
-        if not e.secrets.has_hub:
-            raise HTTPException(400, "The Team Hub connection isn't set up.")
-        try:
-            people = hub.team_from_hub(e.secrets)
-        except Exception as exc:
-            log.warning("team from hub failed: %s", type(exc).__name__)
-            raise HTTPException(502, "The Team Hub didn't share its team. Ask for its /api/title-agent/team "
-                                     "address to be turned on, or add the people here.") from exc
-        return {"people": people}
-
     @app.post("/v1/google/check")
     def google_check(u: User = Depends(admin), e: Engine = Depends(eng)):
         ok, message = google.check(e.secrets, e.store.get_settings().get("google_folder_id", ""))

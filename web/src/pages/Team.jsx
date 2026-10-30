@@ -1,5 +1,5 @@
 // Team (Managers only, from the account menu): who's on it, with roles, departments and photos, as in the Universal
-// Team Hub's Team Members. Copy From The Team Hub fills it with the hub's Managers and TC department.
+// Team Hub's Team Members.
 // Managers are the admins (they approve lessons and change settings); everyone in TC is in the TC list. Saved
 // through the engine (PUT /v1/team); before the first save it starts with the person signed in, as a Manager.
 import { useEffect, useState } from 'preact/hooks';
@@ -107,14 +107,6 @@ export function Team({ me }) {
     setDraft(d => [...d, { name, email, role: np.role, dept: np.role === 'manager' ? '' : np.dept, photo: '' }]);
     setNp({ name: '', email: '', role: 'member', dept: 'TC' });
   };
-  const fromHub = async () => {
-    setBusy(true);
-    try {
-      const { people } = await api.teamFromHub();
-      if (!people.length) return toast('The Team Hub sent nobody.', true);
-      setDraft(people); toast(`Copied ${people.length} people from the Team Hub. Check them, then Save Changes.`);
-    } catch (e) { toast(e.message, true); } finally { setBusy(false); }
-  };
   const save = async () => {
     setBusy(true);
     try { await api.putTeam({ people: draft }); toast('Team saved.'); }
@@ -138,12 +130,7 @@ export function Team({ me }) {
         </div>
       </section>
 
-      {!saved && <div class="note">No team saved yet. Copy From The Team Hub (its Managers and TC department, with
-        their photos) or add people below, then Save Changes.</div>}
-      <div class="toolbar">
-        <button class="btn glass pill" onClick={fromHub} disabled={busy}>{busy ? <Spinner /> : <Icon name="users" />} Copy From The Team Hub</button>
-        <span class="row-sub">Replaces the list below with the hub's Managers and TC department. Nothing changes until you Save.</span>
-      </div>
+      {!saved && <div class="note">No team saved yet. Add the Managers and the TC department below, then Save Changes.</div>}
 
       {admin && (
         <div class="card team-add">

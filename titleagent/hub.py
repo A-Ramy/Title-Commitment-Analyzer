@@ -7,7 +7,7 @@ there; a blocker cleared here shows as done there. Both directions are signed wi
 (HMAC-SHA256 of "<unix seconds>.<body>", 5 minutes' leeway).
 
 Sent after every review, re-run, item change and missing item (in the background), and for every open deal each
-weekday morning with the daily email run (scripts/hub_sync.py), so a missed message is caught up. Logs say counts,
+weekday morning after the 8:00 email (titleagent/daily.py), so a missed message is caught up. Logs say counts,
 never deal details (the repository and its Actions logs are public).
 """
 

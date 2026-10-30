@@ -117,5 +117,5 @@ def test_daily_email_from_the_store(store):
     store.save_run(deal, analysis(), None, None, False, by="tc@x")
     subject, html = summary_html(store.list_deals(status="open"), store.open_items_by_deal(), date(2026, 10, 30),
                                  "https://title.totalchb.com")
-    assert "open blocker" in subject and "9 Sample Rd" in html and "Closing Nov 20 · 21d" in html
-    assert "10 Sample Rd" in html and "On Track" in html and quiet
+    assert "open Closing Blocker" in subject and "9 Sample Rd" in html and "Closing Nov 20 · 21d" in html
+    assert "10 Sample Rd" in html and "No Open Blockers" in html and quiet

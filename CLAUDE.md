@@ -44,11 +44,15 @@ sync when a rule changes. (The first Streamlit version and its Neon database wer
 - `titleagent/hub.py`: the Universal Team Hub connection. Only Closing Blockers go (one task per deal, "Title -
   <address>", in Monz's list, tagged "Title Commitment Agent"); a blocker cleared here is done there and the reverse.
   Sent after each review / re-run / blocker change (engine, in the background) and caught up each weekday
-  morning with the email run (`scripts/hub_sync.py` in `daily-email.yml`; `hub-sync.yml` runs by hand only);
+  morning after the 8:00 email (`titleagent/daily.py`; GitHub's backup runs `scripts/hub_sync.py`, and
+  `hub-sync.yml` runs by hand only; owner 2026-10-30: no 15-minute runs);
   the hub calls `POST /v1/hub/items`. Signed both ways with `HUB_SYNC_SECRET` (GitHub secret; the hub has the same
   value as `TITLE_AGENT_SYNC_SECRET`).
-- `scripts/daily_email.py` (GitHub Actions, 8:00 AM ET via Resend), `scripts/gcp_setup.sh` (one-time Google Cloud
-  setup), `scripts/evaluate.py` (accuracy on worked commitments kept outside the repo).
+- The 8:00 AM ET email (Closing Blockers only, owner 2026-10-30): Google Cloud Scheduler calls the engine
+  (`POST /v1/tasks/morning`, `titleagent/daily.py`, set up once with `scripts/scheduler_setup.sh`), which sends it via
+  Resend; `scripts/daily_email.py` on GitHub Actions is only the later backup (GitHub runs late or skips).
+- `scripts/gcp_setup.sh` (one-time Google Cloud setup), `scripts/evaluate.py` (accuracy on worked commitments kept
+  outside the repo).
 - Model: `claude-opus-5-5`, effort `high` (accuracy first). The system prompt must stay identical across a run's
   calls (prompt caching): put per-deal details in the step's task, not the system prompt.
 

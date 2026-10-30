@@ -22,7 +22,7 @@ it runs today). Project rules: [`CLAUDE.md`](CLAUDE.md).
 | The engine: reads commitments, runs reviews, builds exports, holds the AI key | Google Cloud Run | `engine/`, `titleagent/` |
 | Data: deals, lists, PDFs, lessons, settings | Firebase (Firestore + Storage), project `title-commitment-agent` | rules in `firebase/` |
 | Sign-in | Firebase Authentication (Google, @totalchb.com only) | |
-| The 8 AM email | GitHub Actions → Resend, from title-agent@totalchb.com | `scripts/daily_email.py` |
+| The 8 AM email (Closing Blockers only) | Google Cloud Scheduler → the engine → Resend, from title-agent@totalchb.com; GitHub Actions later as a backup | `titleagent/daily.py`, `scripts/scheduler_setup.sh` |
 | Google Sheets / Docs exports | A Google Apps Script in the team's Drive | `titleagent/exports/google_export.gs` |
 | Closing Blockers → Universal Team Hub (both ways) | Engine after each change + a catch-up with the morning email run → hub.totalchb.com/api/title-agent | `titleagent/hub.py`, `scripts/hub_sync.py` |
 

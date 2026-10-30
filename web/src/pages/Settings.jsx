@@ -13,7 +13,7 @@ const ET = { timeZone: 'America/New_York', month: 'short', day: 'numeric', hour:
 
 // The daily email's last run (written by scripts/daily_email.py).
 function emailStatus(last) {
-  if (!last) return ['No Run Yet', 'sent from GitHub each weekday at 8:00 AM ET', 'muted'];
+  if (!last) return ['No Run Yet', 'sent each weekday at 8:00 AM ET', 'muted'];
   const at = d => new Date(d).toLocaleString('en-US', ET) + ' ET';
   if (last.result === 'scheduled' && last.deliver_at) {
     return new Date() >= new Date(last.deliver_at) ? ['Sending', `last sent ${at(last.deliver_at)} · ${last.detail}`, 'green']
@@ -81,7 +81,7 @@ export function Settings({ me }) {
 
         <section class="card" style="padding:24px;display:flex;flex-direction:column;gap:14px">
           <h2 style="font-size:20px;font-weight:800">Daily Email</h2>
-          <span class="row-sub">Weekdays at 8:00 AM Eastern: every open deal's blockers and items due in the next 3 days.</span>
+          <span class="row-sub">Weekdays at 8:00 AM Eastern: every open deal's open Closing Blockers.</span>
           <div class="two">
             <label class="field"><span>Send To (Emails, One Per Line)</span>
               <textarea class="input" rows={4} value={f.email_recipients} onInput={set('email_recipients')} /></label>

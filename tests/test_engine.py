@@ -154,3 +154,35 @@ def test_training_through_the_engine(setup):
     assert r.status_code == 200, r.text
     out = r.json()
     assert out["blockers"] == len(out["extra"]) and store.list_examples()[0]["name"] == "Sample"
+
+
+def test_morning_run_only_for_the_scheduler_and_sends_once(setup, monkeypatch):
+    from datetime import UTC, datetime
+
+    import engine.main as engine_main
+    from titleagent import daily
+
+    _, store = setup
+    scheduler = "title-agent-scheduler@example.iam.gserviceaccount.com"
+    tasks = {"sched": {"email": scheduler, "email_verified": True},
+             "other": {"email": "someone@example.iam.gserviceaccount.com", "email_verified": True}}
+    client = TestClient(create_app(Engine(secrets=Secrets(None, None, "re_test", tasks_caller=scheduler),
+                                          store=store, llm=demo.scripted_llm, verify=verify,
+                                          verify_task=lambda t: tasks[t])))
+    for headers in ({}, h("other"), h("tc"), h("forged")):
+        assert client.post("/v1/tasks/morning", headers=headers).status_code == 401
+
+    class Monday8am(datetime):  # Mon Nov 2 2026, 8:00 AM Eastern (EST)
+        @classmethod
+        def now(cls, tz=None):
+            return datetime(2026, 11, 2, 13, 0, tzinfo=UTC)
+
+    monkeypatch.setattr(engine_main, "datetime", Monday8am)
+    sent = []
+    monkeypatch.setattr(daily, "send", lambda key, sender, to, subject, html, at=None: sent.append((subject, at)))
+    store.set_setting("email_recipients", ["pat.tc@totalchb.com"], by="test")
+    first = client.post("/v1/tasks/morning", headers=h("sched")).json()
+    assert first["email"] == "sent" and len(sent) == 1 and sent[0][1] is None  # sent at once, not scheduled
+    assert "Closing Blocker" in sent[0][0]
+    assert client.post("/v1/tasks/morning", headers=h("sched")).json()["email"] == "done" and len(sent) == 1
+    assert store.get_settings()["email_last_run"]["result"] == "sent"

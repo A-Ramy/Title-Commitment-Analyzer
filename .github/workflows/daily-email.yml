@@ -1,15 +1,12 @@
 name: Daily title summary
 
-# The email arrives at 8:00 AM Eastern every weekday (scripts/daily_email.py). GitHub starts scheduled runs late,
-# sometimes by hours, and can skip them, so there are five tries before 8:00. The first that gets through hands the
-# email to Resend to deliver at 8:00 sharp; the rest see it's done. Times are UTC (EDT / EST):
+# The email goes out at 8:00 AM Eastern every weekday from the engine, called by Google Cloud Scheduler
+# (titleagent/daily.py, scripts/scheduler_setup.sh). GitHub starts scheduled runs late or skips them, so these runs are
+# only the backup: they send only if nothing went out yet today, and catch up the Team Hub. Times are UTC (EDT / EST):
 on:
   schedule:
-    - cron: "17 6 * * 1-5"   # 2:17 / 1:17 AM
-    - cron: "17 8 * * 1-5"   # 4:17 / 3:17 AM
-    - cron: "47 9 * * 1-5"   # 5:47 / 4:47 AM
-    - cron: "47 10 * * 1-5"  # 6:47 / 5:47 AM
-    - cron: "17 12 * * 1-5"  # 8:17 / 7:17 AM: last try; sends right away if nothing went out yet
+    - cron: "37 13 * * 1-5"  # 9:37 / 8:37 AM
+    - cron: "37 15 * * 1-5"  # 11:37 / 10:37 AM
   workflow_dispatch:  # Run workflow: sends a test email right away (or, with "check only", sends nothing)
     inputs:
       check_only:
@@ -28,7 +25,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
       - run: uv sync --no-dev
-      - name: Team Hub catch-up (with the morning runs, before the email; it never stops the email)
+      - name: Team Hub catch-up (backs up the engine's morning catch-up; it never stops the email)
         if: github.event_name == 'schedule'
         continue-on-error: true
         run: uv run --no-sync python scripts/hub_sync.py

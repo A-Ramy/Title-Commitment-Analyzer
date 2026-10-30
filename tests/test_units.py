@@ -61,15 +61,15 @@ in the original principal amount of $100,000.00.
     assert items[0].startswith("3. Secure and record") and items[0].endswith("$100,000.00.")
 
 
-def test_daily_email_lists_blockers_and_due_items():
+def test_daily_email_lists_only_closing_blockers():
     deals = [{"id": 1, "address": "1 Sample St", "deal_type": "Wholesale (Assignment)", "closing_date": None,
               "tc": "Pat"}]
     items = {1: [item("Mortgage payoff"), item("Deed", priority="before", due="2026-10-26"),
                  item("Cleared lien", status="Cleared"), item("Later doc", priority="before", due="2026-12-01")]}
     subject, html = summary_html(deals, items, date(2026, 10, 25))
-    assert "1 open blocker," in subject and "1 due soon" in subject
-    assert "Mortgage payoff" in html and "Deed" in html
-    assert "Cleared lien" not in html and "Later doc" not in html
+    assert subject == "Title Commitment Agent: 1 open Closing Blocker (Oct 25)"
+    assert "Mortgage payoff" in html  # owner 2026-10-30: Closing Blockers only, even when other items are due
+    assert "Deed" not in html and "Cleared lien" not in html and "Later doc" not in html
 
 
 def test_folder_id_from_links_and_bare_ids():
@@ -219,10 +219,10 @@ def test_daily_email_is_branded_and_lists_every_open_deal():
     _, html = summary_html(deals, items, date(2026, 10, 25), "https://title.totalchb.com")
     assert 'src="https://title.totalchb.com/logo-full.png"' in html and "Title Commitment" in html
     assert "1 open Closing Blocker across 2 open deals" in html  # the inbox preview line
-    assert "Overdue · Oct 20" in html and "On Track" in html and "2 Example Ave" in html
+    assert "Overdue · Oct 20" in html and "No Open Blockers" in html and "2 Example Ave" in html
     assert "Closing Nov 20 · 26d" in html and "closing Dec 1" in html
     _, quiet = summary_html(deals[1:], {8: []}, date(2026, 10, 25), "https://title.totalchb.com")
-    assert "nothing due in the next 3 days" in quiet and "2 Example Ave" in quiet
+    assert "No open Closing Blockers on any deal." in quiet and "2 Example Ave" in quiet
 
 
 def test_email_links_open_the_deal():

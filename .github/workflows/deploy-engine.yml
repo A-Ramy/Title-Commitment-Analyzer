@@ -63,14 +63,19 @@ jobs:
           GOOGLE_EXPORT_URL: ${{ secrets.GOOGLE_EXPORT_URL }}
           GOOGLE_EXPORT_KEY: ${{ secrets.GOOGLE_EXPORT_KEY }}
           HUB_SYNC_SECRET: ${{ secrets.HUB_SYNC_SECRET }}  # the Universal Team Hub connection (titleagent/hub.py)
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}  # the 8:00 AM email, sent by the engine (titleagent/daily.py)
         run: |
+          # Cloud Scheduler calls the engine with a Google-signed token for the engine's address, from this account
+          # (scripts/scheduler_setup.sh); the engine checks both.
+          TASKS_AUDIENCE=$(gcloud run services describe "$SERVICE" --region "$REGION" --format='value(status.url)')
+          TASKS_CALLER="title-agent-scheduler@$PROJECT.iam.gserviceaccount.com"
           # The engine checks every caller's Firebase sign-in itself, so Cloud Run lets requests through
           # (--no-invoker-iam-check). Requests wait for reviews (1–3 minutes): 15-minute timeout.
           gcloud run deploy "$SERVICE" --image "$IMAGE:$GITHUB_SHA" --region "$REGION" --quiet \
             --service-account "title-agent-engine@$PROJECT.iam.gserviceaccount.com" \
             --no-invoker-iam-check --timeout 900 --cpu 1 --memory 1Gi --concurrency 8 \
             --min-instances 0 --max-instances 3 \
-            --set-env-vars "^@^FIREBASE_PROJECT_ID=$PROJECT@ALLOWED_DOMAINS=totalchb.com@ALLOWED_ORIGINS=https://title.totalchb.com,https://title-commitment-agent.vercel.app,http://localhost:5173@ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY@GOOGLE_EXPORT_URL=$GOOGLE_EXPORT_URL@GOOGLE_EXPORT_KEY=$GOOGLE_EXPORT_KEY@HUB_SYNC_SECRET=$HUB_SYNC_SECRET"
+            --set-env-vars "^@^FIREBASE_PROJECT_ID=$PROJECT@ALLOWED_DOMAINS=totalchb.com@ALLOWED_ORIGINS=https://title.totalchb.com,https://title-commitment-agent.vercel.app,http://localhost:5173@ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY@GOOGLE_EXPORT_URL=$GOOGLE_EXPORT_URL@GOOGLE_EXPORT_KEY=$GOOGLE_EXPORT_KEY@HUB_SYNC_SECRET=$HUB_SYNC_SECRET@RESEND_API_KEY=$RESEND_API_KEY@TASKS_AUDIENCE=$TASKS_AUDIENCE@TASKS_CALLER=$TASKS_CALLER"
           echo "Engine URL: $(gcloud run services describe "$SERVICE" --region "$REGION" --format='value(status.url)')"
 
       - name: Smoke check (up, refuses anyone not signed in, browser rules)
@@ -81,6 +86,7 @@ jobs:
           check "health"            "$(curl -s -o /dev/null -w '%{http_code}' "$URL/health")" 200
           check "no sign-in"        "$(curl -s -o /dev/null -w '%{http_code}' "$URL/v1/me")" 401
           check "forged sign-in"    "$(curl -s -o /dev/null -w '%{http_code}' -H 'Authorization: Bearer forged' "$URL/v1/me")" 401
+          check "morning run: scheduler only" "$(curl -s -o /dev/null -w '%{http_code}' -X POST "$URL/v1/tasks/morning")" 401
           check "no API docs"       "$(curl -s -o /dev/null -w '%{http_code}' "$URL/docs")" 404
           allow() { curl -s -D - -o /dev/null -X OPTIONS -H "Origin: $1" -H 'Access-Control-Request-Method: POST' \
                       -H 'Access-Control-Request-Headers: authorization' "$URL/v1/read" \

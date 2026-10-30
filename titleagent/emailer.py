@@ -37,8 +37,6 @@ RED_BG, GREEN_BG, ORANGE_BG, INDIGO_BG = "#FBF0F2", "#EAF7EF", "#FFF1E0", "#F5F4
 HEAD = "font-family:'Baloo 2','Nunito Sans',Arial,sans-serif;font-weight:700"
 TEXT = "font-family:'Nunito Sans',Arial,sans-serif"
 BAR = {"blocker": RED, "before": ORANGE, "fyi": INDIGO}
-TAG = {"blocker": ("Closing Blocker", RED, RED_BG), "before": ("Before Closing", ORANGE, ORANGE_BG),
-       "fyi": ("Review / FYI", INDIGO, INDIGO_BG)}
 
 
 def _date(v: date | str) -> date:
@@ -143,7 +141,7 @@ def _on_track(d: dict, base: str) -> str:
         name = f"<b>{name}</b>"
     closing = f" · closing {_day(d['closing_date'])}" if d.get("closing_date") else ""
     return (f'<tr><td style="{TEXT};font-size:14px;color:{BODY};padding:3px 0"><span style="color:{GREEN}">'
-            f'&#10003;</span> {name} <span style="color:{MUTED}">· nothing due{closing}</span></td></tr>')
+            f'&#10003;</span> {name}<span style="color:{MUTED}">{closing}</span></td></tr>')
 
 
 FONTS = ("https://fonts.googleapis.com/css2?family=Baloo+2:wght@700&amp;family=Nunito+Sans:wght@400;700"
@@ -152,42 +150,40 @@ FONTS = ("https://fonts.googleapis.com/css2?family=Baloo+2:wght@700&amp;family=N
 
 def summary_html(deals: list[dict], items_by_deal: dict[int, list[ActionItem]], today: date,
                  app_url: str = "") -> tuple[str, str]:
-    """(subject, html): every open deal's open Closing Blockers and anything due in the next 3 days, in the app's
-    design. Deals with nothing to report are listed at the end, so every open deal shows."""
+    """(subject, html): every open deal's open Closing Blockers, and nothing else (owner 2026-10-30), in the app's
+    design. Deals without open blockers are listed at the end, so every open deal shows."""
     soon = (today + timedelta(days=SOON_DAYS)).isoformat()
     base = app_url.rstrip("/")
     cards, quiet = [], []
-    total_blockers = total_due = overdue = 0
+    total = due_soon = overdue = 0
     for d in deals:
-        items = _open(items_by_deal.get(d["id"], []))
-        blockers = [i for i in items if i.priority == "blocker"]
-        due = [i for i in items if i.due_date and i.due_date <= soon]
-        total_blockers += len(blockers)
-        total_due += len(due)
-        overdue += sum(1 for i in items if i.due_date and i.due_date < today.isoformat())
-        rows = sorted(blockers + [x for x in due if x not in blockers],
-                      key=lambda x: (x.priority != "blocker", x.due_date or "9999"))
-        if rows:
-            cards.append(_deal(d, rows, len(blockers), today, base))
+        blockers = sorted((i for i in _open(items_by_deal.get(d["id"], [])) if i.priority == "blocker"),
+                          key=lambda i: i.due_date or "9999")
+        total += len(blockers)
+        overdue += sum(1 for i in blockers if i.due_date and i.due_date < today.isoformat())
+        due_soon += sum(1 for i in blockers if i.due_date and today.isoformat() <= i.due_date <= soon)
+        if blockers:
+            cards.append(_deal(d, blockers, len(blockers), today, base))
         else:
             quiet.append(d)
-    subject = (f"{APP}: {total_blockers} open blocker{'s' if total_blockers != 1 else ''}, "
-               f"{total_due} due soon ({today:%b %d})")
-    preheader = (f"{total_blockers} open Closing Blocker{'s' if total_blockers != 1 else ''} across {len(deals)} open "
-                 f"deal{'s' if len(deals) != 1 else ''} · {total_due} due in the next {SOON_DAYS} days"
-                 + (f" · {overdue} overdue" if overdue else ""))
+    plural = "s" if total != 1 else ""
+    subject = f"{APP}: {total} open Closing Blocker{plural}" + (f", {overdue} overdue" if overdue else "") + \
+        f" ({today:%b %d})"
+    preheader = (f"{total} open Closing Blocker{plural} across {len(deals)} open deal{'s' if len(deals) != 1 else ''}"
+                 + (f" · {overdue} overdue" if overdue else "")
+                 + (f" · {due_soon} due in the next {SOON_DAYS} days" if due_soon else ""))
     if not deals:
         body = _note("No open deals today. Analyze a commitment to start one.")
     elif not cards:
-        body = _note(f"No open Closing Blockers and nothing due in the next {SOON_DAYS} days.")
+        body = _note("No open Closing Blockers on any deal.")
     else:
         body = "".join(cards)
     if quiet:
-        body += (f'<tr><td style="{HEAD};font-size:17px;color:{INDIGO};padding:4px 0 6px">On Track</td></tr>'
+        body += (f'<tr><td style="{HEAD};font-size:17px;color:{INDIGO};padding:4px 0 6px">No Open Blockers</td></tr>'
                  + "".join(_on_track(d, base) for d in quiet))
     stats = (_stat(len(deals), "Open Deals", INDIGO)
-             + _stat(total_blockers, "Open Blockers", RED if total_blockers else GREEN)
-             + _stat(total_due, "Due Soon", ORANGE if total_due else GREEN)
+             + _stat(total, "Open Blockers", RED if total else GREEN)
+             + _stat(due_soon, "Due Soon", ORANGE if due_soon else GREEN)
              + _stat(overdue, "Overdue", RED if overdue else GREEN))
     header = _table(
         f'<tr><td><img src="{escape(base or SITE)}/logo-full.png" width="150" height="46" '
@@ -198,8 +194,8 @@ def summary_html(deals: list[dict], items_by_deal: dict[int, list[ActionItem]], 
             f"{today:%A}, {today:%B} {today.day}</div>"
             f'<div style="{HEAD};font-size:30px;line-height:1.2;color:{INDIGO};padding-top:4px">'
             f'Title Commitment <span style="color:{RED}">Agent</span></div>'
-            f'<div style="{TEXT};font-size:15px;color:{BODY};padding-top:6px">Every open deal\'s Closing Blockers '
-            f"and anything due in the next {SOON_DAYS} days.</div>")
+            f'<div style="{TEXT};font-size:15px;color:{BODY};padding-top:6px">Every open deal\'s Closing Blockers: '
+            f"what still stands between each deal and the closing table.</div>")
     footer = (f"Sent weekdays at 8:00 AM Eastern to the team list in Settings. Closing Blockers are also in the "
               f"Universal Team Hub.<br>Total Cash Home Buyers · {APP} · Internal use only")
     rows = (
@@ -210,8 +206,7 @@ def summary_html(deals: list[dict], items_by_deal: dict[int, list[ActionItem]], 
         f'<table role="presentation" width="100%" cellpadding="0" cellspacing="6" style="border-collapse:separate">'
         f"<tr>{stats}</tr></table></td></tr>"
         f'<tr><td style="background:#ffffff;padding:0 24px 10px;{TEXT};font-size:12px;color:{MUTED}">'
-        f"{_dot(RED)} Closing Blocker &nbsp; {_dot(ORANGE)} Before Closing, due soon &nbsp; "
-        f"Tap an address to open the deal.</td></tr>"
+        f"Due Soon: in the next {SOON_DAYS} days. Tap an address to open the deal.</td></tr>"
         f'<tr><td style="background:{INDIGO_BG};padding:16px 16px 6px">{_table(body)}</td></tr>'
         f'<tr><td align="center" style="background:#ffffff;border-radius:0 0 20px 20px;padding:20px 24px 26px">'
         f'{_button(f"{base}/" if base else SITE, f"Open The {APP}", INDIGO)}</td></tr>'

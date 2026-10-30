@@ -26,7 +26,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, Field
 
-from titleagent import flows, hub
+from titleagent import daily, flows, hub
 from titleagent.access import email_allowed
 from titleagent.config import DEAL_TYPES, DEFAULT_SETTINGS, Secrets, demo_mode, load_secrets
 from titleagent.exports import INCLUDE, checklist_for, google
@@ -45,6 +45,7 @@ class Engine:
     store: object  # FirestoreStore in the cloud; any store in tests
     llm: Callable[[], LLM]
     verify: Callable[[str], dict]  # Firebase ID token -> claims
+    verify_task: Callable[[str], dict] | None = None  # Google-signed token from Cloud Scheduler -> claims
 
 
 def _firebase_verify(secrets: Secrets) -> Callable[[str], dict]:
@@ -58,6 +59,17 @@ def _firebase_verify(secrets: Secrets) -> Callable[[str], dict]:
     return lambda token: auth.verify_id_token(token)
 
 
+def _google_verify(audience: str | None) -> Callable[[str], dict] | None:
+    """Checks a Google-signed token (Cloud Scheduler's) for this engine's address."""
+    if not audience:
+        return None
+    from google.auth.transport import requests as google_requests
+    from google.oauth2 import id_token
+
+    request = google_requests.Request()
+    return lambda token: id_token.verify_oauth2_token(token, request, audience=audience)
+
+
 def default_engine() -> Engine:
     secrets = load_secrets()
     if demo_mode():  # local development and screen tests only: scripted answers on the made-up sample commitment
@@ -67,7 +79,8 @@ def default_engine() -> Engine:
     else:
         def llm() -> LLM:
             return ClaudeLLM(secrets.anthropic_api_key or "")
-    return Engine(secrets=secrets, store=open_store(secrets), llm=llm, verify=_firebase_verify(secrets))
+    return Engine(secrets=secrets, store=open_store(secrets), llm=llm, verify=_firebase_verify(secrets),
+                  verify_task=_google_verify(secrets.tasks_audience))
 
 
 @dataclass
@@ -389,6 +402,29 @@ def create_app(engine: Engine | None = None) -> FastAPI:
             if item.priority == "blocker" and ("status" in changes or "due_date" in changes):
                 to_hub(bg, e, deal_id)
         return {"ok": True}
+
+    # ---- the morning run: Cloud Scheduler at 8:00 AM Eastern on weekdays (titleagent/daily.py)
+    @app.post("/v1/tasks/morning")
+    def morning(authorization: str = Header(default=""), e: Engine = Depends(eng)):
+        """Today's email, then the Team Hub catch-up. Only Cloud Scheduler's service account may call it; a failed
+        email answers 500 so Cloud Scheduler tries again (a sent email is recorded, so a retry doesn't resend)."""
+        token = authorization.removeprefix("Bearer ").strip()
+        caller = (e.secrets.tasks_caller or "").lower()
+        try:
+            claims = e.verify_task(token) if token and e.verify_task and caller else None
+        except Exception:
+            claims = None
+        if not claims or not claims.get("email_verified") or str(claims.get("email", "")).lower() != caller:
+            raise HTTPException(401, "Not the scheduler.")
+        now = datetime.now(UTC)
+        try:
+            result, message = daily.send_summary(e.store, e.secrets, now, hub.APP_URL)
+        except Exception as exc:
+            log.warning("morning: the email failed: %s", type(exc).__name__)
+            raise HTTPException(500, "The email service failed; the next try sends it.") from exc
+        counts = daily.hub_catch_up(e.store, e.secrets, hub.APP_URL)
+        log.info("morning: email %s; hub %s", result, counts)
+        return {"email": result, "message": message, "hub": counts}
 
     # ---- the Universal Team Hub: blockers ticked or unticked there (signed with HUB_SYNC_SECRET, no sign-in)
     @app.post("/v1/hub/items")

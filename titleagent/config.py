@@ -66,6 +66,10 @@ class Secrets:
     # The Universal Team Hub (titleagent/hub.py): where Closing Blockers go, and the secret both apps sign with
     hub_url: str | None = None
     hub_secret: str | None = None
+    # The morning run (titleagent/daily.py): Google Cloud Scheduler calls the engine with a Google-signed token for
+    # this audience (the engine's address), from this service account (scripts/scheduler_setup.sh)
+    tasks_audience: str | None = None
+    tasks_caller: str | None = None
 
     @property
     def has_ai(self) -> bool:
@@ -130,6 +134,8 @@ def load_secrets() -> Secrets:
         google_export_key=get("GOOGLE_EXPORT_KEY"),
         hub_url=get("HUB_URL") or ("https://hub.totalchb.com/api/title-agent" if get("HUB_SYNC_SECRET") else None),
         hub_secret=get("HUB_SYNC_SECRET"),
+        tasks_audience=get("TASKS_AUDIENCE"),
+        tasks_caller=get("TASKS_CALLER"),
     )
 
 

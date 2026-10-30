@@ -615,10 +615,11 @@ def story() -> list:
             "stay under <b>Documents And Review History</b>; click one to open it.")]
     s += [P("The daily email", "h2"),
           P(f"Every weekday at 8:00 AM Eastern, everyone on the list gets one email from the <b>{APP}</b> "
-            "(title-agent@totalchb.com) covering every open deal: its open Closing Blockers and anything due in the "
-            "next 3 days, with overdue items flagged and a link straight to the deal. It's prepared in the early "
-            "hours, so a status you change that morning shows up in the next day's email. With no open deals it "
-            "still arrives and says so.")]
+            "(title-agent@totalchb.com) with every open deal's open <b>Closing Blockers</b>, and nothing else: "
+            "the totals at the top (open deals, open blockers, due in the next 3 days, overdue), then one card per "
+            "deal with each blocker's headline and due date. Tap an address to open the deal. Deals without open "
+            "blockers are listed at the end. It's built at 8:00 from the list as it stands, so clear what's done "
+            "before then. With no open deals it still arrives and says so.")]
 
     # ---- 12
     s += section(12, "For The Owner And Admins",
@@ -663,9 +664,9 @@ def story() -> list:
         ["Database", "<b>Firestore</b>: the deals live in the company's own Firebase project."],
         ["Google", "<b>Set Up</b>: Google Sheets / Docs exports work (saved by the export script)."],
         ["Team Hub", "<b>Connected</b>: Closing Blockers go to hub.totalchb.com and ticks come back."],
-        ["Daily Email", "<b>Scheduled</b>: this morning's email is queued for 8:00. <b>Sending</b>: it went out (with "
-                        "the time and how many people). <b>Skipped</b> or <b>Failed</b>: the reason is shown; the next "
-                        "weekday tries again."],
+        ["Daily Email", "<b>Sending</b>: it went out (with the time and how many people). <b>Skipped</b> or "
+                        "<b>Failed</b>: the reason is shown; a failed email is tried again within minutes, and again "
+                        "later that morning."],
     ], [0.22, 0.78])]
     s += [box("Access is the company Google account: when someone leaves and their @totalchb.com account is "
               "closed, they can no longer sign in. Remove them from Admins and TCs too.", "warn")]

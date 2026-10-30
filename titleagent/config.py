@@ -42,6 +42,10 @@ DEFAULT_SETTINGS: dict = {
     # Days before closing each kind of item is due (weekends move back to Friday).
     "due_offsets": {"payoff": 10, "curative": 14, "documents": 5, "bring_down": 5, "closing": 0},
     "google_folder_id": "",
+    # What Team Leaders and Members may do (Settings → Permissions; owner 2026-10-30). Managers can do everything.
+    # approve_lessons: the Feedback Inbox and the lessons (Knowledge); report_missing: Report Missing Item on a deal.
+    "permissions": {"lead": {"approve_lessons": True, "report_missing": True},
+                    "member": {"approve_lessons": False, "report_missing": True}},
     # Company names that mean "our own entity" in a chain of title (double close / assignment checks).
     "our_entities": ["Total Cash Home Buyers, LLC", "Total Cash Home Buyers LLC"],
 }
@@ -51,6 +55,7 @@ DEFAULT_SETTINGS: dict = {
 # (settings/team): names and emails stay out of this public repository.
 TEAM_ROLES = ("manager", "lead", "member")  # Manager, Team Leader, Member
 TEAM_DEPTS = ("TC",)
+PERMISSIONS = ("approve_lessons", "report_missing")
 
 @dataclass(frozen=True)
 class Secrets:

@@ -42,9 +42,14 @@ sync when a rule changes. (The first Streamlit version and its Neon database wer
 - `web/`: Vite + Preact. `src/pages/` one file per screen, `src/data.js` live Firestore reads, `src/api.js` engine
   calls, `src/styles.css` the hub's tokens and components. Copy the hub's look from RemyTCHB/HUB (`app/app.dc.html`),
   e.g. the due date picker (`ui.jsx` DatePicker, days only) and Team Members (`pages/Team.jsx`).
-- Team tab (owner 2026-10-30): `settings/team` (name, email, role manager / lead / member, dept TC, a small photo as a
-  data: URL), saved by `PUT /v1/team`, which also sets `admins` (the managers) and `tcs` (everyone in TC). Names
-  and emails live only in the database, never in this public repository.
+- Team (owner 2026-10-30; Managers only, from the account menu): `settings/team` (name, email, role manager / lead /
+  member, dept TC, a photo as a small data: URL or the hub's photo URL), saved by `PUT /v1/team`, which also sets
+  `admins` (the managers) and `tcs` (everyone in TC). Copy From The Team Hub: `POST /v1/team/from-hub` → the hub's
+  `POST /api/title-agent/team` (signed like the sync; the hub's Managers and TC department). Names and emails live
+  only in the databases, never in this public repository.
+- Permissions (`settings.permissions`, Settings): what Team Leaders and Members may do (`approve_lessons`,
+  `report_missing`); Managers always can. The engine checks them (`allowed()` in `engine/main.py`); `/v1/me` returns
+  `role` and `can` for the page.
 - `titleagent/hub.py`: the Universal Team Hub connection. Only Closing Blockers go (one task per deal, "Title -
   <address>", in Monz's list, tagged "Title Commitment Agent"); a blocker cleared here is done there and the reverse.
   Sent after each review / re-run / blocker change (engine, in the background) and caught up each weekday

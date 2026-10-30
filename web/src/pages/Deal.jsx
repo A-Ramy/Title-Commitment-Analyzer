@@ -261,7 +261,7 @@ function Records({ deal }) {
 }
 
 // ---------------------------------------------------------------- the page
-export function Deal({ id }) {
+export function Deal({ id, me }) {
   const toast = useToast();
   const { data: deal } = useDeal(id);
   const { items: fsItems } = useItems(id);
@@ -349,7 +349,8 @@ export function Deal({ id }) {
 
       <div class="card bar-card">
         <button class="btn glass pill" onClick={() => setDialog('export')}><Icon name="download" /> Export List</button>
-        <button class="btn primary pill" onClick={() => setDialog('missing')}><Icon name="plus" /> Report Missing Item</button>
+        {me?.can?.report_missing !== false && (
+          <button class="btn primary pill" onClick={() => setDialog('missing')}><Icon name="plus" /> Report Missing Item</button>)}
         <span style="flex:1" />
         <button class="btn ghost pill" disabled={!run} onClick={() => setDialog('rerun')}><Icon name="refresh" /> Re-run</button>
         <button class="btn ghost pill" onClick={() => go(`analyze/update/${deal.id}`)}><Icon name="upload" /> Updated Commitment</button>

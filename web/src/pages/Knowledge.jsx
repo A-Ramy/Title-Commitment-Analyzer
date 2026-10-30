@@ -69,7 +69,7 @@ function LessonRow({ x, admin }) {
           {' · '}{when(x.created_at)}{x.approved_by ? ` · approved by ${x.approved_by}` : ''}</span>
       </div>
       <button class="switch" role="switch" aria-checked={!!x.active} aria-label={x.active ? 'Turn this lesson off' : 'Turn this lesson on'}
-        disabled={!admin} onClick={flip} title={admin ? '' : 'Only admins change lessons'} />
+        disabled={!admin} onClick={flip} title={admin ? '' : 'Lessons are changed by the people Settings → Permissions allows'} />
     </div>
   );
 }
@@ -77,7 +77,7 @@ function LessonRow({ x, admin }) {
 export function Knowledge({ me }) {
   const toast = useToast();
   const ref = useReference();
-  const admin = !!me?.admin;
+  const admin = !!me?.can?.approve_lessons;  // Settings → Permissions (managers always)
   const feedback = useCol('feedback');
   const lessons = useCol('lessons');
   const examples = useCol('examples');
@@ -111,14 +111,14 @@ export function Knowledge({ me }) {
         <div class="card tile"><span>Active Lessons</span><b>{active.length}</b><small>{all.length - active.length} turned off</small></div>
         <div class="card tile"><span>Pro Checklist</span><b>{checks || '—'}</b><small>checks across {(ref?.checklist || []).length} groups</small></div>
         <div class="card tile"><span>Feedback Waiting</span><b class={inbox.length ? 'red' : 'green'}>{inbox.length}</b>
-          <small>{inbox.length ? 'needs an admin' : 'inbox is empty'}</small></div>
+          <small>{inbox.length ? 'needs approving' : 'inbox is empty'}</small></div>
       </div>
 
       <div class="section-head"><h2>Feedback Inbox</h2><p>From Report Missing Item, item feedback and training gaps.</p></div>
       {feedback === undefined ? <Spinner /> : inbox.length ? (
         <div class="list">{inbox.map(f => <InboxCard key={f.id} f={f} admin={admin} />)}</div>
       ) : <div class="note green">Inbox is empty. Every piece of feedback has been reviewed.</div>}
-      {inbox.length > 0 && !admin && <p class="row-sub" style="margin:0">Only admins approve lessons (Settings → Admins).</p>}
+      {inbox.length > 0 && !admin && <p class="row-sub" style="margin:0">Managers approve lessons, and whoever Settings → Permissions allows.</p>}
 
       <div class="section-head"><h2>Lessons</h2><p>Turn one off to stop the agent using it; it takes effect on the next review.</p></div>
       <div class="list">{all.map(x => <LessonRow key={x.id} x={x} admin={admin} />)}</div>

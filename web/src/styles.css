@@ -442,3 +442,18 @@ pre.code { margin: 0; padding: 14px; max-height: 320px; overflow: auto; border-r
 .team-add > b { flex: 1 1 100%; font-family: var(--font-display); font-size: 14px; color: var(--tchb-indigo-700); }
 .team-add .input { flex: 1 1 200px; min-width: 0; width: auto; }
 @media (max-width: 760px) { .team-row .pill-pick { width: auto; flex: 1 1 120px; } }
+
+/* Settings: permissions and the people picker */
+.perm-grid { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 10px 22px; align-items: center; }
+.perm-grid > b { font-family: var(--font-display); font-size: 13px; color: var(--tchb-indigo-700); text-align: center; }
+.perm-what { display: flex; flex-direction: column; min-width: 0; }
+.perm-what b { font-family: var(--font-display); font-size: 15px; color: var(--text-body); }
+.perm-what small { font-size: 12px; color: var(--text-muted); }
+.perm-cell { display: flex; justify-content: center; }
+.people-pick { display: flex; flex-wrap: wrap; gap: 8px; }
+.person-chip { display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px 4px 4px; border-radius: 999px;
+  cursor: pointer; border: 1px solid var(--border-strong); background: var(--surface-card); font-family: var(--font-display);
+  font-weight: 700; font-size: 13px; color: var(--text-body); }
+.person-chip[aria-pressed='true'] { border-color: var(--tchb-indigo-500); background: var(--tchb-indigo-050);
+  color: var(--tchb-indigo-700); }
+.person-chip:disabled { cursor: default; }

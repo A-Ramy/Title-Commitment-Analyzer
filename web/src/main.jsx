@@ -19,7 +19,7 @@ import { Training } from './pages/Training.jsx';
 
 const TABS = [
   { value: 'deals', label: 'Deals' }, { value: 'analyze', label: 'Analyze' },
-  { value: 'training', label: 'Training' }, { value: 'knowledge', label: 'Knowledge' }, { value: 'team', label: 'Team' },
+  { value: 'training', label: 'Training' }, { value: 'knowledge', label: 'Knowledge' },
 ];
 
 // Your photo from the Team tab, or your initials.
@@ -52,8 +52,9 @@ function Header({ user, me, page }) {
               onChange={v => go(v === 'deals' ? '' : v)} options={TABS} />
             <MyAvatar user={user} onClick={menu.open} />
             <Menu menu={menu} label="Account">
-              <div class="label">{user.email}{me?.admin ? ' · admin' : ''}</div>
+              <div class="label">{user.email}{me?.admin ? ' · manager' : me?.role === 'lead' ? ' · team leader' : ''}</div>
               <button onClick={() => go('settings')}><Icon name="settings" /> Settings</button>
+              {me?.admin && <button onClick={() => go('team')}><Icon name="users" /> Team</button>}
               <hr />
               <button onClick={signOutNow}><Icon name="out" /> Sign Out</button>
             </Menu>

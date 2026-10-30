@@ -117,3 +117,31 @@ def test_engine_takes_signed_hub_updates_and_sends_changes(monkeypatch):
     client.patch(f"/v1/deals/{deal_id}/items", json={"key": "1", "status": "Open"},
                  headers={"Authorization": "Bearer tc"})
     assert len(fake.sent) == 1 and fake.sent[0]["blockers"][0]["status"] == "Open"
+
+
+def test_team_from_hub_keeps_managers_and_tc_only():
+    sent = {}
+
+    def post(url, data, headers, timeout):
+        sent["url"] = url
+        assert hub.verify("s3cret", data, headers["X-Hub-Timestamp"], headers["X-Hub-Signature"])
+
+        class R:
+            def raise_for_status(self):
+                pass
+
+            def json(self):
+                return {"people": [
+                    {"name": "Pat  Manager", "email": "Pat@totalchb.com", "role": "manager", "dept": "OPS",
+                     "photo": "https://firebasestorage.googleapis.com/v0/b/x/o/a.jpg?alt=media&token=t"},
+                    {"name": "Lee Lead", "email": "lee@totalchb.com", "role": "lead", "dept": "tc"},
+                    {"name": "Sam Member", "email": "sam@totalchb.com", "role": "member", "dept": "TC",
+                     "photo": "https://elsewhere.example/p.jpg"},
+                    {"name": "Ops Person", "email": "ops@totalchb.com", "role": "member", "dept": "OPS"}]}
+        return R()
+
+    people = hub.team_from_hub(SECRETS, post=post)
+    assert sent["url"] == "https://hub.example/api/title-agent/team"
+    assert [p["email"] for p in people] == ["pat@totalchb.com", "lee@totalchb.com", "sam@totalchb.com"]
+    assert people[0]["name"] == "Pat Manager" and people[0]["dept"] == "" and people[0]["photo"].startswith("https://")
+    assert people[1]["dept"] == "TC" and people[2]["photo"] == ""  # only the hub's own photo store

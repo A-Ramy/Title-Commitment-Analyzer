@@ -1,14 +1,17 @@
-// Settings (admins change them; everyone can see them): the daily email, due dates, the Google folder, and what is
-// connected. People (admins, TCs) are on the Team tab. Saved through the engine (PUT /v1/settings).
+// Settings (managers change them; everyone can see them): Permissions (what Team Leaders and Members may do), the
+// daily email (picked from the team), due dates, the Google folder, and what is connected. People are on Team
+// (Managers, from the account menu). Saved through the engine (PUT /v1/settings).
 import { useEffect, useState } from 'preact/hooks';
 import { api } from '../api.js';
 import { useReference, useSettings } from '../data.js';
 import { Icon, Spinner, useToast } from '../ui.jsx';
+import { Avatar } from './Team.jsx';
 
 const DUE = [['payoff', 'Payoff Letters'], ['curative', 'Court / Curative'], ['documents', 'Documents'],
   ['bring_down', 'Bring-Down'], ['closing', 'At Closing']];
-const lines = v => (v || []).join('\n');
-const parse = t => t.replace(/,/g, '\n').split('\n').map(x => x.trim()).filter(Boolean);
+const PERMS = [['approve_lessons', 'Approve Lessons', 'The Feedback Inbox and the lessons on Knowledge'],
+  ['report_missing', 'Add Missing Items', 'Report Missing Item on a deal']];
+const WHO = [['lead', 'Team Leaders'], ['member', 'Members']];
 const ET = { timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };
 
 // The daily email's last run (written by scripts/daily_email.py).
@@ -36,7 +39,8 @@ export function Settings({ me }) {
   const [showScript, setShowScript] = useState(false);
   useEffect(() => {
     if (s && !f) {
-      setF({ email_recipients: lines(s.email_recipients),
+      setF({ email_recipients: [...(s.email_recipients || [])], permissions: JSON.parse(JSON.stringify(s.permissions || {})),
+        extra: '',
         email_from: s.email_from || 'title-agent@totalchb.com', due_offsets: { ...(s.due_offsets || {}) },
         google_folder_id: s.google_folder_id || '' });
     }
@@ -46,7 +50,7 @@ export function Settings({ me }) {
   const save = async () => {
     setBusy('save');
     try {
-      await api.putSettings({ email_recipients: parse(f.email_recipients),
+      await api.putSettings({ email_recipients: f.email_recipients, permissions: f.permissions,
         email_from: f.email_from.trim(), due_offsets: f.due_offsets, google_folder_id: f.google_folder_id.trim() });
       toast('Saved.');
     } catch (e) { toast(e.message, true); } finally { setBusy(''); }
@@ -55,33 +59,70 @@ export function Settings({ me }) {
     setBusy('check'); setCheck(null);
     try { setCheck(await api.googleCheck()); } catch (e) { setCheck({ ok: false, message: e.message }); } finally { setBusy(''); }
   };
+  const team = s.team || [];
+  const sends = email => f.email_recipients.includes(email);
+  const toggle = email => setF({ ...f, email_recipients: sends(email) ? f.email_recipients.filter(x => x !== email)
+    : [...f.email_recipients, email] });
+  const addExtra = () => {
+    const email = f.extra.trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return toast('Type a whole email address.', true);
+    setF({ ...f, extra: '', email_recipients: sends(email) ? f.email_recipients : [...f.email_recipients, email] });
+  };
+  const others = f.email_recipients.filter(x => !team.some(p => p.email === x));
+  const perm = (who, k) => !!f.permissions?.[who]?.[k];
+  const setPerm = (who, k) => setF({ ...f, permissions: { ...f.permissions, [who]: { ...(f.permissions[who] || {}), [k]: !perm(who, k) } } });
   const [eValue, eSub, eCls] = emailStatus(s.email_last_run);
   const google = ref?.connections?.google;
   return (
     <>
       <section class="hero">
         <div class="hero-text">
-          <div class="eyebrow-row"><span class="eyebrow">{admin ? 'Admins Only' : 'Read Only: Only Admins Change Settings'}</span></div>
+          <div class="eyebrow-row"><span class="eyebrow">{admin ? 'Managers Change Settings' : 'Read Only: Managers Change Settings'}</span></div>
           <h1 class="title">Settings</h1>
-          <p class="lede">The Daily Email, Due Dates And The Google Folder. People Are On The Team Tab.</p>
+          <p class="lede">Who May Do What, The Daily Email, Due Dates And The Google Folder.</p>
         </div>
       </section>
 
       <fieldset disabled={!admin} style="border:none;margin:0;padding:0;display:flex;flex-direction:column;gap:18px;min-width:0">
-        <section class="card" style="padding:24px;display:flex;flex-direction:column;gap:10px">
-          <h2 style="font-size:20px;font-weight:800">People</h2>
-          <span class="row-sub">Set on the <a href="#/team">Team</a> tab: Managers are the admins (they approve lessons and
-            change settings) and everyone in TC is in the TC list. Admins now: {(s.admins || []).join(', ') || 'everyone (no team saved yet)'}.</span>
+        <section class="card" style="padding:24px;display:flex;flex-direction:column;gap:14px">
+          <h2 style="font-size:20px;font-weight:800">Permissions</h2>
+          <span class="row-sub">Managers can always do everything. Choose what Team Leaders and Members may do.
+            {admin ? <> Roles are set on <a href="#/team">Team</a> (your photo → Team).</> : ''}</span>
+          <div class="perm-grid" role="table" aria-label="Permissions">
+            <span role="columnheader" />
+            {WHO.map(([w, label]) => <b key={w} role="columnheader">{label}</b>)}
+            {PERMS.map(([k, label, hint]) => [
+              <span key={k} class="perm-what" role="rowheader"><b>{label}</b><small>{hint}</small></span>,
+              ...WHO.map(([w, wl]) => (
+                <span key={k + w} class="perm-cell" role="cell">
+                  <button type="button" class="switch" role="switch" aria-checked={perm(w, k)} aria-label={`${wl}: ${label}`}
+                    onClick={() => setPerm(w, k)} />
+                </span>))])}
+          </div>
         </section>
 
         <section class="card" style="padding:24px;display:flex;flex-direction:column;gap:14px">
           <h2 style="font-size:20px;font-weight:800">Daily Email</h2>
           <span class="row-sub">Weekdays at 8:00 AM Eastern: every open deal's open Closing Blockers.</span>
-          <div class="two">
-            <label class="field"><span>Send To (Emails, One Per Line)</span>
-              <textarea class="input" rows={4} value={f.email_recipients} onInput={set('email_recipients')} /></label>
-            <label class="field"><span>Send From</span><input class="input" value={f.email_from} onInput={set('email_from')} /></label>
+          <div class="field"><span>Send To</span>
+            <div class="people-pick" role="group" aria-label="Send to">
+              {team.map(p => (
+                <button key={p.email} type="button" class="person-chip" aria-pressed={sends(p.email)} title={p.email}
+                  onClick={() => toggle(p.email)}>
+                  <Avatar person={p} size={28} />{p.name}{sends(p.email) && <Icon name="check" size={14} stroke={3} />}
+                </button>))}
+              {others.map(x => (
+                <button key={x} type="button" class="person-chip" aria-pressed="true" title="Not on the team: click to remove"
+                  onClick={() => toggle(x)}><Avatar person={{ email: x }} size={28} />{x}<Icon name="x" size={14} /></button>))}
+              {!team.length && !others.length && <span class="row-sub">Save the team first (your photo → Team), then pick people here.</span>}
+            </div>
+            <div class="toolbar" style="margin-top:4px">
+              <input class="input" style="flex:1 1 240px" placeholder="Someone not on the team? Their email" value={f.extra}
+                onInput={set('extra')} onKeyDown={e => e.key === 'Enter' && addExtra()} />
+              <button type="button" class="btn ghost pill sm" onClick={addExtra}><Icon name="plus" /> Add</button>
+            </div>
           </div>
+          <label class="field"><span>Send From</span><input class="input" value={f.email_from} onInput={set('email_from')} /></label>
         </section>
 
         <section class="card" style="padding:24px;display:flex;flex-direction:column;gap:14px">

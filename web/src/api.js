@@ -46,6 +46,7 @@ export const api = {
   setLesson: (id, body) => call('PATCH', `/v1/lessons/${id}`, body),
   putSettings: body => call('PUT', '/v1/settings', body),
   putTeam: body => call('PUT', '/v1/team', body),
+  teamFromHub: () => call('POST', '/v1/team/from-hub'),
   googleCheck: () => call('POST', '/v1/google/check'),
 
   async download(dealId, format, include) {

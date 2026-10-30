@@ -114,3 +114,27 @@ def _mark(store, deal_id: int, fields: dict) -> None:
             db.document(f"deals/{deal_id}").update(fields)
         except Exception:
             pass
+
+
+PHOTO_HOSTS = ("https://firebasestorage.googleapis.com/",)  # where the hub keeps its photos
+
+
+def team_from_hub(secrets, post=None) -> list[dict]:
+    """The hub's Managers and TC department for the Team tab (POST <hub>/team, signed like a sync). The names and
+    emails come from the hub's own directory, so they never sit in this repository. Raises on failure."""
+    body = b"{}"
+    r = (post or requests.post)(secrets.hub_url.rstrip("/") + "/team", data=body,
+                                headers=signed_headers(secrets.hub_secret, body), timeout=30)
+    r.raise_for_status()
+    out = []
+    for p in (r.json() or {}).get("people") or []:
+        email = str(p.get("email") or "").strip().lower()
+        role = p.get("role") if p.get("role") in ("manager", "lead", "member") else "member"
+        dept = "TC" if str(p.get("dept") or "").upper() == "TC" else ""
+        if not email or not (role == "manager" or dept == "TC"):
+            continue
+        photo = str(p.get("photo") or "")
+        out.append({"name": " ".join(str(p.get("name") or email).split())[:80], "email": email, "role": role,
+                    "dept": "" if role == "manager" else dept,
+                    "photo": photo if photo.startswith(PHOTO_HOSTS) and len(photo) < 2000 else ""})
+    return out

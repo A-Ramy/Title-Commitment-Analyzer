@@ -3,7 +3,8 @@
 It holds the AI key and runs everything that needs the server: reading commitments, reviews, training comparisons,
 exports, and every change to the data (the page reads Firestore live; the security rules keep it read-only). Every
 request carries the person's Firebase ID token; only verified accounts on ALLOWED_DOMAINS (default totalchb.com) or
-in ALLOWED_EMAILS get in. Admin actions also need the email in Settings → Admins (no admins yet = everyone).
+in ALLOWED_EMAILS get in. Managers (Team tab) change settings; Settings → Permissions says what Team Leaders and
+Members may do.
 
 Long steps (read, review, re-run, training) take 1–3 minutes: the page sends a job id, watches jobs/{id} in
 Firestore for the current step, and gets the result in the response (Cloud Run timeout 15 minutes).
@@ -28,7 +29,7 @@ from pydantic import BaseModel, Field
 
 from titleagent import daily, flows, hub
 from titleagent.access import email_allowed
-from titleagent.config import DEAL_TYPES, DEFAULT_SETTINGS, Secrets, demo_mode, load_secrets
+from titleagent.config import DEAL_TYPES, DEFAULT_SETTINGS, PERMISSIONS, Secrets, demo_mode, load_secrets
 from titleagent.exports import INCLUDE, checklist_for, google
 from titleagent.llm import LLM, AgentError, ClaudeLLM
 from titleagent.models import STATUSES
@@ -87,7 +88,9 @@ def default_engine() -> Engine:
 class User:
     email: str
     uid: str
-    admin: bool
+    admin: bool  # a Manager on the Team tab (before a team is saved: everyone listed in admins, or everyone)
+    role: str = "member"  # manager | lead | member (not on the team: member)
+    can: dict | None = None  # {permission: bool} from Settings → Permissions
 
 
 # ---------------------------------------------------------------- request bodies
@@ -198,14 +201,30 @@ def create_app(engine: Engine | None = None) -> FastAPI:
         s = e.secrets
         if not (claims.get("email_verified") and email_allowed(email, s.allowed_emails, s.allowed_domains)):
             raise HTTPException(403, f"{email or 'This account'} doesn't have access to the Title Commitment Agent.")
-        admins = [a.strip().lower() for a in e.store.get_settings().get("admins", []) if a.strip()]
-        return User(email=email, uid=str(claims.get("uid") or claims.get("user_id") or ""),
-                    admin=not admins or email in admins)
+        settings = e.store.get_settings()
+        admins = [a.strip().lower() for a in settings.get("admins", []) if a.strip()]
+        is_admin = not admins or email in admins
+        on_team = next((p for p in settings.get("team") or [] if p.get("email") == email), None)
+        role = "manager" if is_admin else (on_team or {}).get("role", "member")
+        rules = {**DEFAULT_SETTINGS["permissions"].get(role, {}), **(settings.get("permissions") or {}).get(role, {})}
+        can = {k: is_admin or bool(rules.get(k)) for k in PERMISSIONS}
+        return User(email=email, uid=str(claims.get("uid") or claims.get("user_id") or ""), admin=is_admin,
+                    role=role, can=can)
 
     def admin(u: User = Depends(user)) -> User:
         if not u.admin:
-            raise HTTPException(403, "Only admins can do this (Settings → Admins).")
+            raise HTTPException(403, "Only managers can do this (Team).")
         return u
+
+    def allowed(permission: str, what: str):
+        def check(u: User = Depends(user)) -> User:
+            if not (u.can or {}).get(permission):
+                raise HTTPException(403, f"You can't {what}: a manager can turn it on (Settings → Permissions).")
+            return u
+        return check
+
+    lessons = allowed("approve_lessons", "approve or change lessons")
+    reporter = allowed("report_missing", "report missing items")
 
     @app.exception_handler(flows.FlowError)
     def flow_error(_: Request, exc: flows.FlowError):
@@ -273,7 +292,7 @@ def create_app(engine: Engine | None = None) -> FastAPI:
 
     @app.get("/v1/me")
     def me(u: User = Depends(user)):
-        return {"email": u.email, "admin": u.admin}
+        return {"email": u.email, "admin": u.admin, "role": u.role, "can": u.can}
 
     @app.get("/v1/reference")
     def reference(u: User = Depends(user), e: Engine = Depends(eng)):
@@ -373,7 +392,7 @@ def create_app(engine: Engine | None = None) -> FastAPI:
         return {"link": link}
 
     @app.post("/v1/deals/{deal_id}/missing")
-    def missing(deal_id: int, body: MissingIn, bg: BackgroundTasks, u: User = Depends(user),
+    def missing(deal_id: int, body: MissingIn, bg: BackgroundTasks, u: User = Depends(reporter),
                 e: Engine = Depends(eng)):
         deal_or_404(e, deal_id)
         out = {"feedback_id": flows.missing_item(e.store, deal_id, body.what, body.where, body.why, body.priority,
@@ -464,19 +483,19 @@ def create_app(engine: Engine | None = None) -> FastAPI:
 
     # ---- admins
     @app.post("/v1/feedback/{feedback_id}/resolve")
-    def resolve(feedback_id: int, body: ResolveIn, u: User = Depends(admin), e: Engine = Depends(eng)):
+    def resolve(feedback_id: int, body: ResolveIn, u: User = Depends(lessons), e: Engine = Depends(eng)):
         if body.approve and not body.lesson.strip():
             raise HTTPException(400, "Write the lesson as a general rule before approving it.")
         return {"lesson_id": e.store.resolve_feedback(feedback_id, body.approve, body.lesson, by=u.email)}
 
     @app.post("/v1/lessons")
-    def add_lesson(body: LessonIn, u: User = Depends(admin), e: Engine = Depends(eng)):
+    def add_lesson(body: LessonIn, u: User = Depends(lessons), e: Engine = Depends(eng)):
         if not body.text.strip():
             raise HTTPException(400, "Write the lesson first.")
         return {"lesson_id": e.store.add_lesson(body.text, source="manual", by=u.email)}
 
     @app.patch("/v1/lessons/{lesson_id}")
-    def set_lesson(lesson_id: int, body: LessonPatch, u: User = Depends(admin), e: Engine = Depends(eng)):
+    def set_lesson(lesson_id: int, body: LessonPatch, u: User = Depends(lessons), e: Engine = Depends(eng)):
         fields = {k: v for k, v in (("text", body.text and body.text.strip()), ("active", body.active))
                   if v is not None and v != ""}
         if fields:
@@ -491,6 +510,9 @@ def create_app(engine: Engine | None = None) -> FastAPI:
         for key, value in body.items():
             if key == "google_folder_id":
                 value = google.folder_id_from(str(value or ""))
+            if key == "permissions":  # Team Leaders and Members: only the known switches, as true / false
+                value = {r: {k: bool(dict(dict(value).get(r) or {}).get(k, DEFAULT_SETTINGS["permissions"][r][k]))
+                             for k in PERMISSIONS} for r in ("lead", "member")}
             if key == "due_offsets":  # every kind keeps a value: missing ones fall back to the defaults
                 value = {**DEFAULT_SETTINGS["due_offsets"],
                          **{k: int(v) for k, v in dict(value).items() if k in DEFAULT_SETTINGS["due_offsets"]}}
@@ -507,7 +529,8 @@ def create_app(engine: Engine | None = None) -> FastAPI:
                 raise HTTPException(400, f"{email} isn't a company sign-in (@totalchb.com).")
             if email in seen:
                 raise HTTPException(400, f"{email} is on the team twice.")
-            if p.photo and not re.match(r"^data:image/(jpeg|png);base64,[A-Za-z0-9+/=]+$", p.photo):
+            if p.photo and not (re.match(r"^data:image/(jpeg|png);base64,[A-Za-z0-9+/=]+$", p.photo)
+                                or (p.photo.startswith(hub.PHOTO_HOSTS) and len(p.photo) < 2000)):
                 raise HTTPException(400, "A photo must be a picture file.")
             seen.add(email)
             people.append({"name": " ".join(p.name.split()), "email": email, "role": p.role,
@@ -523,6 +546,19 @@ def create_app(engine: Engine | None = None) -> FastAPI:
         e.store.set_setting("tcs", [p["name"] for p in tc if p["role"] == "lead"]
                             + [p["name"] for p in tc if p["role"] != "lead"], by=u.email)
         return {"ok": True}
+
+    @app.post("/v1/team/from-hub")
+    def team_from_hub(u: User = Depends(admin), e: Engine = Depends(eng)):
+        """The Universal Team Hub's Managers and TC department, for a manager to check and save on the Team tab."""
+        if not e.secrets.has_hub:
+            raise HTTPException(400, "The Team Hub connection isn't set up.")
+        try:
+            people = hub.team_from_hub(e.secrets)
+        except Exception as exc:
+            log.warning("team from hub failed: %s", type(exc).__name__)
+            raise HTTPException(502, "The Team Hub didn't share its team. Ask for its /api/title-agent/team "
+                                     "address to be turned on, or add the people here.") from exc
+        return {"people": people}
 
     @app.post("/v1/google/check")
     def google_check(u: User = Depends(admin), e: Engine = Depends(eng)):

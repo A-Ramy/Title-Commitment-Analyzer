@@ -47,7 +47,9 @@ def test_only_verified_company_accounts_get_in(setup):
     assert client.get("/v1/me", headers=h("forged")).status_code == 401
     assert client.get("/v1/me", headers=h("outsider")).status_code == 403
     assert client.get("/v1/me", headers=h("unverified")).status_code == 403
-    assert client.get("/v1/me", headers=h("tc")).json() == {"email": "pat.tc@totalchb.com", "admin": True}
+    assert client.get("/v1/me", headers=h("tc")).json() == {
+        "email": "pat.tc@totalchb.com", "admin": True, "role": "manager",
+        "can": {"approve_lessons": True, "report_missing": True}}
     ref = client.get("/v1/reference", headers=h("tc")).json()
     assert "Double Close" in ref["deal_types"] and sum(len(g["checks"]) for g in ref["checklist"]) == 34
     assert ref["connections"]["google"] is None and ref["connections"]["hub"] is False
@@ -210,3 +212,20 @@ def test_team_tab_sets_admins_and_tcs(setup):
     assert client.put("/v1/team", json={"people": twice}, headers=h("tc")).status_code == 400
     bad_photo = [{**team[0], "photo": "javascript:alert(1)"}, *team[1:]]
     assert client.put("/v1/team", json={"people": bad_photo}, headers=h("tc")).status_code == 400
+
+
+def test_permissions_for_team_leaders_and_members(setup):
+    client, store = setup
+    team = [{"name": "Pat Tc", "email": "pat.tc@totalchb.com", "role": "manager"},
+            {"name": "Owner Lead", "email": "owner@totalchb.com", "role": "lead", "dept": "TC"}]
+    assert client.put("/v1/team", json={"people": team}, headers=h("tc")).status_code == 200
+    me = client.get("/v1/me", headers=h("owner")).json()
+    assert me["role"] == "lead" and me["can"] == {"approve_lessons": True, "report_missing": True} and not me["admin"]
+    assert client.post("/v1/lessons", json={"text": "A general rule."}, headers=h("owner")).status_code == 200
+    assert client.put("/v1/settings", json={"email_from": "x@totalchb.com"}, headers=h("owner")).status_code == 403
+    off = {"lead": {"approve_lessons": False, "report_missing": False}, "member": {"approve_lessons": False}}
+    assert client.put("/v1/settings", json={"permissions": off}, headers=h("tc")).status_code == 200
+    assert store.get_settings()["permissions"]["member"] == {"approve_lessons": False, "report_missing": True}
+    assert client.get("/v1/me", headers=h("owner")).json()["can"] == {"approve_lessons": False, "report_missing": False}
+    assert client.post("/v1/lessons", json={"text": "Another rule."}, headers=h("owner")).status_code == 403
+    assert client.post("/v1/deals/1/missing", json={"what": "x"}, headers=h("owner")).status_code == 403

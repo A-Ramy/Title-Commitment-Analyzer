@@ -60,6 +60,11 @@ sync when a rule changes. (The first Streamlit version and its Neon database wer
 - The 8:00 AM ET email (Closing Blockers only, owner 2026-10-30): Google Cloud Scheduler calls the engine
   (`POST /v1/tasks/morning`, `titleagent/daily.py`, set up once with `scripts/scheduler_setup.sh`), which sends it via
   Resend; `scripts/daily_email.py` on GitHub Actions is only the later backup (GitHub runs late or skips).
+- Exports (owner 2026-10-30): every export is also saved in the team's Google Drive folder (Settings), in a folder
+  per type (PDF, Word, Excel, CSV, Google Sheets, Google Docs; made the first time) with the date and time in its
+  name; PDF / Word / Excel / CSV still download to the person's computer, Google Sheets / Docs go only to Drive. The
+  Drive copy never holds up a download (`X-Drive-Copy` header). `google_export.gs` is version 2: after a change to
+  it, the person who deployed it pastes it over the old one and deploys a new version (Test Google Folder says so).
 - `scripts/gcp_setup.sh` (one-time Google Cloud setup), `scripts/evaluate.py` (accuracy on worked commitments kept
   outside the repo).
 - Model: `claude-opus-5-5`, effort `high` (accuracy first). The system prompt must stay identical across a run's

@@ -21,6 +21,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from typing import Literal
+from urllib.parse import quote
 
 from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -30,7 +31,7 @@ from pydantic import BaseModel, Field
 from titleagent import daily, flows, hub
 from titleagent.access import email_allowed
 from titleagent.config import DEAL_TYPES, DEFAULT_SETTINGS, PERMISSIONS, Secrets, demo_mode, load_secrets
-from titleagent.exports import INCLUDE, checklist_for, google
+from titleagent.exports import INCLUDE, google
 from titleagent.llm import LLM, AgentError, ClaudeLLM
 from titleagent.models import STATUSES
 from titleagent.storage import open_store
@@ -181,7 +182,7 @@ def create_app(engine: Engine | None = None) -> FastAPI:
     origins = [o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "https://title.totalchb.com").split(",")
                if o.strip()]
     app.add_middleware(CORSMiddleware, allow_origins=origins, allow_methods=["*"], allow_headers=["*"],
-                       expose_headers=["Content-Disposition"])
+                       expose_headers=["Content-Disposition", "X-Drive-Copy", "X-Drive-Note"])
     state = {"engine": engine}
 
     def eng() -> Engine:
@@ -373,23 +374,38 @@ def create_app(engine: Engine | None = None) -> FastAPI:
     @app.get("/v1/deals/{deal_id}/export")
     def export(deal_id: int, format: str = "pdf", include: str = "all", u: User = Depends(user),
                e: Engine = Depends(eng)):
-        data, name, mime = flows.export(e.store, deal_id, format, include)
-        return Response(data, media_type=mime, headers={"Content-Disposition": f'attachment; filename="{name}"'})
+        """The file for the person's computer; a copy also goes to its type's folder in the team's Drive folder.
+        The copy never holds up the download: X-Drive-Copy says saved / off / failed, X-Drive-Note why."""
+        data, checklist = flows.export(e.store, deal_id, format, include)
+        folder = e.store.get_settings().get("google_folder_id", "")
+        copy, note = "off", "Google Exports aren't set up yet (Settings)."
+        if e.secrets.has_google and folder:
+            try:
+                google.export(e.secrets, folder, checklist.drive_name(include, format), data, format, timeout=30)
+                copy, note = "saved", google.FOLDERS[format][0]
+            except Exception as exc:  # the download goes ahead either way
+                copy = "failed"
+                note = str(exc) if isinstance(exc, google.GoogleExportError) else "Google Drive didn't answer."
+                log.warning("export: the Drive copy failed (%s)", type(exc).__name__)
+        elif e.secrets.has_google:
+            note = "Set the Google Drive folder in Settings."
+        return Response(data, media_type=flows.FORMATS[format], headers={
+            "Content-Disposition": f'attachment; filename="{checklist.filename(format, include)}"',
+            "X-Drive-Copy": copy, "X-Drive-Note": quote(note)})
 
     @app.post("/v1/deals/{deal_id}/google")
     def to_google(deal_id: int, body: GoogleIn, u: User = Depends(user), e: Engine = Depends(eng)):
+        """A Google Sheet / Doc, straight into its folder in the team's Drive folder (nothing to download)."""
         if body.include not in INCLUDE:
             raise HTTPException(400, f"Unknown choice: {body.include}.")
-        deal = deal_or_404(e, deal_id)
-        run = e.store.latest_run(deal_id)
-        checklist = checklist_for(deal, run["analysis"] if run else None, e.store.get_items(deal_id))
-        data = flows.export(e.store, deal_id, "xlsx" if body.kind == "sheet" else "docx", body.include)[0]
+        deal_or_404(e, deal_id)
+        data, checklist = flows.export(e.store, deal_id, "xlsx" if body.kind == "sheet" else "docx", body.include)
         try:
             link = google.export(e.secrets, e.store.get_settings().get("google_folder_id", ""),
-                                 f"{checklist.title} · {checklist.heading(body.include)}", data, body.kind)
+                                 checklist.drive_name(body.include), data, body.kind)
         except google.GoogleExportError as exc:
             raise HTTPException(400, str(exc)) from exc
-        return {"link": link}
+        return {"link": link, "folder": google.FOLDERS[body.kind][0]}
 
     @app.post("/v1/deals/{deal_id}/missing")
     def missing(deal_id: int, body: MissingIn, bg: BackgroundTasks, u: User = Depends(reporter),

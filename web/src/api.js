@@ -55,6 +55,8 @@ export const api = {
     const a = Object.assign(document.createElement('a'), { href: url, download: name });
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 10000);
+    // the copy in the team's Drive folder: saved (note = its folder), off or failed (note = why)
+    return { drive: res.headers.get('X-Drive-Copy') || 'off', note: decodeURIComponent(res.headers.get('X-Drive-Note') || '') };
   },
 
   // A PDF for the engine to read: into the person's own Storage folder (storage rules), then the engine takes it.

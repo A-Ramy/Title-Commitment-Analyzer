@@ -9,7 +9,7 @@ from collections.abc import Callable
 from datetime import date
 
 from titleagent import duedates, pipeline, prompts, training
-from titleagent.exports import INCLUDE, checklist_for, document, tabular
+from titleagent.exports import INCLUDE, Checklist, checklist_for, document, tabular
 from titleagent.llm import LLM, Usage
 from titleagent.models import ActionItem, StructureOut
 from titleagent.pdf import is_pdf
@@ -174,8 +174,8 @@ def train(store, llm: LLM, data: bytes, filename: str, deal_type: str, name: str
     }
 
 
-def export(store, deal_id: int, fmt: str, include: str = "all") -> tuple[bytes, str, str]:
-    """(file, file name, content type) for Export List."""
+def export(store, deal_id: int, fmt: str, include: str = "all") -> tuple[bytes, Checklist]:
+    """(file, the checklist it was made from: its file name and Drive name) for Export List. The type: FORMATS."""
     if fmt not in FORMATS:
         raise FlowError(f"Unknown format: {fmt}.")
     if include not in INCLUDE:
@@ -187,7 +187,7 @@ def export(store, deal_id: int, fmt: str, include: str = "all") -> tuple[bytes, 
     checklist = checklist_for(deal, run["analysis"] if run else None, store.get_items(deal_id))
     data = {"csv": tabular.to_csv, "xlsx": tabular.to_xlsx, "pdf": document.to_pdf,
             "docx": document.to_docx}[fmt](checklist, include)
-    return data, checklist.filename(fmt, include), FORMATS[fmt]
+    return data, checklist
 
 
 def missing_item(store, deal_id: int, what: str, where: str, why: str, priority: str, provided_by: str,

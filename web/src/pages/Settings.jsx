@@ -147,6 +147,7 @@ export function Settings({ me }) {
             {!google && <span class="row-sub">Not set up yet: follow the steps below.</span>}
             {google === 'script' && <span class="row-sub">Exports are saved by the Google export script, as the person who deployed it.</span>}
           </div>
+          <p class="row-sub" style="margin:0">Every export is saved here, in a folder for its type (PDF, Word, Excel, CSV, Google Sheets, Google Docs, made the first time), with the date and time in its name. Downloads still save to the person's computer too.</p>
           {check && <div class={`note ${check.ok ? 'green' : 'red'}`}>{check.message}</div>}
           <button class="link-btn" type="button" style="align-self:flex-start" onClick={() => setShowScript(!showScript)}>
             {showScript ? 'Hide' : 'Show'} The Setup Steps (About 5 Minutes)</button>
@@ -160,6 +161,7 @@ export function Settings({ me }) {
                 <li>Give the engine <code>GOOGLE_EXPORT_URL</code> and <code>GOOGLE_EXPORT_KEY</code> (GitHub → Settings → Secrets → Actions), then run Deploy engine.</li>
                 <li>Paste the folder's link above, Save, then Test Google Folder.</li>
               </ol>
+              <p class="note" style="margin:0"><b>Already set up?</b> When Test Google Folder says the script is the old version: open it at script.google.com, paste the script below over everything, Save, then <b>Deploy → Manage deployments → edit (pencil) → Version: New version → Deploy</b>. The web app URL and the key stay the same.</p>
               <pre class="code">{ref?.google_script || 'Loading…'}</pre>
               <button class="btn glass pill sm" type="button" style="align-self:flex-start"
                 onClick={() => navigator.clipboard.writeText(ref?.google_script || '').then(() => toast('Script copied.'))}>

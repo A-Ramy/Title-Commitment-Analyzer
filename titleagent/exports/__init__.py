@@ -49,10 +49,16 @@ class Checklist:
         return [*self.meta, ("Includes", f"{INCLUDE[include]}: {left_out[include]}")]
 
     def filename(self, ext: str, include: str = "all") -> str:
+        """The download's name, stamped with when it was made (as the copy in the Drive folder is)."""
         import re
 
         base = re.sub(r"[^A-Za-z0-9]+", "_", self.title).strip("_")[:60] or "Title"
-        return f"{base}_{self.heading(include).replace(' ', '_')}.{ext}"
+        return f"{base}_{self.heading(include).replace(' ', '_')}_{self.generated:%Y-%m-%d_%I%M%p}.{ext}"
+
+    def drive_name(self, include: str = "all", ext: str = "") -> str:
+        """The copy's name in the Drive folder: address · heading · date and time (ext for a file kept as is)."""
+        return (f"{self.title} · {self.heading(include)} · {self.generated:%Y-%m-%d %I:%M %p}"
+                + (" ET" if self.generated.tzinfo else "") + (f".{ext}" if ext else ""))
 
 
 def money(v: float | None) -> str:

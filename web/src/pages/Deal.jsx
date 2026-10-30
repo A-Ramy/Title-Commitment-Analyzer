@@ -136,10 +136,16 @@ function ExportDialog({ deal, items, onClose }) {
     setBusy(key);
     try { await fn(); } catch (e) { toast(e.message, true); } finally { setBusy(''); }
   };
+  const download = f => run(f, async () => {
+    const { drive, note } = await api.download(deal.id, f, include);
+    if (drive === 'saved') toast(`Downloaded, and saved in the team's Drive folder → ${note}.`);
+    else if (drive === 'failed') toast(`Downloaded, but not saved in the Drive folder: ${note}`, true);
+    else toast(`Downloaded. Not saved in Drive: ${note}`);
+  });
   const google = kind => run(kind, async () => {
-    const { link } = await api.google(deal.id, kind, include);
+    const { link, folder } = await api.google(deal.id, kind, include);
     window.open(link, '_blank', 'noopener');
-    toast('Created in the team\'s Google Drive folder.');
+    toast(`Created in the team's Drive folder → ${folder}.`);
   });
   return (
     <Modal title="Export List" onClose={onClose}>
@@ -150,7 +156,7 @@ function ExportDialog({ deal, items, onClose }) {
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
         {[['pdf', 'PDF'], ['docx', 'Word'], ['xlsx', 'Excel'], ['csv', 'CSV']].map(([f, label]) => (
           <button key={f} class="btn glass pill" disabled={!!busy}
-            onClick={() => run(f, () => api.download(deal.id, f, include))}>
+            onClick={() => download(f)}>
             {busy === f ? <Spinner /> : <Icon name="download" />} {label}
           </button>))}
         <button class="btn glass pill" disabled={!!busy} onClick={() => google('sheet')}>
@@ -158,6 +164,7 @@ function ExportDialog({ deal, items, onClose }) {
         <button class="btn glass pill" disabled={!!busy} onClick={() => google('doc')}>
           {busy === 'doc' ? <Spinner /> : <Icon name="file" />} Google Docs</button>
       </div>
+      <p class="row-sub" style="margin:0">Every export is also saved in the team's Google Drive folder, in a folder for its type, with the date and time in its name. Google Sheets and Docs go only there.</p>
       <p class="row-sub" style="margin:0">Exports contain names, addresses and loan numbers. Send them only to people on the deal.</p>
       <div class="actions"><button class="btn ghost pill" onClick={onClose}>Done</button></div>
     </Modal>

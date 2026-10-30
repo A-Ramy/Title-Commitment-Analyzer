@@ -110,6 +110,49 @@ def test_check_folder_needs_a_shared_drive_folder_it_can_write(monkeypatch):
     assert check_folder(sa, "")[0] is False
 
 
+def test_service_account_saves_into_a_folder_per_type(monkeypatch):
+    from titleagent.exports import google
+
+    calls, existing = [], {}
+
+    class Drive:
+        def files(self):
+            return self
+
+        def list(self, q, **_):
+            calls.append(("list", q))
+            name = q.split("name = '")[1].split("'")[0]
+            return Result({"files": [{"id": existing[name]}] if name in existing else []})
+
+        def create(self, body, **kw):
+            calls.append(("create", body, kw.get("media_body")))
+            if body.get("mimeType") == google.FOLDER:
+                existing[body["name"]] = "sub-" + body["name"]
+                return Result({"id": existing[body["name"]]})
+            return Result({"id": "f1", "webViewLink": "https://drive.google.com/file/d/f1"})
+
+    class Result:
+        def __init__(self, out):
+            self.out = out
+
+        def execute(self):
+            return self.out
+
+    monkeypatch.setattr(google, "_drive", lambda _sa: Drive())
+    sa = {"client_email": "agent@proj.iam.gserviceaccount.com"}
+    assert google.upload(sa, "0Root", "A.pdf", b"%PDF", "pdf").endswith("/f1")
+    made = [c for c in calls if c[0] == "create"]
+    assert made[0][1] == {"name": "PDF", "mimeType": google.FOLDER, "parents": ["0Root"]}
+    assert made[1][1] == {"name": "A.pdf", "parents": ["sub-PDF"]}  # kept as a PDF, not converted
+    calls.clear()
+    google.upload(sa, "0Root", "A", b"PK", "doc")
+    made = [c for c in calls if c[0] == "create"]
+    assert made[-1][1] == {"name": "A", "parents": ["sub-Google Docs"], "mimeType": google.DOC}
+    calls.clear()
+    google.upload(sa, "0Root", "B.pdf", b"%PDF", "pdf")  # the PDF folder exists now: not made twice
+    assert [c[1]["name"] for c in calls if c[0] == "create"] == ["B.pdf"]
+
+
 def test_service_account_pasted_as_json():
     assert _decode_service_account(None, '{"client_email": "a@b.iam.gserviceaccount.com"}') == {
         "client_email": "a@b.iam.gserviceaccount.com"}
@@ -150,14 +193,28 @@ def test_google_export_through_the_apps_script(monkeypatch):
         if json["key"] != "k1":
             return FakeResponse({"ok": False, "error": "wrong key"})
         if json["action"] == "ping":
-            return FakeResponse({"ok": True, "folder": "Title Checklists"})
+            return FakeResponse({"ok": True, "folder": "Title Checklists", "version": version})
+        if "type" not in json:  # what the first script answered to anything but a Sheet / Doc
+            return FakeResponse({"ok": False, "error": "unknown kind"})
         return FakeResponse({"ok": True, "link": "https://docs.google.com/spreadsheets/d/abc"})
 
+    version = 2
     monkeypatch.setattr(requests, "post", post)
     link = google.export(secrets, "https://drive.google.com/drive/folders/1Fold?usp=sharing", "Deal", b"xlsx", "sheet")
     assert link.endswith("/abc")
-    assert sent[-1]["folder"] == "1Fold" and sent[-1]["kind"] == "sheet" and sent[-1]["data"] == "eGxzeA=="
-    assert google.check(secrets, "1Fold") == (True, "Connected: exports go to “Title Checklists”.")
+    assert sent[-1]["folder"] == "1Fold" and sent[-1]["data"] == "eGxzeA=="
+    assert (sent[-1]["subfolder"], sent[-1]["type"], sent[-1]["convert"]) == (
+        "Google Sheets", google.XLSX, google.SHEET)
+    google.export(secrets, "1Fold", "Deal.pdf", b"%PDF", "pdf")
+    assert (sent[-1]["action"], sent[-1]["subfolder"], sent[-1]["type"], sent[-1]["convert"]) == (
+        "save", "PDF", "application/pdf", "")
+    assert google.check(secrets, "1Fold") == (
+        True, "Connected: exports go to “Title Checklists”, a folder for each type.")
+    # a script deployed before the folders per type: Test Google Folder says to update it
+    version = None
+    ok, msg = google.check(secrets, "1Fold")
+    assert not ok and "old version" in msg and "New version" in msg
+    assert "old version" in google._script_error("unknown kind")
 
     wrong = Secrets(None, None, None, google_export_url=secrets.google_export_url, google_export_key="nope")
     ok, msg = google.check(wrong, "1Fold")

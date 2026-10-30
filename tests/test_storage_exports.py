@@ -1,6 +1,7 @@
 import csv
 import io
-from datetime import date
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
 
 from openpyxl import load_workbook
 
@@ -82,7 +83,10 @@ def test_every_export_format():
     assert wb.active.max_row > len(a.items)
     assert document.to_pdf(cl).startswith(b"%PDF")
     assert document.to_docx(cl)[:2] == b"PK"
-    assert cl.filename("pdf") == "1427_Maple_Ave_Columbus_OH_Title_Checklist.pdf"
+    cl.generated = datetime(2026, 10, 30, 14, 5, tzinfo=ZoneInfo("America/New_York"))
+    assert cl.filename("pdf") == "1427_Maple_Ave_Columbus_OH_Title_Checklist_2026-10-30_0205PM.pdf"
+    assert cl.drive_name("all", "pdf") == "1427 Maple Ave, Columbus, OH · Title Checklist · 2026-10-30 02:05 PM ET.pdf"
+    assert cl.drive_name("blockers") == "1427 Maple Ave, Columbus, OH · Closing Blockers · 2026-10-30 02:05 PM ET"
 
 
 def test_closing_blockers_only_export():
@@ -94,7 +98,7 @@ def test_closing_blockers_only_export():
     assert ["Includes", "Closing Blockers only: Before Closing and Review / FYI items left out"] in rows
     body = rows[rows.index(next(r for r in rows if r and r[0] == "#")) + 1:]
     assert {r[1] for r in body} == {"Closing Blocker"}
-    assert cl.filename("pdf", "blockers") == "1427_Maple_Ave_Columbus_OH_Closing_Blockers.pdf"
+    assert cl.filename("pdf", "blockers").startswith("1427_Maple_Ave_Columbus_OH_Closing_Blockers_2026-")
     assert load_workbook(io.BytesIO(tabular.to_xlsx(cl, "blockers"))).active.title == "Closing Blockers"
     from pypdf import PdfReader
 

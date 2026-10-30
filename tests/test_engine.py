@@ -1,6 +1,8 @@
 """The v2 engine end to end: sign-in rules, upload → read → confirm → review, re-run, exports, list edits, report
 missing, training, admin actions. Firestore via the emulator; scripted AI answers; made-up sample data."""
 
+from urllib.parse import unquote
+
 import pytest
 
 from titleagent import demo
@@ -106,7 +108,7 @@ def test_a_full_deal_through_the_engine(setup):
     # exports, including Closing Blockers only
     r = client.get(f"/v1/deals/{deal_id}/export?format=pdf&include=blockers", headers=h("tc"))
     assert r.status_code == 200 and r.content.startswith(b"%PDF")
-    assert "Closing_Blockers.pdf" in r.headers["content-disposition"]
+    assert "Closing_Blockers_20" in r.headers["content-disposition"] and r.headers["x-drive-copy"] == "off"
     assert client.get(f"/v1/deals/{deal_id}/export?format=exe", headers=h("tc")).status_code == 400
     assert client.get(f"/v1/deals/{deal_id}/export?format=csv", headers=h("outsider")).status_code == 403
 
@@ -229,3 +231,45 @@ def test_permissions_for_team_leaders_and_members(setup):
     assert client.get("/v1/me", headers=h("owner")).json()["can"] == {"approve_lessons": False, "report_missing": False}
     assert client.post("/v1/lessons", json={"text": "Another rule."}, headers=h("owner")).status_code == 403
     assert client.post("/v1/deals/1/missing", json={"what": "x"}, headers=h("owner")).status_code == 403
+
+
+def test_every_export_is_also_saved_in_its_drive_folder(monkeypatch):
+    from tests.conftest import firestore_store
+    from titleagent.exports import google
+    from titleagent.models import ActionItem, Source
+
+    store = firestore_store()
+    secrets = Secrets(None, None, None, google_export_url="https://script.google.com/macros/s/x/exec",
+                      google_export_key="k1")
+    client = TestClient(create_app(Engine(secrets=secrets, store=store, llm=demo.scripted_llm, verify=verify)))
+    deal_id = store.create_deal(by="pat.tc@totalchb.com", address="1 Sample Way, Exampleton, OH")
+    store.replace_items(deal_id, [ActionItem(key="1", priority="blocker", category="Other", title="Item", action="Do",
+                                             provided_by="Seller", sources=[Source(ref="B-I 1")])])
+    saved = []
+
+    def export(_secrets, folder, name, data, kind, timeout=90):
+        if folder == "broken":
+            raise google.GoogleExportError("The export key doesn't match.")
+        saved.append((folder, name, kind, data[:4]))
+        return "https://drive.google.com/file/d/f1"
+
+    monkeypatch.setattr(google, "export", export)
+    r = client.get(f"/v1/deals/{deal_id}/export?format=pdf", headers=h("tc"))  # no folder set yet: just the download
+    assert r.status_code == 200 and r.headers["x-drive-copy"] == "off"
+    assert "folder" in unquote(r.headers["x-drive-note"])
+
+    store.set_setting("google_folder_id", "1Fold", by="test")
+    r = client.get(f"/v1/deals/{deal_id}/export?format=pdf", headers=h("tc"))
+    assert r.content.startswith(b"%PDF") and (r.headers["x-drive-copy"], r.headers["x-drive-note"]) == ("saved", "PDF")
+    folder, name, kind, head = saved[-1]
+    assert (folder, kind, head) == ("1Fold", "pdf", b"%PDF")
+    assert name.startswith("1 Sample Way, Exampleton, OH · Title Checklist · 20") and name.endswith(" ET.pdf")
+
+    r = client.post(f"/v1/deals/{deal_id}/google", json={"kind": "sheet", "include": "blockers"}, headers=h("tc"))
+    assert r.json() == {"link": "https://drive.google.com/file/d/f1", "folder": "Google Sheets"}
+    assert saved[-1][2] == "sheet" and " · Closing Blockers · " in saved[-1][1] and not saved[-1][1].endswith(".xlsx")
+
+    store.set_setting("google_folder_id", "broken", by="test")  # Drive fails: the download still comes
+    r = client.get(f"/v1/deals/{deal_id}/export?format=csv", headers=h("tc"))
+    assert r.status_code == 200 and r.headers["x-drive-copy"] == "failed"
+    assert unquote(r.headers["x-drive-note"]) == "The export key doesn't match."

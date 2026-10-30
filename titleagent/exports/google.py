@@ -1,5 +1,7 @@
-"""Google Sheets and Google Docs: the Excel / Word export uploaded into the team's Drive folder and converted by
-Drive, so the Google versions keep the same layout. Two ways in, the first one set wins:
+"""The team's Google Drive folder: every export is saved there, in a folder for its type (FOLDERS), with the date and
+time in its name. PDF / Word / Excel / CSV go as they are (and still download to the person's computer); Google
+Sheets and Docs are the Excel / Word export converted by Drive, so they keep the same layout. Two ways in, the
+first one set wins:
 
 1. The Apps Script web app (google_export.gs), deployed by a team member: writes as that person. Easy setup: no
    Google Cloud project, no service account, works with any folder that person can add files to.
@@ -19,8 +21,17 @@ SCRIPT = (Path(__file__).with_name("google_export.gs")).read_text(encoding="utf-
 SCOPES = ["https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
 SHEET = "application/vnd.google-apps.spreadsheet"
 DOC = "application/vnd.google-apps.document"
+FOLDER = "application/vnd.google-apps.folder"
 XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+SCRIPT_VERSION = 2  # google_export.gs's VERSION: older scripts can't make the folders per type
+
+# kind → (the folder inside the team's folder, the file's type, the Google type it becomes or None to keep it as is)
+FOLDERS = {"pdf": ("PDF", "application/pdf", None), "docx": ("Word", DOCX, None), "xlsx": ("Excel", XLSX, None),
+           "csv": ("CSV", "text/csv", None), "sheet": ("Google Sheets", XLSX, SHEET), "doc": ("Google Docs", DOCX, DOC)}
+OLD_SCRIPT = ("The Google export script is the old version. Settings → Google Exports → Show The Setup Steps → Copy "
+              "The Script, paste it over the old one and Save, then Deploy → Manage deployments → edit → Version: "
+              "New version → Deploy.")
 
 
 class GoogleExportError(RuntimeError):
@@ -63,7 +74,7 @@ def check_folder(service_account: dict, folder_id: str) -> tuple[bool, str]:
                        "have no storage of their own.")
     if not (f.get("capabilities") or {}).get("canAddChildren"):
         return False, f"{email} can see “{f.get('name')}” but can't add files. Make it a Content Manager."
-    return True, f"Connected: exports go to “{f.get('name')}”."
+    return True, f"Connected: exports go to “{f.get('name')}”, a folder for each type."
 
 
 def _drive(service_account: dict):
@@ -74,18 +85,33 @@ def _drive(service_account: dict):
     return build("drive", "v3", credentials=creds, cache_discovery=False)
 
 
+def _subfolder(drive, parent: str, name: str) -> str:
+    """The folder for this type inside the team's folder, made the first time."""
+    q = f"'{parent}' in parents and name = '{name}' and mimeType = '{FOLDER}' and trashed = false"
+    found = drive.files().list(q=q, corpora="allDrives", includeItemsFromAllDrives=True, supportsAllDrives=True,
+                               fields="files(id)").execute().get("files", [])
+    if found:
+        return found[0]["id"]
+    return drive.files().create(body={"name": name, "mimeType": FOLDER, "parents": [parent]}, fields="id",
+                                supportsAllDrives=True).execute()["id"]
+
+
 def upload(service_account: dict, folder_id: str, name: str, data: bytes, kind: str) -> str:
-    """Creates the Google file and returns its link. kind: 'sheet' or 'doc'."""
+    """Saves the file in its type's folder and returns its link. kind: a key of FOLDERS."""
     from googleapiclient.errors import HttpError
     from googleapiclient.http import MediaIoBaseUpload
 
     folder_id = folder_id_from(folder_id)
     if not folder_id:
         raise GoogleExportError("Set the Google Drive folder in Settings first.")
-    target, source = (SHEET, XLSX) if kind == "sheet" else (DOC, DOCX)
+    sub, source, target = FOLDERS[kind]
     try:
-        f = _drive(service_account).files().create(
-            body={"name": name, "mimeType": target, "parents": [folder_id]},
+        drive = _drive(service_account)
+        body = {"name": name, "parents": [_subfolder(drive, folder_id, sub)]}
+        if target:
+            body["mimeType"] = target
+        f = drive.files().create(
+            body=body,
             media_body=MediaIoBaseUpload(io.BytesIO(data), mimetype=source, resumable=False),
             fields="id, webViewLink",
             supportsAllDrives=True,
@@ -109,6 +135,8 @@ def _script_error(error: str) -> str:
         return "The export key doesn't match. Copy GOOGLE_EXPORT_KEY again from the script's setup log."
     if error == "not a folder":
         return "That link is a file, not a folder. Open the folder and copy its link."
+    if error == "unknown kind":
+        return OLD_SCRIPT
     if error == "read only":
         return "The script's Google account can only view that folder. Give it edit access, or deploy as an editor."
     if "Drive is not defined" in error:
@@ -122,11 +150,12 @@ def _script_error(error: str) -> str:
     return f"Google Drive said: {error}"
 
 
-def _script(secrets: Secrets, payload: dict) -> dict:
+def _script(secrets: Secrets, payload: dict, timeout: int = 90) -> dict:
     import requests
 
     try:
-        r = requests.post(secrets.google_export_url, json={**payload, "key": secrets.google_export_key}, timeout=90)
+        r = requests.post(secrets.google_export_url, json={**payload, "key": secrets.google_export_key},
+                          timeout=timeout)
         out = r.json()
     except requests.RequestException as exc:
         raise GoogleExportError("Couldn't reach the Google export script. Try again.") from exc
@@ -138,14 +167,17 @@ def _script(secrets: Secrets, payload: dict) -> dict:
     return out
 
 
-def export(secrets: Secrets, folder: str, name: str, data: bytes, kind: str) -> str:
-    """Creates the Google Sheet ('sheet') or Doc ('doc') in the folder and returns its link."""
+def export(secrets: Secrets, folder: str, name: str, data: bytes, kind: str, timeout: int = 90) -> str:
+    """Saves the export in the team's folder, in its type's folder, and returns its link. kind: a key of FOLDERS
+    ('sheet' / 'doc' become a Google Sheet / Doc)."""
     folder_id = folder_id_from(folder)
     if not folder_id:
         raise GoogleExportError("Set the Google Drive folder in Settings first.")
     if secrets.google_export_url and secrets.google_export_key:
-        return _script(secrets, {"action": "create", "folder": folder_id, "name": name, "kind": kind,
-                                 "data": base64.b64encode(data).decode()})["link"]
+        sub, source, target = FOLDERS[kind]
+        return _script(secrets, {"action": "save", "folder": folder_id, "subfolder": sub, "name": name,
+                                 "type": source, "convert": target or "", "data": base64.b64encode(data).decode()},
+                       timeout)["link"]
     if secrets.google_service_account:
         return upload(secrets.google_service_account, folder_id, name, data, kind)
     raise GoogleExportError("Google exports aren't set up yet (Settings → Google Exports).")
@@ -161,7 +193,9 @@ def check(secrets: Secrets, folder: str) -> tuple[bool, str]:
             out = _script(secrets, {"action": "ping", "folder": folder_id})
         except GoogleExportError as exc:
             return False, str(exc)
-        return True, f"Connected: exports go to “{out.get('folder')}”."
+        if (out.get("version") or 0) < SCRIPT_VERSION:
+            return False, f"Connected to “{out.get('folder')}”, but: {OLD_SCRIPT}"
+        return True, f"Connected: exports go to “{out.get('folder')}”, a folder for each type."
     if secrets.google_service_account:
         return check_folder(secrets.google_service_account, folder_id)
     return False, "Google exports aren't set up yet."

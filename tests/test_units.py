@@ -215,11 +215,11 @@ def test_daily_email_is_branded_and_lists_every_open_deal():
               "tc": "Pat"}, {"id": 8, "address": "2 Example Ave", "deal_type": "Fix & Flip", "closing_date": None,
                              "tc": "Sam"}]
     items = {7: [item("Payoff", key="a", due="2026-10-20")], 8: []}
-    _, html = summary_html(deals, items, date(2026, 10, 25), "https://title.totalchb.com", branded=True)
+    _, html = summary_html(deals, items, date(2026, 10, 25), "https://title.totalchb.com")
     assert 'src="https://title.totalchb.com/logo-full.png"' in html and "Title Commitment" in html
     assert "1 open Closing Blocker across 2 open deals" in html  # the inbox preview line
     assert "Overdue · Oct 20" in html and "On Track" in html and "2 Example Ave" in html
-    _, quiet = summary_html(deals[1:], {8: []}, date(2026, 10, 25), "https://title.totalchb.com", branded=True)
+    _, quiet = summary_html(deals[1:], {8: []}, date(2026, 10, 25), "https://title.totalchb.com")
     assert "nothing due in the next 3 days" in quiet and "2 Example Ave" in quiet
 
 

@@ -19,51 +19,13 @@ EASTERN = ZoneInfo("America/New_York")
 SEND_AT = time(8, 0)
 LATEST_TO_SCHEDULE = time(7, 58)  # a run after this sends right away instead
 SOON_DAYS = 3
-# The daily email in the app's design (branded_html), drafted 2026-10-30: it goes out once the owner approves it.
-BRANDED = False
 
 
 def _open(items: list[ActionItem]) -> list[ActionItem]:
     return [i for i in items if i.status not in DONE_STATUSES and i.change != "removed"]
 
 
-def summary_html(deals: list[dict], items_by_deal: dict[int, list[ActionItem]], today: date,
-                 app_url: str = "", branded: bool | None = None) -> tuple[str, str]:
-    """(subject, html). The branded design once BRANDED is on; until then the plain email."""
-    if BRANDED if branded is None else branded:
-        return branded_html(deals, items_by_deal, today, app_url)
-    soon = today + timedelta(days=SOON_DAYS)
-    blocks, total_blockers, total_due = [], 0, 0
-    for d in deals:
-        items = _open(items_by_deal.get(d["id"], []))
-        blockers = [i for i in items if i.priority == "blocker"]
-        due = [i for i in items if i.due_date and i.due_date <= soon.isoformat()]
-        total_blockers += len(blockers)
-        total_due += len(due)
-        if not (blockers or due):
-            continue
-        closing = d.get("closing_date")
-        lines = "".join(
-            f"<li><b>{escape(i.title)}</b> · {escape(i.provided_by)}"
-            f"{f' · due {escape(i.due_date)}' if i.due_date else ''}"
-            f"{' · <span style=color:#BD2239>OVERDUE</span>' if i.due_date and i.due_date < today.isoformat() else ''}"
-            f"</li>" for i in sorted(blockers + [x for x in due if x not in blockers],
-                                     key=lambda x: (x.priority != "blocker", x.due_date or "9999")))
-        link = f' <a href="{escape(app_url.rstrip("/"))}/#/deal/{d["id"]}">Open</a>' if app_url else ""
-        blocks.append(f"<h3 style='color:#4D458A;margin:18px 0 4px'>{escape(d['address'] or 'Deal ' + str(d['id']))}"
-                      f"</h3><div style='color:#767388;font-size:13px'>{escape(d.get('deal_type') or '')}"
-                      f"{f' · closing {closing}' if closing else ''} · TC {escape(d.get('tc') or 'unassigned')}"
-                      f"{link}</div><ul>{lines}</ul>")
-    subject = (f"Title Commitment Agent: {total_blockers} open blocker{'s' if total_blockers != 1 else ''}, "
-               f"{total_due} due soon ({today:%b %d})")
-    html = (f"<div style='font-family:Arial,sans-serif;max-width:680px'><h2 style='color:#4D458A'>"
-            f"Title Commitment Agent daily summary · {today:%A, %b %d}</h2>"
-            + ("".join(blocks) or "<p>No open blockers and nothing due in the next 3 days.</p>")
-            + "<p style='color:#767388;font-size:12px'>Total Cash Home Buyers · Title Commitment Agent</p></div>")
-    return subject, html
-
-
-# ---------------------------------------------------------------- the branded email
+# ---------------------------------------------------------------- the email (owner approved, 2026-10-30)
 # The app's look (web/src/styles.css: TCHB indigo / red / green, Baloo 2 headings, Nunito Sans text, white cards on a
 # soft grey page) in what email programs accept: tables and inline styles. Baloo 2 and Nunito Sans load where the
 # email program allows web fonts (Apple Mail, iPhone); elsewhere (Gmail, Outlook) Arial stands in.
@@ -183,7 +145,7 @@ FONTS = ("https://fonts.googleapis.com/css2?family=Baloo+2:wght@700&amp;family=N
          "&amp;display=swap")
 
 
-def branded_html(deals: list[dict], items_by_deal: dict[int, list[ActionItem]], today: date,
+def summary_html(deals: list[dict], items_by_deal: dict[int, list[ActionItem]], today: date,
                  app_url: str = "") -> tuple[str, str]:
     """(subject, html): every open deal's open Closing Blockers and anything due in the next 3 days, in the app's
     design. Deals with nothing to report are listed at the end, so every open deal shows."""

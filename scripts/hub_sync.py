@@ -33,7 +33,9 @@ def main() -> int:
             applied += r.get("applied", 0)
         except Exception as exc:
             failed += 1
-            print(f"one deal failed: {type(exc).__name__}")
+            # the reason (e.g. the hub's address or status code) says nothing about the deal itself
+            reason = str(exc).split("(Caused by")[-1].strip(" )")[:160] if str(exc) else ""
+            print(f"one deal failed: {type(exc).__name__} {reason}")
     print(f"open deals {len(deals)}: synced {ok}, new hub tasks {created}, "
           f"hub changes copied back {applied}, failed {failed}")
     return 1 if failed and not ok else 0

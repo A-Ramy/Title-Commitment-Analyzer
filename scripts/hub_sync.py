@@ -1,5 +1,5 @@
-"""Every open deal's Closing Blockers to the Universal Team Hub, and back what changed there (GitHub Actions, every
-15 minutes). Prints counts only.
+"""Every open deal's Closing Blockers to the Universal Team Hub, and back what changed there (GitHub Actions, each
+weekday morning with the daily email run). Prints counts only.
 
     uv run python scripts/hub_sync.py
 """

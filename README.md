@@ -24,7 +24,7 @@ it runs today). Project rules: [`CLAUDE.md`](CLAUDE.md).
 | Sign-in | Firebase Authentication (Google, @totalchb.com only) | |
 | The 8 AM email | GitHub Actions → Resend, from title-agent@totalchb.com | `scripts/daily_email.py` |
 | Google Sheets / Docs exports | A Google Apps Script in the team's Drive | `titleagent/exports/google_export.gs` |
-| Closing Blockers → Universal Team Hub (both ways) | Engine + GitHub Actions every 15 minutes → hub.totalchb.com/api/title-agent | `titleagent/hub.py`, `scripts/hub_sync.py` |
+| Closing Blockers → Universal Team Hub (both ways) | Engine after each change + a catch-up with the morning email run → hub.totalchb.com/api/title-agent | `titleagent/hub.py`, `scripts/hub_sync.py` |
 
 Every push deploys itself: Vercel rebuilds the page; `.github/workflows/deploy-engine.yml` rebuilds the engine, deploys
 it to Cloud Run (keyless sign-in to Google, `scripts/gcp_setup.sh`) and smoke-checks it.

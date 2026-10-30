@@ -256,7 +256,7 @@ function Records({ deal }) {
         {!docs.length && <span class="row-sub">No documents.</span>}
       </div>
       <div class="toolbar">
-        {deal.hub_error ? <span class="row-sub"><span class="chip orange">Team Hub</span> Not reached yet: it tries again within 15 minutes.</span>
+        {deal.hub_error ? <span class="row-sub"><span class="chip orange">Team Hub</span> Not reached yet: it's sent again with the next change, and every weekday morning.</span>
           : deal.hub_synced_at ? <span class="row-sub"><span class="chip green">Team Hub</span> Closing Blockers sent {when(deal.hub_synced_at)}.</span>
           : null}
         <span class="spacer" />

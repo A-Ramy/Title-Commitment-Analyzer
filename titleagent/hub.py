@@ -6,9 +6,9 @@ item's due date). The hub keeps the task in step with what is sent and answers w
 there; a blocker cleared here shows as done there. Both directions are signed with HUB_SYNC_SECRET
 (HMAC-SHA256 of "<unix seconds>.<body>", 5 minutes' leeway).
 
-Sent after every review, re-run, item change and missing item (in the background), and for every open deal every
-15 minutes by GitHub Actions (scripts/hub_sync.py), so a missed message is caught up. Logs say counts, never deal
-details (the repository and its Actions logs are public).
+Sent after every review, re-run, item change and missing item (in the background), and for every open deal each
+weekday morning with the daily email run (scripts/hub_sync.py), so a missed message is caught up. Logs say counts,
+never deal details (the repository and its Actions logs are public).
 """
 
 from __future__ import annotations
@@ -94,7 +94,8 @@ def sync(store, secrets, deal_id: int, app_url: str = APP_URL, post=None) -> dic
 
 
 def safe_sync(store, secrets, deal_id: int, app_url: str = APP_URL) -> dict | None:
-    """sync() for background use: never raises; failures are kept on the deal and retried by the 15-minute run."""
+    """sync() for background use: never raises; failures are kept on the deal and retried by the next change
+    or the morning catch-up."""
     if not getattr(secrets, "has_hub", False):
         return None
     try:

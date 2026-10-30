@@ -586,15 +586,17 @@ def story() -> list:
         ["You change a blocker's due date", "The subtask's date follows."],
         ["You Report a Missing Closing Blocker (added to the list)", "A new subtask appears."],
         ["An updated commitment removes a blocker", "It's no longer sent to the hub."],
-        ["Anything was missed (the hub was busy, a connection dropped)", "A catch-up runs every 15 minutes for "
-                                                                          "every open deal."],
+        ["Anything was missed (the hub was busy, a connection dropped)", "It's sent again with the next change, "
+                                                                          "and a catch-up runs every weekday "
+                                                                          "morning for every open deal."],
     ], [0.42, 0.58])]
-    s += [P("Changes normally show on the other side within moments, and always within about 15 minutes. Only "
+    s += [P("Changes normally show on the other side within moments. Only "
             "the tick travels back from the hub: change titles, dates and notes here, where the list is worked.")]
     s += [P("Checking it's working", "h2"),
           P("At the bottom of every deal, under <b>Documents And Review History</b>, a <b>Team Hub</b> line shows when "
-            "the Closing Blockers were last sent. If it says <b>Not reached yet</b>, nothing is lost: it tries again "
-            "within 15 minutes. Admins also see a <b>Team Hub</b> tile in Settings → Connections."),
+            "the Closing Blockers were last sent. If it says <b>Not reached yet</b>, nothing is lost: it's sent again "
+            "with the next change and every weekday morning. Admins also see a <b>Team Hub</b> tile in "
+            "Settings → Connections."),
           shot("11-records", "The bottom of a deal: the documents, the Team Hub line and Mark Deal Closed.", 1.0,
                crop=(0.14, 0.64, 0.86, 0.86))]
     s += [box("Closing a deal here (Mark Deal Closed) stops sending it to the hub. Clear or waive its blockers "
@@ -705,8 +707,9 @@ def story() -> list:
                                                   "on the confirm screen."],
         ["Can I upload a scanned PDF?", "Yes. Quotes from scanned pages have no ✓, because there's no text to check "
                                         "them against."],
-        ["A blocker isn't in the Team Hub yet.", "Look at the Team Hub line at the bottom of the deal. It catches up "
-                                                 "within 15 minutes; if it still says Not reached yet, tell an admin."],
+        ["A blocker isn't in the Team Hub yet.", "Look at the Team Hub line at the bottom of the deal. If it says Not "
+                                                 "reached yet, it catches up the next weekday morning; if it still "
+                                                 "does after that, tell an admin."],
         ["I ticked a subtask in the hub. Will it clear here?", "Yes, the blocker turns Cleared here, usually within "
                                                                "moments."],
         ["Where are the original PDFs?", "Bottom of the deal → Documents And Review History."],
@@ -759,7 +762,7 @@ def story() -> list:
         ("Due dates", "Payoffs 10 days before closing · court / curative 14 · documents 5 · bring-down 5 · paid at "
                       "the table: closing day · weekends move to Friday"),
         ("Team Hub", "Closing Blockers only · one task per deal (Title - address) · ticks travel both ways · "
-                     "catch-up every 15 minutes"))]], colWidths=[WIDTH / 3] * 3)
+                     "catch-up every weekday morning"))]], colWidths=[WIDTH / 3] * 3)
     marks.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, -1), LAV), ("VALIGN", (0, 0), (-1, -1), "TOP"),
                                ("LINEAFTER", (0, 0), (1, 0), 4, colors.white), ("TOPPADDING", (0, 0), (-1, -1), 8),
                                ("BOTTOMPADDING", (0, 0), (-1, -1), 8), ("LEFTPADDING", (0, 0), (-1, -1), 9),

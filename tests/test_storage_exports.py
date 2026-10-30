@@ -5,6 +5,7 @@ from datetime import date
 from openpyxl import load_workbook
 
 from titleagent import demo, pipeline
+from titleagent.emailer import summary_html
 from titleagent.exports import Checklist, document, tabular
 from titleagent.llm import Usage
 from titleagent.prompts import REVISED_SEED_LESSONS, SEED_LESSONS
@@ -106,3 +107,15 @@ def test_closing_blockers_only_export():
         .extract_text()
     assert ["", "No Closing Blockers on this deal."] in list(csv.reader(io.StringIO(
         tabular.to_csv(clean, "blockers").decode("utf-8-sig"))))
+
+
+def test_daily_email_from_the_store(store):
+    """The email built from data exactly as the daily run reads it (closing dates come back as dates)."""
+    deal = store.create_deal(by="tc@x", address="9 Sample Rd", deal_type="Double Close",
+                             closing_date=date(2026, 11, 20), tc="Pat")
+    quiet = store.create_deal(by="tc@x", address="10 Sample Rd", deal_type="Fix & Flip", tc="Sam")
+    store.save_run(deal, analysis(), None, None, False, by="tc@x")
+    subject, html = summary_html(store.list_deals(status="open"), store.open_items_by_deal(), date(2026, 10, 30),
+                                 "https://title.totalchb.com")
+    assert "open blocker" in subject and "9 Sample Rd" in html and "Closing Nov 20 · 21d" in html
+    assert "10 Sample Rd" in html and "On Track" in html and quiet

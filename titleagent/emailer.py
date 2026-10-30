@@ -41,8 +41,13 @@ TAG = {"blocker": ("Closing Blocker", RED, RED_BG), "before": ("Before Closing",
        "fyi": ("Review / FYI", INDIGO, INDIGO_BG)}
 
 
-def _day(iso: str) -> str:
-    d = date.fromisoformat(iso)
+def _date(v: date | str) -> date:
+    """The store gives a deal's closing date as a date and an item's due date as YYYY-MM-DD: take either."""
+    return v if isinstance(v, date) else date.fromisoformat(v)
+
+
+def _day(v: date | str) -> str:
+    d = _date(v)
     return f"{d:%b} {d.day}"
 
 
@@ -59,7 +64,7 @@ def _button(href: str, label: str, color: str = RED) -> str:
 def _due(i: ActionItem, today: date) -> str:
     if not i.due_date:
         return ""
-    days = (date.fromisoformat(i.due_date) - today).days
+    days = (_date(i.due_date) - today).days
     if days < 0:
         return _chip(f"Overdue · {_day(i.due_date)}", RED, RED_BG, 11)
     if days == 0:
@@ -83,7 +88,7 @@ def _row(i: ActionItem, today: date) -> str:
 def _closing(d: dict, today: date) -> str:
     if not d.get("closing_date"):
         return _chip("No closing date", MUTED, LINE)
-    days = (date.fromisoformat(d["closing_date"]) - today).days
+    days = (_date(d["closing_date"]) - today).days
     text = (f"{-days}d past closing" if days < 0 else "Closing today" if days == 0
             else f"Closing {_day(d['closing_date'])} · {days}d")
     return _chip(text, RED if days < 0 else ORANGE if days <= 7 else INDIGO,
